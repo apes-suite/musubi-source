@@ -57,7 +57,7 @@
 !! [Interpolation methods](../page/features/intp_methods.html)
 !!
 ?? include 'header/lbm_macros.inc'
-?? include 'treelm/source/logMacros.inc'
+?? include 'tem/source/logMacros.inc'
 module mus_interpolate_debug_module
   use iso_c_binding, only: c_f_pointer
 

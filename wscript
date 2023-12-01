@@ -11,14 +11,10 @@ import glob
 APPNAME = 'musubi'
 VERSION = '1'
 
-# Add the aotus subdirectory as path to search for modules.
-sys.path.append(os.path.join(sys.path[0], 'treelm', 'aotus'))
-
 top = '.'
 out = 'build'
 
 def options(opt):
-    opt.recurse('treelm')
     opt.load('compiler_cxx')
     opt.add_option('--no_harvesting', action='store_true',
                    default=False,
@@ -28,9 +24,9 @@ def options(opt):
                    help='Streaming approach to use, either PUSH or PULL')
 
     mus_opt = opt.add_option_group('External libraries to include')
-    mus_opt.add_option('--with_ext_tdf', action='store_true', 
+    mus_opt.add_option('--with_ext_tdf', action='store_true',
                        help='add external library to compute thermodynamic factors.')
-    mus_opt.add_option('--libdmapp', action='store_true', 
+    mus_opt.add_option('--libdmapp', action='store_true',
                        help='to use the highly optimized GHAL-based DMAPP \
                        collective algorithms, if available.')
 
@@ -71,10 +67,8 @@ def configure(conf):
     conf.setenv('')
 
     # Compile flags are set in treelm!
-    # Check in treelm/wscript for the flags that are set, for the various
+    # Check in tem/wscript for the flags that are set, for the various
     # available targets.
-
-    conf.recurse('treelm')
     subconf(conf)
 
     # Avoid some warnings:
@@ -100,19 +94,6 @@ def configure(conf):
     conf.env.ford_mainpage = 'mus_mainpage.md'
 
 def build(bld):
-    bld(rule='cp ${SRC} ${TGT}', source=bld.env.COCOSET, target='coco.set')
-
-    bld.add_group()
-
-    if bld.cmd != 'gendoxy':
-        # Build Treelm and aotus recursive
-        bld.recurse('treelm')
-
-    # Build the Musubi objects
-    build_mus_objs(bld)
-
-
-def build_mus_objs(bld):
     from waflib.extras.utest_results import utests
 
     pp_sources = bld.path.ant_glob('source/compute/*.fpp')
@@ -137,9 +118,9 @@ def build_mus_objs(bld):
     mus_sources += bld.path.ant_glob('source/turbulence/*.f90')
     mus_sources += pp_sources
 
-    if bld.cmd != 'gendoxy':
+    if bld.cmd != 'docu':
 
-      # source files to compute thermodynamic factors 
+      # source files to compute thermodynamic factors
       extLib_objs=[]
       if bld.env.with_ext_tdf:
           ext_tf_source = bld.path.ant_glob('external/thermFactor/Density.cpp')
@@ -183,7 +164,7 @@ def build_mus_objs(bld):
 
       if bld.env.build_hvs and not bld.options.no_harvesting:
           mus_hvs_sources = bld.path.ant_glob('source/mus_harvesting/*.fpp')
-          mus_hvs_sources += bld.path.ant_glob('source/mus_harvesting/*.f90', 
+          mus_hvs_sources += bld.path.ant_glob('source/mus_harvesting/*.f90',
                                               excl='source/mus_harvesting/mus_harvesting.f90')
           bld(
               features = 'fc',
@@ -197,28 +178,22 @@ def build_mus_objs(bld):
               target = 'mus_harvesting')
 
       utests(bld, ['lapack_objs', 'aotus', 'tem_objs', bld.env.mpi_mem_c_obj,
-                   'mus_objs','utest_objs']+extLib_objs, coco=True)
+                   'mus_objs','utest_objs']+extLib_objs, preprocessor='coco')
 
     else:
 
-      bld.recurse('treelm', 'post_doxy')
       bld(
-        features = 'coco',
+        features = 'includes coco',
         source   = pp_sources)
 
 
-# clean output files 
+# clean output files
 # add different extension format to remove
 # by extending outputfiles list using outfiles.extend(glob.glob('*.yourfileext')
 def cleanoutput(ctx):
     outputfiles=[]
     outputfiles.extend(glob.glob('*.vtk'))
-    #print outputfiles 
+    #print outputfiles
     for output in outputfiles:
         os.remove(output)
 
-#clean build directory and coco completely to create the build from scratch
-def cleanall(ctx):
-    from waflib import Options
-    Options.commands = ['distclean'] + Options.commands
-    ctx.exec_command('rm coco')

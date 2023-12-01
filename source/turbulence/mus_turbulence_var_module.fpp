@@ -24,7 +24,7 @@
 ! **************************************************************************** !
 !> author: Kannan Masilamani
 !! This module provides variable to extract when turbulence model is active
-?? include 'treelm/source/deriveMacros.inc'
+?? include 'tem/source/deriveMacros.inc'
 module mus_turbulence_var_module
   use iso_c_binding, only: c_loc, c_ptr, c_f_pointer
 

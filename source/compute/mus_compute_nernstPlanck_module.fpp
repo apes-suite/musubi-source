@@ -23,7 +23,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ?? include 'header/lbm_macros.inc'
-?? include 'treelm/source/logMacros.inc'
+?? include 'tem/source/logMacros.inc'
 ! ****************************************************************************** !
 !> This module provides the definition and methods for
 !! BGK advection relaxation scheme.
