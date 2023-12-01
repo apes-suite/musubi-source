@@ -1,0 +1,17 @@
+simulation_name = 'channel'
+
+input = {
+  read = '$!filename!$'
+}
+
+output = {
+  folder = '$!folder!$',
+
+  {
+   dumpAll = true,
+   format = 'VTU',
+   binary = true,
+  }
+}
+
+

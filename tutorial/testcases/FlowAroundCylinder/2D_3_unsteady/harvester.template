@@ -1,0 +1,13 @@
+require 'common'
+simulation_name = 'channel_cylinder_Re'..Re
+
+input = {
+  read = '$!filename!$',
+}
+
+output = {
+  folder = '$!folder!$',     -- Output location 
+  { -- first output
+    format = 'VTU',   -- Output format 
+  },
+}

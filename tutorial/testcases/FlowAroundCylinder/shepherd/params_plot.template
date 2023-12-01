@@ -1,0 +1,82 @@
+show_plot = True
+font_family = 'serif'
+font_type = 'Times New Roman'
+font_size = 14
+set_majorgrid = True
+set_minorgrid = False
+write_output = True
+plot = []
+
+Re = $!musubi_Re!$
+height =0.41
+
+## velocityX over time 
+plot.append(dict(kind = 'xy',data=['tracking/channel2D_2D_probe_velocity_p*.res'], col=[1,2], 
+                       startplot = True, endplot = True, figname = 'velX_over_time',  ls = 'b', format = 'png',
+                       title = 'probe velocityX over time',
+                       xlabel = 'time [s]', ylabel = 'velocityX [${m}/{s}$]', label = 'velocityX' ))
+
+## velocityY over time
+plot.append(dict(kind = 'xy',data=['tracking/channel2D_2D_probe_velocity_p*.res'], col=[1,3], 
+                       startplot = True, endplot = True, figname = 'velY_over_time',  ls = 'b', format = 'png',
+                       title = 'probe velocityY over time',
+                       xlabel = 'time [s]', ylabel = 'velocityY [${m}/{s}$]', label = 'velocityY' ))
+
+## drag coefficient over time
+plot.append(dict(kind = 'xy',data=['tracking/channel2D_2D_cyl_coeff_p*.res'], col=[1,2], 
+                       startplot = True, endplot = True, figname = 'cD_over_time',  ls = 'b', format = 'png',
+                       title = 'drag coefficient over time',
+                       xlabel = 'time [s]', ylabel = 'cD [ ]', label = 'cD' ))
+
+## lift coefficient over time
+plot.append(dict(kind = 'xy',data=['tracking/channel2D_2D_cyl_coeff_p*.res'], col=[1,3], 
+                       startplot = True, endplot = True, figname = 'cL_over_time',  ls = 'b', format = 'png',
+                       title = 'lift coefficient over time',
+                       xlabel = 'time [s]', ylabel = 'cL [ ]', label = 'cL' ))
+
+ 
+## rescirculation length
+if Re <= 20:
+  plot.append(dict(kind='rLength', data=['tracking/channel2D_2D_line_p*_t*.res'],
+              col=[1,5], xlabel='x', ylabel='Velocity X',
+              startplot = True, endplot = True, ls = 'r', dx=height/$!seeder_nHeight!$, re_start =0.25, 
+              label = 'velocity x'))
+
+## pressure difference over time
+plot.append(dict(kind='deltaP', data=['tracking/channel2D_2D_probe_pressure_p*.res',
+                      'tracking/channel2D_2D_probe_pressure_p*.res'], col=[1,2,3], 
+                      startplot = True, endplot = False, label = '$\Delta p$', ls = 'r'))
+if Re == 20:
+  plot.append(dict(kind='axhline', endplot = False, val = 0.1172, label = 'upper\_bound', ls = 'b-'))
+  plot.append(dict(kind='axhline', endplot = True, val = 0.1176, label = 'lower\_bound', ls = 'g-',
+                   xlabel='time (s)', ylabel='$\Delta p (N/m^{2})$', 
+                   figname = 'deltaP_over_time',format='png', 
+                   title = 'pressure difference with guidelines', titlesize = 16))
+
+if Re == 100:
+  plot.append(dict(kind='axhline', endplot = False, val = 2.50, label = 'upper\_bound', ls = 'b-'))
+  plot.append(dict(kind='axhline', endplot = True, val = 2.46, label = 'lower\_bound', ls = 'g-',
+                   xlabel='time (s)', ylabel='$\Delta p (N/m^{2})$', 
+                   figname = 'deltaP_over_time',format='png', 
+                   title = 'pressure difference with guidelines', titlesize = 16))
+
+## velocityY over length
+plot.append(dict(kind='xy', data=['tracking/channel2D_2D_line_p*_t*.res'],
+            col=[1,6], xlabel='x', ylabel='Velocity Y [${m}/{s}$]', figname = 'velY_over_length', format = 'png',
+            startplot = True, endplot = True, ls = '-b', title = 'velocity Y over length',
+            label = 'v'))
+
+## velocityX over length
+plot.append(dict(kind='xy', data=['tracking/channel2D_2D_line_p*_t*.res'],
+            col=[1,5], xlabel='x', ylabel='Velocity X [${m}/{s}$]', figname = 'velX_over_length', format = 'png',
+            startplot = True, endplot = True, ls = '-b', title = 'velocity X over length',
+            label = 'u'))
+
+
+## frequency 
+if Re == 100:
+  plot.append(dict(kind = 'FFT', data=['tracking/channel2D_2D_probe_velocity_p*.res'],
+                      col=[1,3],startplot = True, endplot = True, 
+                      xlabel = 'frequency [$s^{-1}$]', ylabel = 'velocityY', ls ='r', 
+                      figname = 'frequency',format ='png', 
+                      label = 'velocityY', title = 'velocityY over frequency'))

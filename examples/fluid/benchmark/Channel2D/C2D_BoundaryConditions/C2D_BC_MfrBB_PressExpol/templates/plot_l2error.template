@@ -1,0 +1,191 @@
+## This is the user-script for plotting using gleaner tool.
+mus_path='musubi_path'
+sdr_path='seeder_path'
+
+omega = $!musubi_omega!$
+nHeight= $!seeder_nHeight!$
+height = 0.41
+dx_ref = height/nHeight[0]
+
+import glob
+import numpy as np
+
+# Do not use X-server to create and save plot
+import matplotlib
+matplotlib.use('Agg')
+
+def extractL2Norm(nHeight, omega, variable):
+  filename = variable+str(omega)+"_l2Norm.txt"
+  fileID = open(filename, "w")
+  fileID.write("# relative_dx \t difference_l2norm \t analy_l2norm \t rel_l2norm diff_l2norm_avg\n")
+ 
+  slope_file = variable+str(omega)+'_slope.txt'
+  slopeID = open(slope_file, 'w')
+  slopeID.write('# relative_dx \t 1st_order \t 2nd_order\n')
+  for iL in nHeight:
+    dir_path = 'sdr_nHeight'+str(iL)+'/mus_omega'+str(omega)
+    dataFile = glob.glob(dir_path+'/tracking/*'+variable+'_l2norm*.res')
+    data = np.genfromtxt(dataFile[0], dtype = None)
+    if data.size == data.shape[0]:
+      data.resize(1,data.size)
+    diff = data[-1,1]
+    anal = data[-1,2]
+    dx_loc = height/iL
+    dx_norm = dx_loc/dx_ref
+    fileID.write(str(dx_norm)+'\t'+str(diff)+'\t'+str(anal)+'\t'+str(diff/anal)+'\t'+str(diff/iL)+'\n')  
+    #print(data[-1,1],data[-1,2])
+
+    if iL == nHeight[0]:
+      # constant for linear slope
+      c1 = (diff/anal)/dx_norm
+      # constant for quadratic slope
+      c2 = c1/dx_norm
+
+      slopeID = open(slope_file, 'w')
+    slopeID.write( str(dx_norm)+'\t'\
+                  +str(c1*dx_norm)+'\t'+str(c2*dx_norm*dx_norm)+'\n')
+
+  fileID.close()
+  slopeID.close()
+  return [filename, slope_file]
+
+import sys
+import os
+## Import all required modules
+import matplotlib.ticker as mtick
+import matplotlib.pyplot as mplt
+import logging
+
+# font setting
+from matplotlib import rc
+font_size = 12
+#font_family = 'serif'
+#font_type = 'Times New Roman'
+#rc('text',usetex=True)
+#font = {'family':font_family,'%s'%font_family:font_type,'size':font_size}
+#rc('font',**font)
+
+#axis without scientific notation
+y_formatter = mtick.ScalarFormatter(useOffset=False)
+color = ['r','y','g','m','b']
+markerstyle = ['x','+','v','o','D']
+markers = ['r-o','b-s','k-*','g-d','k-v','kx','k-p','k-^','k+']
+
+## -------------------------------------------------------------------------- ##
+logging.basicConfig(level=logging.INFO)
+logging.info('Started creating plots ...') 
+
+vel_files = []
+press_files = []
+wss_files = []
+for iomega in omega: 
+  [vel_file, slope_file] = extractL2Norm(nHeight, iomega, 'vel')
+  vel_files.append([vel_file, slope_file])
+
+  [press_file, slope_file] = extractL2Norm(nHeight, iomega, 'press')
+  press_files.append([press_file, slope_file])
+
+  [wss_file, slope_file]= extractL2Norm(nHeight, iomega, 'wss')
+  wss_files.append([wss_file, slope_file])
+
+## -------------------------------------------------------------------------- ##
+logging.info('Velocity Error:')
+fig = mplt.figure()
+ax = fig.add_subplot(111)
+# Plot x, y ... at certain time step
+x, y, z = np.loadtxt(fname = vel_files[0][1], dtype = 'float', \
+                     comments = '#', unpack = True)
+mplt.plot(x, y, '--', color = 'k', label = '1st-order')
+mplt.plot(x, z, '-.', color = 'k', label = '2nd-order')
+
+for iomega in range(len(omega)):
+  #print('file: ', vel_files[iomega][0])
+  x, y = np.loadtxt(fname = vel_files[iomega][0], dtype = 'float', comments = '#', \
+                       usecols = (0,3), unpack = True )
+  mplt.plot(x, y, '-', marker=markerstyle[iomega],label='$Ma_{lat}=$'+str(omega[iomega]))
+
+# plot setting
+mplt.legend(loc=2, ncol=1,borderaxespad=0, \
+            prop={'size':font_size}).get_frame().set_lw(0.0)
+mplt.xlabel('$\Delta x/\Delta x_{ref}$')
+mplt.ylabel('Velocity relative l2norm error')
+mplt.grid(True,which="major",ls="-")
+mplt.grid(True,which="minor",ls="-")
+mplt.xscale('log')
+mplt.yscale('log')
+#ax.yaxis.set_major_formatter(y_formatter)
+
+# save fig
+figsize = [8,6]
+fig = mplt.gcf()
+fig.set_size_inches(figsize[0],figsize[1])
+mplt.savefig('Vel_relativeError.png', dpi=100, format='png', \
+             bbox_inches="tight",interpolation=None)
+## -------------------------------------------------------------------------- ##
+logging.info('Pressure Error:')
+fig = mplt.figure()
+ax = fig.add_subplot(111)
+# Plot x, y ... at certain time step
+x, y, z = np.loadtxt(fname = press_files[0][1], dtype = 'float', \
+                     comments = '#', unpack = True)
+mplt.plot(x, y, '--', color = 'k', label = '1st-order')
+mplt.plot(x, z, '-.', color = 'k', label = '2nd-order')
+
+for iomega in range(len(omega)):
+  x, y = np.loadtxt(fname = press_files[iomega][0], dtype = 'float', comments = '#', \
+                       usecols = (0,3), unpack = True )
+  mplt.plot(x, y, '-', marker=markerstyle[iomega],label='$Ma_{lat}$='+str(omega[iomega]))
+
+
+# plot setting
+mplt.legend(loc=2, ncol=1,borderaxespad=0, \
+            prop={'size':font_size}).get_frame().set_lw(0.0)
+mplt.xlabel('$\Delta x/\Delta x_{ref}$')
+mplt.ylabel('Pressure relative l2norm error')
+mplt.grid(True,which="major",ls="-")
+mplt.grid(True,which="minor",ls="-")
+mplt.xscale('log')
+mplt.yscale('log')
+#ax.yaxis.set_major_formatter(y_formatter)
+
+# save fig
+figsize = [8,6]
+fig = mplt.gcf()
+fig.set_size_inches(figsize[0],figsize[1])
+mplt.savefig('Press_relativeError.png', dpi=100, format='png', \
+             bbox_inches="tight",interpolation=None)
+## -------------------------------------------------------------------------- ##
+logging.info('WSS Error:')
+fig = mplt.figure()
+ax = fig.add_subplot(111)
+# Plot x, y ... at certain time step
+x, y, z = np.loadtxt(fname = wss_files[0][1], dtype = 'float', \
+                     comments = '#', unpack = True)
+mplt.plot(x, y, '--', color = 'k', label = '1st-order')
+mplt.plot(x, z, '-.', color = 'k', label = '2nd-order')
+
+for iomega in range(len(omega)):
+  x, y = np.loadtxt(fname = wss_files[iomega][0], dtype = 'float', comments = '#', \
+                       usecols = (0,3), unpack = True )
+  mplt.plot(x, y, '-', marker=markerstyle[iomega],label='$Ma_{lat}$='+str(omega[iomega]))
+
+# plot setting
+mplt.legend(loc=2, ncol=1,borderaxespad=0, \
+            prop={'size':font_size}).get_frame().set_lw(0.0)
+mplt.xlabel('$\Delta x/\Delta x_{ref}$')
+mplt.ylabel('WSS relative l2norm error')
+mplt.grid(True,which="major",ls="-")
+mplt.grid(True,which="minor",ls="-")
+mplt.xscale('log')
+mplt.yscale('log')
+#ax.yaxis.set_major_formatter(y_formatter)
+
+# save fig
+figsize = [8,6]
+fig = mplt.gcf()
+fig.set_size_inches(figsize[0],figsize[1])
+mplt.savefig('WSS_relativeError.png', dpi=100, format='png', \
+             bbox_inches="tight",interpolation=None)
+## -------------------------------------------------------------------------- ##
+logging.info('Plots created')
+

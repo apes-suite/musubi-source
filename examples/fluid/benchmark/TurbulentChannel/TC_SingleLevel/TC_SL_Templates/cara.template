@@ -1,0 +1,14 @@
+<!--(raw)-->#<!--(end)-->#!
+!/bin/bash
+#SBATCH --ntasks=$!nprocs!$
+#SBATCH --time=24:00:00
+#SBATCH --account=2261024
+#SBATCH --job-name=$!musubi_wall_func!$$!musubi_les!$
+#SBATCH --output=$!musubi_wall_func!$-%j.out
+#SBATCH --error=$!musubi_wall_func!$-%j.err
+#SBATCH --mail-user=kannan.masilamani@dlr.de
+#SBATCH --mail-type=END
+
+cd $!musubi_path!$
+# Execute application
+srun $!musubi_executable!$ $!musubi_file!$

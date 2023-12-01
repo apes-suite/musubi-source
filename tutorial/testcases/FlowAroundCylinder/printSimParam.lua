@@ -1,0 +1,37 @@
+require "common"
+require "units"
+
+if acoustic_scaling == true then
+   print('acoustic_scaling = True')
+else
+   print('acoustic_scaling = False')
+end 
+print('##Physical parameters##')
+print('Re =', Re)
+print('Re_check =', Re_check)
+print('u_in_p =', u_in_phy)
+print('u_mean_p =', u_mean_phy)
+print('nu_p =', nu_phy)
+print('rho0_p =', rho0_p)
+print('length_bnd =', length_bnd)
+print('length =', length)
+print('height =', height)
+print('Dia =',Dia)
+print('dx =',dx)
+print('dt =',dt)
+print('u_lp =',u_lp)
+print('pr_lp =',pr_lp)
+print('pr_l =',pr_l)
+print('level =', level)
+print('')
+print('##Lattice parameters##')
+print('nLength =', nLength)
+print('nLength_bnd =', nLength_bnd)
+print('nHeight =', nHeight)
+print('nDia =', nL)
+print('nElems =', nLength*nHeight)
+print('nSteps =', nSteps)
+print('u_in_L =', u_in_L)
+print('u_mean_L =', u_mean_L)
+print('nu_L =', nu_L)
+print('omega =', omega)

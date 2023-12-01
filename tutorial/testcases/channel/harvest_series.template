@@ -1,0 +1,11 @@
+require 'musubi'
+
+restart.read = '$!file!$'
+tracking = {
+ { label = 'paraview',
+   variable = {'density','velocity','pressure'},
+   shape = { kind = 'all' }, -- same as: shape = { kind = 'global' }
+   folder = '$!out!$',
+   output = { format = 'vtk' },
+ }
+}
