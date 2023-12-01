@@ -25,7 +25,7 @@
 !> author: Kannan Masilamani
 !! This module provides variable to extract material variable like viscosity,
 !! omega, etc.
-?? include 'treelm/source/deriveMacros.inc'
+?? include 'tem/source/deriveMacros.inc'
 module mus_material_var_module
   use iso_c_binding, only: c_loc, c_ptr, c_f_pointer
 

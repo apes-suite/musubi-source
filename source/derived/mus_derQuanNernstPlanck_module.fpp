@@ -34,7 +34,7 @@
 !! A Coupled Lattice Boltzmann method to solve  Nernst -Planck Model for
 !! simulating Electro-Osmotic Flows
 ?? include 'header/lbm_macros.inc'
-?? include 'treelm/source/deriveMacros.inc'
+?? include 'tem/source/deriveMacros.inc'
 module mus_derQuanNernstPlanck_module
   use iso_c_binding, only: c_loc, c_ptr, c_f_pointer
   ! include treelm modules

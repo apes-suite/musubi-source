@@ -38,7 +38,7 @@
 !! Details on implementation can be found in [[tem_bc_module]]
 !!
 ?? include 'header/lbm_macros.inc'
-?? include 'treelm/source/logMacros.inc'
+?? include 'tem/source/logMacros.inc'
 module mus_bc_fluid_module
   use iso_c_binding, only: c_f_pointer
 

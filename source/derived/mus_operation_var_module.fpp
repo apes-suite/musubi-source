@@ -26,7 +26,7 @@
 ! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-?? include 'treelm/source/deriveMacros.inc'
+?? include 'tem/source/deriveMacros.inc'
 ! ****************************************************************************** !
 !> This module provides the routine for applying operators. Currently it is
 !! only implemented for 3D and needs to be extended to 2d

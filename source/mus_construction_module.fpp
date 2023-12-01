@@ -36,7 +36,7 @@
 !> \ref mus_construct "Creation of the data structures"
 !!
 ?? include 'header/lbm_macros.inc'
-?? include 'treelm/source/logMacros.inc'
+?? include 'tem/source/logMacros.inc'
 module mus_construction_module
 
   ! include treelm modules

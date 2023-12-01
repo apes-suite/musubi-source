@@ -31,7 +31,7 @@
 ! ****************************************************************************** !
 !> author: Jiaxing Qi
 !! Routines and parameter definitions for the standard D3Q27 model
-?? include 'header/lbm_macros.inc'
+?? include 'mus/source/header/lbm_macros.inc'
 module mus_d3q27_module
   use iso_c_binding,            only: c_f_pointer
 

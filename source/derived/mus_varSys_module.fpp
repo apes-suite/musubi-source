@@ -32,7 +32,7 @@
 !! variable operation method data.
 !! Also contains all general routines for the variable system.
 !!
-?? include 'treelm/source/deriveMacros.inc'
+?? include 'tem/source/deriveMacros.inc'
 module mus_varSys_module
 
   use, intrinsic :: iso_c_binding,  only: c_ptr, c_f_pointer, c_loc

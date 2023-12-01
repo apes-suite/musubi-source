@@ -27,7 +27,7 @@
 !! getPoint, setupIndices and getValOfIndex
 !!
 ?? include 'header/lbm_macros.inc'
-?? include 'treelm/source/deriveMacros.inc'
+?? include 'tem/source/deriveMacros.inc'
 module mus_stateVar_module
 
   use, intrinsic :: iso_c_binding,  only: c_ptr, c_f_pointer, c_loc

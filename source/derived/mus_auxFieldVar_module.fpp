@@ -33,7 +33,7 @@
 !!    * potential for poisson
 !!
 ?? include 'header/lbm_macros.inc'
-?? include 'treelm/source/deriveMacros.inc'
+?? include 'tem/source/deriveMacros.inc'
 module mus_auxFieldVar_module
   use iso_c_binding, only: c_loc, c_ptr, c_f_pointer
 

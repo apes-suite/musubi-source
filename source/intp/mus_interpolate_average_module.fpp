@@ -28,7 +28,7 @@
 !! Average Interpolation of flow quantities between different grid levels
 !!
 ?? include 'header/lbm_macros.inc'
-?? include 'treelm/source/logMacros.inc'
+?? include 'tem/source/logMacros.inc'
 module mus_interpolate_average_module
   use iso_c_binding, only: c_loc, c_ptr, c_f_pointer
 

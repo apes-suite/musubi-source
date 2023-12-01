@@ -138,7 +138,7 @@ fluid = {
 initial_condition = {
   pressure = {
   -- Make use of predefined gausspulse function, which is defined in
-  -- treelm/source/tem_spatial_module.f90
+  -- tem/sourcetem_spatial_module.f90
   predefined = 'gausspulse',
   center= center,
   halfwidth = halfwidth,
