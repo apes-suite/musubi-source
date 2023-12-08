@@ -9,7 +9,8 @@ output_dir: docu
 page_dir: doc_pages
 media_dir: examples/tutorials/images
 copy_subdir: media
-project_website: https://apes.osdn.io/pages/musubi.html
+project_website: https://geb.inf.tu-dresden.de/pages/musubi.html
+project_github: https://github.com/apes-suite/musubi.git
 graph: true
 graph_maxdepth: 4
 graph_maxnodes: 32
@@ -32,7 +33,7 @@ Introduction to Musubi
 
 Musubi is the multi-level parallel lattice Boltzmann solver within the APES
 suite.
-It is working on a linearized octree and uses efficient data structures 
+It is working on a linearized octree and uses efficient data structures
 allowing adaptive parallel simulations.
 Musubi offers several collision kernels and is designed in a way to deal with
 huge meshes efficiently.

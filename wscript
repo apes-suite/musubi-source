@@ -92,6 +92,7 @@ def configure(conf):
 
     conf.setenv('ford', conf.env)
     conf.env.ford_mainpage = 'mus_mainpage.md'
+    conf.env.fordurl_mus = 'https://geb.inf.tu-dresden.de/doxy/musubi/'
 
 def build(bld):
     from waflib.extras.utest_results import utests
@@ -181,10 +182,36 @@ def build(bld):
                    'mus_objs','utest_objs']+extLib_objs, preprocessor='coco')
 
     else:
+      from waflib.extras.make_fordoc import gendoc
 
-      bld(
+      mpp = bld(
         features = 'includes coco',
         source   = pp_sources)
+
+      mus_preprocessed = []
+      for ppm in mpp.tasks:
+        for f in ppm.outputs:
+          mus_preprocessed.append(f)
+
+      if not bld.env.fordonline:
+        mus_preprocessed.append(bld.env.fordext_aotus)
+        mus_preprocessed.append(bld.env.fordext_tem)
+
+      tgt = bld.path.get_bld().make_node('docu/modules.json')
+      bld.env.fordext_mus = tgt
+
+      bld( rule = gendoc,
+           source = mus_preprocessed,
+           src_paths = [bld.path.find_node('source').abspath()],
+           target = tgt,
+           extern = ['aoturl = {0}'.format(bld.env.fordext_aotus),
+                     'temurl = {0}'.format(bld.env.fordext_tem)
+                    ],
+           extern_urls = ['aoturl = {0}'.format(bld.env.fordurl_aotus),
+                          'temurl = {0}'.format(bld.env.fordurl_tem)
+                         ],
+           mainpage = os.path.join(bld.top_dir, 'mus', 'mus_mainpage.md')
+      )
 
 
 # clean output files
