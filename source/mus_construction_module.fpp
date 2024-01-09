@@ -51,7 +51,7 @@ module mus_construction_module
     &                                tem_FirstIdAtLevel, tem_IDofCoord,        &
     &                                tem_CoordOfId, tem_ParentOF
   use tem_geometry_module,     only: tem_determine_discreteVector,             &
-    &                                tem_ElemSizeLevel
+    &                                tem_ElemSizeLevel, tem_PosOfID
   use tem_tools_module,        only: tem_horizontalSpacer
   use tem_grow_array_module,   only: init, append, destroy, empty, truncate
   use tem_dyn_array_module,    only: init, append, expand,  &
@@ -574,8 +574,25 @@ contains
           & globBC       = scheme%globBC,              &
           & nSymBCs      = nSymBCs,                    &
           & symmetricBCs = symmetricBCs(1:nSymBCs)     ) 
-      end if   
-    end do  
+      end if
+
+      do iField = 1, scheme%nFields
+        do iBC = 1, geometry%boundary%nBCtypes
+          ! Copy the neighboring information to the bc%elem%neigh
+          select case ( trim(scheme%field( iField )%bc( iBC )%BC_kind) )
+          case ('turbulent_wall', 'turbulent_wall_noneq_expol', 'turbulent_wall_eq')
+            call fixNormalsAndDonorNodes(                   &
+              & iLevel = iLevel,                            &
+              & fieldBC = scheme%field( iField )%bc( iBC ), &
+              & levelDesc = scheme%levelDesc(iLevel),       &
+              & stencil = scheme%layout%fStencil,           &
+              & globBC = scheme%globBC( iBC ),              &
+              & pdf = scheme%pdf(iLevel),                   &
+              & nScalars = scheme%varSys%nScalars           )
+          end select
+        end do ! iBC
+      end do ! iField
+    end do
 
 
 ?? IF( .not. SOA) then
@@ -1635,9 +1652,9 @@ contains
           call setFieldBCNeigh(                                       &
             &     fieldBC   = scheme%field( iField )%bc( iBnd ),      &
             &     globBC    = scheme%globBC( iBnd ),                  &
-            &     levelDesc = scheme%levelDesc(minLevel:maxLevel),&
-            &     minLevel  = minLevel,                     &
-            &     maxLevel  = maxLevel                      )
+            &     levelDesc = scheme%levelDesc(minLevel:maxLevel),    &
+            &     minLevel  = minLevel,                               &
+            &     maxLevel  = maxLevel                                )
         end if ! nNeigh>0
       end do ! iBnd
     end do ! iField
@@ -2319,10 +2336,10 @@ contains
             ! q-values stored in outgoing direction
             globBC( bID )%elemLvl( level )%qVal%val(iDir, nBnds( bID ) ) &
               & = bc_prop%qVal(iMeshDir, iElem_qVal)
-            if (bc_prop%qVal(iMeshDir, iElem_qVal) > 0.0_rk) then
+            if ( (bc_prop%qVal(iMeshDir, iElem_qVal) > 0.0_rk) ) then
               qValiDir = qValWeight(iDir) * bc_prop%qVal(iMeshDir, iElem_qVal)
               minQVal = min(minQVal, qValiDir)
-              if (minQVal == qValiDir ) then
+              if (minQVal == qValiDir) then
                 globBC( bID )%elemLvl( level )%normal%val(:, nBnds( bID ) ) &
                   & = - stencil%cxDir( :, iDir )
               end if
@@ -2368,6 +2385,116 @@ contains
 
     end do ! iElem = 1, tree%property(1)%nElems
   end subroutine assignBCList
+! **************************************************************************** !
+
+  ! **************************************************************************** !
+  !> This routine assigns the BC lists
+  !! Run over all the elements with the property boundary
+  !! and check each direction.
+  !! Assign all common boundaries to the level-wise representation
+  !! 3rd step in build_BCLists
+  subroutine fixNormalsAndDonorNodes( iLevel, fieldBC, levelDesc, &
+      &                               stencil, globBC, pdf, nScalars )
+    ! --------------------------------------------------------------------------
+    !> Level
+    integer, intent(in)                        :: iLevel
+    !> field boundary with boundary neighbor info
+    type(boundary_type),      intent(inout)    :: fieldBC
+    !> level description of all levels
+    type(tem_levelDesc_type), intent(in)       :: levelDesc
+    !> stencil
+    type( tem_stencilHeader_type ), intent(in) :: stencil
+    !> boundaries for the elements with bnd property set
+    type( glob_boundary_type ), intent(inout)  :: globBC
+    !> pdf_data_types for every level
+    !! size: minLevel:maxLevel
+    type(pdf_data_type), intent(in)            :: pdf
+    !> number of scalars in the varSys
+    integer, intent(in)                        :: nScalars
+    ! --------------------------------------------------------------------------
+    integer :: iElem, iDir, length
+    real(kind=rk) :: minQVal, qValWeight(stencil%QQN), qValiDir
+    logical :: skipDir(stencil%QQN)
+    integer :: stencilPos, posInNghElems, neighVal, iNeigh, invDir, neighPos
+    integer(kind=long_k) :: statePos
+    ! --------------------------------------------------------------------------
+    ! calculate weights
+    ! Get length of currently treated direction and determine
+    ! If it is one of the main coordinate axis
+    do iDir = 1, stencil%QQN
+      length   = stencil%cxDir( 1, iDir )**2 &
+        &      + stencil%cxDir( 2, iDir )**2 &
+        &      + stencil%cxDir( 3, iDir )**2
+
+      ! For the normals, we weight the orthogonal directions
+      ! of the stencil more heavily
+      if( length == 1) then
+        qValWeight(iDir) = 1.0_rk
+      else if ( length == 2 ) then
+        qValWeight(iDir) = sqrt(2.0_rk)
+      else ! length == 3
+        qValWeight(iDir) = sqrt(3.0_rk)
+      end if
+    end do
+
+    ! loop over all BCelems without ghostelems having BC property
+    elemLoop: do iElem = 1, globBC%nElems_Fluid( iLevel )
+      stencilPos = fieldBC%elemLvl(iLevel)%stencilPos(iElem)
+      ! current element index in nghElems
+      posInNghElems = fieldBC%elemLvl(iLevel)%posInNghElems( iElem )
+      statePos = globBC%elemLvl(iLevel)%elem%val(iElem)
+      do iDir = 1, stencil%QQN
+        neighPos =                                                                      &
+& ?NghElemIDX?( pdf%neigh, iDir, stencil, statePos, nScalars, pdf%nSize )
+
+        ! not all direction have neighbors!!!! We need to check this first
+        ! ghost have negative neighPosInTree
+        if (neighPos == statePos) then
+          skipDir(iDir) = .true.
+        else if ( btest( levelDesc%property(neighPos), &
+          &              prp_hasBnd) ) then
+          skipDir(iDir) = .true.
+        end if
+
+      end do
+
+      neighLoop: do iNeigh = 1, fieldBC%nNeighs
+        ! neighbor position in the levelwise list
+        neighVal = levelDesc%neigh( stencilPos )%                  &
+          &                            nghElems( iNeigh, posInNghElems )
+
+        if (neighVal > 0 .and. iNeigh == 1) then
+          if (btest(levelDesc%property(neighVal), prp_hasBnd)) then
+
+            minQVal = huge(minQVal)
+
+            do iDir = 1, stencil%QQN
+              if ( .not. skipDir(iDir) ) then
+
+                invDir = stencil%cxDirInv(iDir)
+                qValiDir = qValWeight(iDir) * globBC%elemLvl( iLevel )%qVal%val(invDir, iElem )
+                minQVal = min(minQVal, qValiDir)
+
+                if (minQVal == qValiDir) then
+                  globBC%elemLvl( iLevel )%normal%val(:, iElem ) &
+                    & = - stencil%cxDir( :, iDir )
+
+                  neighPos =                                                            &
+& ?NghElemIDX?( pdf%neigh, iDir, stencil, statePos, nScalars, pdf%nSize )
+
+                  fieldBC%neigh( iLevel )%posInState( iNeigh, iElem ) = neighPos
+                end if
+
+              end if
+            end do
+
+          end if
+        end if
+
+      end do neighLoop
+
+    end do elemLoop
+  end subroutine fixNormalsAndDonorNodes
 ! **************************************************************************** !
 
 
