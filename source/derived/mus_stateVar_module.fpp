@@ -510,7 +510,7 @@ contains
         & nSrcElems   = nSrcElems,                                   &
         & point       = point(iPoint,:),                             &
         & statePos    = statePos,                                    &
-        & neigh       = fPtr%solverData%scheme%pdf(loc_level)%neigh, &
+        & neigh       = scheme%pdf(loc_level)%neigh,                 &
         & baryOfTotal = scheme%levelDesc(loc_level)%baryOfTotal,     &
         & nElems      = scheme%pdf(loc_level)%nSize,                 &
         & nSolve      = scheme%pdf(loc_level)%nElems_computed,       &
