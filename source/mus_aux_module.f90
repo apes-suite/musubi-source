@@ -13,6 +13,7 @@
 ! Copyright (c) 2016 Peter Vitt <peter.vitt2@uni-siegen.de>
 ! Copyright (c) 2016-2017 Raphael Haupt <raphael.haupt@uni-siegen.de>
 ! Copyright (c) 2022 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2023 jana.gericke@dlr.de <jana.gericke@dlr.de>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -508,8 +509,8 @@ contains
         & == 'smagorinsky') then
         do iBnd = 1, nBCs
           select case (trim(scheme%field(1)%bc(iBnd)%BC_kind))
-          case ( 'turbulent_wall', 'turbulent_wall_noneq_expol', &
-            & 'turbulent_wall_eq' )
+          case ( 'turbulent_wall', 'turbulent_wall_noneq_expol',        &
+            &    'turbulent_wall_eq', 'turbulent_wall_curved_highorder' )
             call mus_turb_updateViscOfTurbWall(                              &
               &    turbData     = scheme%field(1)%fieldProp%fluid%turbulence &
               &                     %dataOnLvl(iLevel),                      &

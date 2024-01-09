@@ -59,7 +59,6 @@ module mus_varSys_module
   use tem_spacetime_fun_module,     only: tem_st_fun_listelem_type
   use tem_element_module,           only: eT_fluid
   use tem_stencil_module,           only: tem_stencilHeader_type
-  use tem_dyn_array_module,         only: PositionOfVal
 
   ! include musubi modules
   use mus_scheme_type_module,  only: mus_scheme_type
@@ -83,7 +82,6 @@ module mus_varSys_module
   public :: mus_derive_fromPDF
   public :: mus_generic_fromPDF_forElement
   public :: mus_createSrcElemInTreeForGetPoint
-  public :: mus_derVar_intpOnPoint
 
   !> Method data container for every variable
   type mus_varSys_data_type
@@ -260,108 +258,73 @@ contains
     ! -------------------------------------------------------------------- !
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
+    integer :: iPnt, posInPntData, first, last
+    integer, allocatable :: srcElemPos(:)
+    real(kind=rk), allocatable :: srcRes(:), pntVal(:)
+    real(kind=rk) :: weight
+    integer :: iSrc, nTreeIds, nSrcElems, iSrcElem
     ! -------------------------------------------------------------------- !
+!write(dbgUnit(1),*) 'Derive for point :'//trim(varSys%varname%val(fun%myPos))
     call C_F_POINTER( fun%method_Data, fPtr )
     scheme => fPtr%solverData%scheme
-    call mus_derVar_intpOnPoint( varPos       = fun%myPos,               &
-      &                          varSys       = varSys,                  &
-      &                          tree         = tree,                    &
-      &                          time         = time,                    &
-      &                          point        = point,                   &
-      &                          nPnts        = nPnts,                   &
-      &                          stencil      = scheme%layout%fStencil,  &
-      &                          levelPointer = fPtr%solverData%geometry &
-      &                                             %levelPointer,       &
-      &                          levelDesc    = scheme%levelDesc,        &
-      &                          res          = res                      )
-  end subroutine mus_deriveVar_forPoint
-  ! ************************************************************************* !
+    allocate(srcElemPos(scheme%layout%fStencil%QQ))
+    allocate(srcRes(scheme%layout%fStencil%QQ*fun%nComponents))
+    allocate(pntVal(fun%nComponents))
 
-  ! ************************************************************************* !
-  subroutine mus_derVar_intpOnPoint(varPos, varSys, tree, time, point, nPnts, &
-    &                                stencil, levelPointer, levelDesc, res     )
-    ! -------------------------------------------------------------------- !
-    !> Position of variable in varSys
-    integer, intent(in) :: varPos
-
-    !> The variable system to obtain the variable from.
-    type(tem_varSys_type), intent(in) :: varSys
-
-    !> Point in time at which to evaluate the variable.
-    type(tem_time_type), intent(in)  :: time
-
-    !> global treelm mesh info
-    type(treelmesh_type), intent(in) :: tree
-
-    !> Three-dimensional coordinates at which the variable should be
-    !! evaluated. Only useful for variables provided as space-time functions.
-    real(kind=rk), intent(in) :: point(:,:)
-
-    !> Number of values to obtain for this variable (vectorized access).
-    integer, intent(in) :: nPnts
-
-    !> stencil definition
-    type(tem_stencilHeader_type), intent(in) :: stencil
-
-    !> Pointer from treeIDlist entry to level-wise fluid part of total list
-    integer, intent(in)         :: levelPointer(:)
-
-    !> level description of all levels
-    type(tem_levelDesc_type), intent(in) :: levelDesc(tree%global%minLevel:)
-
-    !> Resulting values for the requested variable.
-    !!
-    !! Dimension: n requested entries x nComponents of this variable
-    !! Access: (iElem-1)*fun%nComponents + iComp
-    real(kind=rk), intent(out) :: res(:)
-    ! -------------------------------------------------------------------- !
-    integer :: iPnt, iSrc, nSrcElems, nComponents
-    integer :: srcElemPos(stencil%QQ)
-    real(kind=rk) :: weights(stencil%QQ)
-    real(kind=rk), allocatable :: srcRes(:), pntVal(:)
-    ! -------------------------------------------------------------------- !
-    nComponents = varSys%method%val(varPos)%nComponents
-    allocate(srcRes(stencil%QQ*nComponents))
-    allocate(pntVal(nComponents))
+    ! Create source element list for all points and store them in
+    ! pointData type. To avoid adding a point twice, a unique treeID
+    ! is created at finesh possible level in treelm i.e. level 20.
+    ! The position of this treeID in the unique dynamic array is used
+    ! to access the source element position in pointData type.
+    call mus_createSrcElemInTreeForGetPoint(                      &
+      & pntDataMapToTree = fPtr%pointData%mapToTree,              &
+      & point            = point,                                 &
+      & nPnts            = nPnts,                                 &
+      & stencil          = scheme%layout%fStencil,                &
+      & tree             = tree,                                  &
+      & levelPointer     = fPtr%solverData%geometry%levelPointer, &
+      & levelDesc        = scheme%levelDesc(:)                    )
 
     res = 0.0_rk
+    nTreeIds = fPtr%pointData%mapToTree%treeID%nVals
     do iPnt = 1, nPnts
       srcRes = 0.0_rk
-      ! get position of source element position in global tree for 
-      ! interpolation.
-      ! Also calculate weights for interpolation using distance between the
-      ! point and source element barycenter
-      call mus_intp_getSrcElemPosInTree( &
-        & srcElemPos   = srcElemPos,     &
-        & weights      = weights,        &
-        & nSrcElems    = nSrcElems,      &
-        & point        = point(iPnt,:),  &
-        & stencil      = stencil,        &
-        & tree         = tree,           &
-        & levelPointer = levelPointer,   &
-        & levelDesc    = levelDesc(:)    )
+
+      posInPntData = tem_PosofId(                                             &
+        &              tem_IdOfCoord( tem_CoordOfReal(tree, point(iPnt,:)) ), &
+        &              fPtr%pointData%mapToTree%treeID%val(1:nTreeIds) )
+
+      first = fPtr%pointData%mapToTree%srcElem%first%val(posInPntData)
+      last = fPtr%pointData%mapToTree%srcElem%last%val(posInPntData)
+
+      nSrcElems = 0
+      do iSrc = first, last
+        nSrcElems = nSrcElems + 1
+        srcElemPos(nSrcElems) = fPtr%pointData%mapToTree%srcElem         &
+          &                                             %elemPos%val(iSrc)
+      end do
 
       ! Skip this element if no source element found
-      if (nSrcElems == 0) then
-        call tem_abort("In mus_derVar_intpOnPoint: No source element found "&
-          &             //"for interpolation")
-      end if
+      if (nSrcElems == 0) cycle
 
       ! get source element values
-      call varSys%method%val(varPos)%get_element( &
-         & varSys  = varSys,                      &
-         & elemPos = srcElemPos(1:nSrcElems),     &
-         & time    = time,                        &
-         & tree    = tree,                        &
-         & nElems  = nSrcElems,                   &
-         & nDofs   = 1,                           &
-         & res     = srcRes                       )
+      call varSys%method%val(fun%myPos)%get_element( &
+         & varSys  = varSys,                         &
+         & elemPos = srcElemPos(1:nSrcElems),        &
+         & time    = time,                           &
+         & tree    = tree,                           &
+         & nElems  = nSrcElems,                      &
+         & nDofs   = 1,                              &
+         & res     = srcRes                          )
 
       ! Linear interpolation res = sum(weight_i*phi_i)
       pntVal = 0.0_rk
-      do iSrc = 1, nSrcElems
-        pntVal(:) = pntVal(:) + weights(iSrc)                         &
-          & * srcRes((iSrc-1)*nComponents+1 : iSrc*nComponents)
+      iSrcElem = 0
+      do iSrc = first, last
+        iSrcElem = iSrcElem + 1
+        weight = fPtr%pointData%mapToTree%srcElem%weight%val(iSrc)
+        pntVal(:) = pntVal(:) + weight                                        &
+          & * srcRes((iSrcElem-1)*fun%nComponents+1 : iSrcElem*fun%nComponents)
       end do
 !      write(*,*) 'Linear intp pntVal ', pntVal
 !      pntVal = mus_interpolate_quadratic2d_leastSq( &
@@ -369,10 +332,12 @@ contains
 !        &          targetCoord  = point(iPnt,1:2),  &
 !        &          nSourceElems = nSrcElems         )
 !      write(*,*) 'quadratic intp pntVal ', pntVal
-      res( (iPnt-1)*nComponents+1 : iPnt*nComponents ) = pntVal
+      res( (iPnt-1)*fun%nComponents+1 : iPnt*fun%nComponents ) = pntVal
+
+!write(dbgUnit(1),*) 'treeID ', tree%treeID(elemPos), 'val ', pntVal
 
     end do !iPnt
-  end subroutine mus_derVar_intpOnPoint
+  end subroutine mus_deriveVar_forPoint
   ! ************************************************************************* !
 
 
@@ -578,15 +543,13 @@ contains
   ! ************************************************************************** !
   !> This routine creates srcElemInTree in pointData. It is called all in 
   !! getPoint routine when first time the get point routine in called.
-  subroutine mus_createSrcElemInTreeForGetPoint(pntDataMaptoTree, posInPntData,&
-    &                                           point, nPnts, stencil, tree,   &
-    &                                           levelPointer, levelDesc)
+  subroutine mus_createSrcElemInTreeForGetPoint(pntDataMaptoTree, point, nPnts,&
+    &                                           stencil, tree, levelPointer,   &
+    &                                           levelDesc)
     ! ------------------------------------------------------------------------ !
     !> Contains position of source elements in Tree and weights for
     !! interpolation
     type(tem_pointData_type), intent(out) :: pntDataMapToTree
-    !> Contains position of a point in pntDataMapToTree
-    integer, intent(out) :: posInPntData(:)
     !> Three-dimensional coordinates at which the variable should be
     !! evaluated. Only useful for variables provided as space-time functions.
     real(kind=rk), intent(in) :: point(:,:)
@@ -601,7 +564,7 @@ contains
     !> level description of all levels
     type(tem_levelDesc_type), intent(in) :: levelDesc(tree%global%minLevel:)
     ! ------------------------------------------------------------------------ !
-    integer :: iPnt, QQ, nSrcElems
+    integer :: iPnt, QQ, nSrcElems, pos
     integer, allocatable :: srcElemPos(:)
     real(kind=rk), allocatable :: weights(:)
     logical :: wasAdded
@@ -620,7 +583,7 @@ contains
         &         storeOffsetBit = .false.,              &
         &         elemPos        = 0,                    &
         &         tree           = tree,                 &
-        &         pos            = posInPntData(iPnt),   &
+        &         pos            = pos,                  &
         &         wasAdded       = wasAdded              )
 
       if (wasAdded) then
