@@ -86,7 +86,6 @@ module mus_auxFieldVar_module
   public :: mus_addSrcToAuxField_poisson
   public :: mus_addSponFldToAuxField_fluid
   public :: mus_addDynSponFldToAuxField_fluid
-  public :: mus_addTurbChanForceToAuxField_fluid
   public :: mus_addHRRCorrToAuxField_fluid_2D
   public :: mus_addHRRCorrToAuxField_fluid_3D
 
@@ -1966,7 +1965,6 @@ contains
           ! element offset
           elemoff = (elemPos-1)*varSys%nAuxScalars
           ! source term + Local density and velocity
-          auxField(elemOff+dens_pos) = 0.5_rk * HRR_Corr%dens(elemPos) + auxField(elemOff+dens_pos)
           auxField(elemOff+vel_pos(1)) = 0.5_rk * HRR_Corr%vel(elemPos,1) + auxField(elemOff+vel_pos(1))
           auxField(elemOff+vel_pos(2)) = 0.5_rk * HRR_Corr%vel(elemPos,2) + auxField(elemOff+vel_pos(2))
 
@@ -2035,7 +2033,6 @@ contains
           ! element offset
           elemoff = (elemPos-1)*varSys%nAuxScalars
           ! source term + Local density and velocity
-          auxField(elemOff+dens_pos) = 0.5_rk * HRR_Corr%dens(elemPos) + auxField(elemOff+dens_pos)
           auxField(elemOff+vel_pos(1)) = 0.5_rk * HRR_Corr%vel(elemPos,1) + auxField(elemOff+vel_pos(1))
           auxField(elemOff+vel_pos(2)) = 0.5_rk * HRR_Corr%vel(elemPos,2) + auxField(elemOff+vel_pos(2))
           auxField(elemOff+vel_pos(3)) = 0.5_rk * HRR_Corr%vel(elemPos,3) + auxField(elemOff+vel_pos(3))
@@ -2047,71 +2044,6 @@ contains
 
   end subroutine mus_addHRRCorrToAuxField_fluid_3D
   ! ************************************************************************** !
-
-  ! ************************************************************************** !
-  !> This routine add dynamic force to velocity in auxField for
-  !! weakly-compressible model for turbulent channel test case.
-  !! Force definition:
-  !! Force = rho*u_tau^2/H + rho*(u_bulk_ref-uX_bulk_avg)*u_bulk_ref/H
-  !! Reference:
-  !! 1) https://www.wias-berlin.de/people/john/ELECTRONIC_PAPERS/JR07.IJNMF.pdf
-  !! 2) Haussmann, Marc; BARRETO, Alejandro CLARO; KOUYI, Gislain LIPEME;
-  !! Rivière, Nicolas; Nirschl, Hermann; Krause, Mathias J. (2019):
-  !! Large-eddy simulation coupled with wall models for turbulent channel flows
-  !! at high Reynolds numbers with a lattice Boltzmann method — Application to
-  !! Coriolis mass flowmeter. In Computers & Mathematics with Applications 78
-  !! (10), pp. 3285–3302. DOI: 10.1016/j.camwa.2019.04.033.
-  subroutine mus_addTurbChanForceToAuxField_fluid(fun, auxField, iLevel, time, &
-    &                                             varSys, phyConvFac, derVarPos)
-    ! ------------------------------------------------------------------------ !
-    !> Description of method to update source
-    class(mus_source_op_type), intent(inout) :: fun
-    !> output auxField array
-    real(kind=rk), intent(inout)         :: auxField(:)
-    !> current level
-    integer, intent(in)                :: iLevel
-    !> current timing information
-    type(tem_time_type), intent(in)    :: time
-    !> variable system definition
-    type(tem_varSys_type), intent(in) :: varSys
-    !> Physics conversion factor for current level
-    type(mus_convertFac_type), intent(in) :: phyConvFac
-    !> position of derived quantities in varsys
-    type(mus_derVarPos_type), intent(in) :: derVarPos(:)
-    ! ------------------------------------------------------------------------ !
-    integer :: dens_pos, vel_pos(3)
-    real(kind=rk) :: forceTerm(3)
-    integer :: iElem, nElems, posInTotal, elemOff
-    real(kind=rk) :: forceDynL(3)
-    ! ------------------------------------------------------------------------ !
-    
-    ! position of density and velocity field in auxField
-    dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
-    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
-    ! Number of elements to apply source terms
-    nElems = fun%elemLvl(iLevel)%nElems
-
-    ! Convert dynamic force term in m/s^2 to lattice unit.
-    forceDynL = fun%turbChanForce%forceDyn / phyConvFac%accel
-    !write(dbgunit(1), *) 'forceDynL: ', forceDynL
-
-!$omp parallel do schedule(static), private( posInTotal, forceTerm, elemOff )
-    !NEC$ ivdep
-    do iElem = 1, nElems
-      posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
-      ! element offset
-      elemoff = (posInTotal-1)*varSys%nAuxScalars
-      ! forceterm to add to velocity: F/2
-      forceTerm = forceDynL * 0.5_rk
-      ! add force to velocity i.e. u(i) = u(i) + F(i)/2
-      auxField(elemOff+vel_pos(1)) = auxField(elemOff+vel_pos(1)) + forceTerm(1)
-      auxField(elemOff+vel_pos(2)) = auxField(elemOff+vel_pos(2)) + forceTerm(2)
-      auxField(elemOff+vel_pos(3)) = auxField(elemOff+vel_pos(3)) + forceTerm(3)
-    end do
-
-  end subroutine mus_addTurbChanForceToAuxField_fluid
-  ! ************************************************************************** !
-
 
 end module mus_auxFieldVar_module
 

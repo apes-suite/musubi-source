@@ -69,8 +69,8 @@ module mus_scheme_module
   use mus_field_module,         only: mus_load_fields, mus_fields_out, &
     &                                 mus_load_fieldBaseInfos, mus_field_cleanup
   use mus_mixture_module,       only: mus_mixture_out
-  use mus_variable_module,      only: mus_build_varSys,          &
-    &                                 mus_append_stateVar,       &
+  use mus_variable_module,      only: mus_build_varSys,             &
+    &                                 mus_append_stateVar,          &
     &                                 mus_append_readVarAsStateVar
   use mus_source_type_module,   only: mus_source_cleanup,  &
     &                                 mus_load_source_var, &
@@ -85,7 +85,8 @@ module mus_scheme_module
     &                                 mus_load_transport_var
   use mus_auxFieldVar_module,    only: mus_assign_calcAuxField_ptr
   use mus_gradData_module,       only: mus_assign_GradCalculation_ptr
-  use mus_scheme_derived_quantities_module, only: mus_assign_derived_functions_ptr
+  use mus_GlobalForce_module,    only: mus_assign_globalForce_ptr
+use mus_scheme_derived_quantities_module, only: mus_assign_derived_functions_ptr
 
   ! include aotus modules
   use aotus_module,     only: flu_state, aot_get_val
@@ -358,6 +359,9 @@ contains
         &                    poss_srcVar  = me%poss_srcVar,     &
         &                    st_funList   = me%st_funList       )
     end if    
+
+    ! assign function pointer for Global Force
+    call mus_assign_globalForce_ptr(me%header, me%field(1)%fieldProp%fluid%applyGlobalForce)
 
     ! assign function pointer to compute auxFieldVar
     call mus_assign_calcAuxField_ptr(me%header, me%calcAuxField)

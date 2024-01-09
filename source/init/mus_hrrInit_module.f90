@@ -61,8 +61,7 @@ module mus_hrrInit_module
   ! ****************************************************************************** !
   ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution
   ! functions, Jonas Latt and Bastien Chopard 2005
-  pure subroutine HRR_Correction_d2q9 ( QQ, weight, gradRHOU3, phi, &
-    &                                   dens, vel )
+  pure subroutine HRR_Correction_d2q9 ( QQ, weight, gradRHOU3, phi, vel )
   ! -------------------------------------------------------------------- !
     !> stencil size
     integer, intent(in)        :: QQ
@@ -72,25 +71,22 @@ module mus_hrrInit_module
     real(kind=rk), intent(in)  :: gradRHOU3(:)
     !> correction term phi
     real(kind=rk), intent(out) :: phi(:)
-    !> correction term phi, rho, vel
-    real(kind=rk), intent(out) :: dens, vel(:)
+    !> correction term vel
+    real(kind=rk), intent(out) :: vel(:) 
     ! -------------------------------------------------------------------- !
     real(kind=rk) :: phi_temp
     ! -------------------------------------------------------------------- !
-    dens = 0._rk
     vel(:) = 0._rk
 
     !iDir = 1
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(1) &
       &                            + gradRHOU3(2)        )
     phi(1) = weight(1) * phi_temp
-    dens = dens + phi(1)
     vel(1) = vel(1) - phi(1)
     !vel(2) = vel(2) + 0._rk
 
     !iDir = 3
     phi(3) = weight(3) * phi_temp
-    dens = dens + phi(3)
     vel(1) = vel(1) + phi(3)
     !vel(2) = vel(2) + 0._rk
 
@@ -98,13 +94,11 @@ module mus_hrrInit_module
     phi_temp = div1_6 * cs4inv * ( gradRHOU3(1)           &
       &                            - 2._rk * gradRHOU3(2) )
     phi(2) = weight(2) * phi_temp
-    dens = dens + phi(2)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(2) 
 
     !iDir = 4
     phi(4) = weight(4) * phi_temp
-    dens = dens + phi(4)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(4) 
 
@@ -112,32 +106,27 @@ module mus_hrrInit_module
     phi_temp = div1_3 * cs4inv * ( - gradRHOU3(1) &
       &                            - gradRHOU3(2) )
     phi(5) = weight(5) * phi_temp
-    dens = dens + phi(5)
     vel(1) = vel(1) - phi(5) 
     vel(2) = vel(2) - phi(5) 
 
     !iDir = 8
     phi(8) = weight(8) * phi_temp
-    dens = dens + phi(8)
     vel(1) = vel(1) + phi(8) 
     vel(2) = vel(2) + phi(8) 
 
     !iDir = 6
     phi(6) = weight(6) * phi_temp
-    dens = dens + phi(6)
     vel(1) = vel(1) - phi(6) 
     vel(2) = vel(2) + phi(6) 
 
     !iDir = 7
     phi(7) = weight(7) * phi_temp
-    dens = dens + phi(7)
     vel(1) = vel(1) + phi(7) 
     vel(2) = vel(2) - phi(7) 
 
     !iDir = 9
     phi_temp = -div1_2 * phi_temp
     phi(9) = weight(9) * phi_temp
-    dens = dens + phi(9)
     !vel(1) = vel(1) + 0._rk 
     !vel(2) = vel(2) + 0._rk
   
@@ -147,8 +136,8 @@ module mus_hrrInit_module
   ! ****************************************************************************** !
   ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution 
   ! functions, Jonas Latt and Bastien Chopard 2005
-  pure subroutine HRR_Correction_d3q19 ( QQ, weight, gradRHOU3, &
-    &                                gradRHOUVZ, phi, dens, vel )
+  pure subroutine HRR_Correction_d3q19 ( QQ, weight, gradRHOU3, gradRHOUVZ,   &
+    &                                    phi, vel )
     ! -------------------------------------------------------------------- !
     !> stencil size
     integer, intent(in)        :: QQ
@@ -158,25 +147,22 @@ module mus_hrrInit_module
     real(kind=rk), intent(in)  :: gradRHOU3(:)
     real(kind=rk), intent(in)  :: gradRHOUVZ(:)
     !> correction term phi, rho, vel
-    real(kind=rk), intent(out) :: phi(:), dens, vel(:)
+    real(kind=rk), intent(out) :: phi(:), vel(:)
     ! -------------------------------------------------------------------- !
     real(kind=rk) :: phi_temp
     ! -------------------------------------------------------------------- !
-    dens = 0._rk
     vel(:) = 0._rk
     
     !iDir = 1
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(1)         &
       &                            + gradRHOU3(2) + gradRHOU3(3) )
     phi(1) = weight(1) * phi_temp
-    dens = dens + phi(1)
     vel(1) = vel(1) - phi(1)
     !vel(2) = vel(2) + 0._rk
     !vel(3) = vel(3) + 0._rk
       
     !iDir = 4
     phi(4) = weight(4) * phi_temp
-    dens = dens + phi(4)
     vel(1) = vel(1) + phi(4)
     !vel(2) = vel(2) + 0._rk
     !vel(3) = vel(3) + 0._rk
@@ -185,14 +171,12 @@ module mus_hrrInit_module
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(2)         &
       &                            + gradRHOU3(1) + gradRHOU3(3) )
     phi(2) = weight(2) * phi_temp
-    dens = dens + phi(2)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(2)
     !vel(3) = vel(3) + 0._rk
       
     !iDir = 5
     phi(5) = weight(5) * phi_temp 
-    dens = dens + phi(5)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(5)
     !vel(3) = vel(3) + 0._rk
@@ -201,14 +185,12 @@ module mus_hrrInit_module
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(3)         &
       &                            + gradRHOU3(1) + gradRHOU3(2) )
     phi(3) = weight(3) * phi_temp 
-    dens = dens + phi(3)
     !vel(1) = vel(1) + 0._rk
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) - phi(3)
       
     !iDir = 6
     phi(6) = weight(6) * phi_temp
-    dens = dens + phi(6)
     !vel(1) = vel(1) + 0._rk
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) + phi(6)
@@ -216,14 +198,12 @@ module mus_hrrInit_module
     !iDir = 7
     phi_temp = phi_temp + div1_2 * cs4inv * ( -gradRHOU3(2) - gradRHOUVZ (1) )
     phi(7) = weight(7) * phi_temp
-    dens = dens + phi(7)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(7)
     vel(3) = vel(3) - phi(7)
         
     !iDir = 10  
     phi(10) = weight(10) * phi_temp
-    dens = dens + phi(10)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(10)
     vel(3) = vel(3) + phi(10)
@@ -231,14 +211,12 @@ module mus_hrrInit_module
     !iDir = 8
     phi_temp = phi_temp + cs4inv * ( gradRHOUVZ(1) )
     phi(8) = weight(8) * phi_temp
-    dens = dens + phi(8)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(8)
     vel(3) = vel(3) + phi(8)
         
     !iDir = 9
     phi(9) = weight(9) * phi_temp
-    dens = dens + phi(9)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(9)
     vel(3) = vel(3) - phi(9)
@@ -247,14 +225,12 @@ module mus_hrrInit_module
     phi_temp = div1_6 * cs4inv * (- 2._rk * ( gradRHOU3(1) + gradRHOU3(3) ) &
       &                           + gradRHOU3(2) - 3._rk * gradRHOUVZ (2)   )
     phi(11) = weight(11) * phi_temp 
-    dens = dens + phi(11)
     vel(1) = vel(1) - phi(11)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) - phi(11)
       
     !iDir = 14
     phi(14) = weight(14) * phi_temp
-    dens = dens + phi(14)
     vel(1) = vel(1) + phi(14)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) + phi(14)
@@ -262,14 +238,12 @@ module mus_hrrInit_module
     !iDir = 12
     phi_temp = phi_temp + cs4inv * ( gradRHOUVZ(2) )
     phi(12) = weight(12) * phi_temp
-    dens = dens + phi(12)
     vel(1) = vel(1) + phi(12)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) - phi(12)
       
     !iDir = 13
     phi(13) = weight(13) * phi_temp
-    dens = dens + phi(13)
     vel(1) = vel(1) - phi(13)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) + phi(13)
@@ -278,14 +252,12 @@ module mus_hrrInit_module
     phi_temp = div1_6 * cs4inv * (-2._rk * ( gradRHOU3(1) + gradRHOU3(2) ) &
       &                           + gradRHOU3(3) - 3._rk * gradRHOUVZ (3)  )
     phi(15) = weight(15) * phi_temp
-    dens = dens + phi(15)
     vel(1) = vel(1) - phi(15)
     vel(2) = vel(2) - phi(15)
     !vel(3) = vel(3) + 0._rk
       
     !iDir = 18
     phi(18) = weight(18) * phi_temp
-    dens = dens + phi(18)
     vel(1) = vel(1) + phi(18)
     vel(2) = vel(2) + phi(18)
     !vel(3) = vel(3) + 0._rk
@@ -293,14 +265,12 @@ module mus_hrrInit_module
     !iDir = 16
     phi_temp = phi_temp + cs4inv * ( gradRHOUVZ(3) )
     phi(16) = weight(16) * phi_temp
-    dens = dens + phi(16)
     vel(1) = vel(1) - phi(16)
     vel(2) = vel(2) + phi(16)
     !vel(3) = vel(3) + 0._rk
       
     !iDir = 17
     phi(17) = weight(17) * phi_temp
-    dens = dens + phi(17)
     vel(1) = vel(1) + phi(17)
     vel(2) = vel(2) - phi(17)
     !vel(3) = vel(3) + 0._rk
@@ -308,7 +278,6 @@ module mus_hrrInit_module
     !iDir = 19
     phi_temp = div1_6 * cs4inv * ( gradRHOU3(1) + gradRHOU3(2) + gradRHOU3(3) )
     phi(19) = weight(19) * phi_temp 
-    dens = dens + phi(19)
     !vel(1) = vel(1) + 0._rk  
     !vel(2) = vel(2) + 0._rk  
     !vel(3) = vel(3) + 0._rk  
@@ -319,8 +288,7 @@ module mus_hrrInit_module
   ! ****************************************************************************** !
   ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution
   ! functions, Jonas Latt and Bastien Chopard 2005
-  pure subroutine HRR_Correction_d3q27 ( QQ, weight, gradRHOU3, phi, &
-    &                                    dens, vel )
+  pure subroutine HRR_Correction_d3q27 ( QQ, weight, gradRHOU3, phi, vel )
   ! -------------------------------------------------------------------- !
     !> stencil size
     integer, intent(in)        :: QQ
@@ -329,25 +297,22 @@ module mus_hrrInit_module
     !> gradient rho V^3
     real(kind=rk), intent(in)  :: gradRHOU3(:)
     !> correction term phi
-    real(kind=rk), intent(out) :: phi(:), dens, vel(:)
+    real(kind=rk), intent(out) :: phi(:), vel(:)
     ! -------------------------------------------------------------------- !
     real(kind=rk) :: phi_temp
     ! -------------------------------------------------------------------- !
-    dens = 0._rk
     vel(:) = 0._rk
 
     !iDir = 1
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(1)         &
       &                            + gradRHOU3(2) + gradRHOU3(3) )
     phi(1) = weight(1) * phi_temp
-    dens = dens + phi(1)
     vel(1) = vel(1) - phi(1)
     !vel(2) = vel(2) + 0._rk
     !vel(3) = vel(3) + 0._rk
 
     !iDir = 4
     phi(4) = weight(4) * phi_temp
-    dens = dens + phi(4)
     vel(1) = vel(1) + phi(4)
     !vel(2) = vel(2) + 0._rk
     !vel(3) = vel(3) + 0._rk
@@ -356,14 +321,12 @@ module mus_hrrInit_module
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(2)         &
       &                            + gradRHOU3(1) + gradRHOU3(3) )
     phi(2) = weight(2) * phi_temp
-    dens = dens + phi(2)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(2)
     !vel(3) = vel(3) + 0._rk
 
     !iDir = 5
     phi(5) = weight(5) * phi_temp
-    dens = dens + phi(5)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(5)
     !vel(3) = vel(3) + 0._rk
@@ -372,14 +335,12 @@ module mus_hrrInit_module
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(3)         &
       &                            + gradRHOU3(1) + gradRHOU3(2) )
     phi(3) = weight(3) * phi_temp
-    dens = dens + phi(3)
     !vel(1) = vel(1) + 0._rk
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) - phi(3)
 
     !iDir = 6
     phi(6) = weight(6) * phi_temp
-    dens = dens + phi(6)
     !vel(1) = vel(1) + 0._rk
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) + phi(6)
@@ -389,28 +350,24 @@ module mus_hrrInit_module
       &                            - 2._rk * ( gradRHOU3(2)   &
       &                                      + gradRHOU3(3) ) )
     phi(7) = weight(7) * phi_temp
-    dens = dens + phi(7)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(7)
     vel(3) = vel(3) - phi(7)
 
     !iDir = 10
     phi(10) = weight(10) * phi_temp
-    dens = dens + phi(10)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(10)
     vel(3) = vel(3) + phi(10)
 
     !iDir = 8
     phi(8) = weight(8) * phi_temp
-    dens = dens + phi(8)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(8)
     vel(3) = vel(3) + phi(8)
 
     !iDir = 9
     phi(9) = weight(9) * phi_temp
-    dens = dens + phi(9)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(9)
     vel(3) = vel(3) - phi(9)
@@ -420,28 +377,24 @@ module mus_hrrInit_module
       &                            - 2._rk * ( gradRHOU3(1)   &
       &                                      + gradRHOU3(3) ) )
     phi(11) = weight(11) * phi_temp
-    dens = dens + phi(11)
     vel(1) = vel(1) - phi(11)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) - phi(11)
 
     !iDir = 14
     phi(14) = weight(14) * phi_temp
-    dens = dens + phi(14)
     vel(1) = vel(1) + phi(14)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) + phi(14)
 
     !iDir = 12
     phi(12) = weight(12) * phi_temp
-    dens = dens + phi(12)
     vel(1) = vel(1) + phi(12)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) - phi(12)
 
     !iDir = 13
     phi(13) = weight(13) * phi_temp
-    dens = dens + phi(13)
     vel(1) = vel(1) - phi(13)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) + phi(13)
@@ -451,28 +404,24 @@ module mus_hrrInit_module
      &                           - 2._rk * ( gradRHOU3(1)    &
      &                                      + gradRHOU3(2) ) )
     phi(15) = weight(15) * phi_temp
-    dens = dens + phi(15)
     vel(1) = vel(1) - phi(15)
     vel(2) = vel(2) - phi(15)
     !vel(3) = vel(3) + 0._rk
 
     !iDir = 18
     phi(18) = weight(18) * phi_temp
-    dens = dens + phi(18)
     vel(1) = vel(1) + phi(18)
     vel(2) = vel(2) + phi(18)
     !vel(3) = vel(3) + 0._rk
 
     !iDir = 16
     phi(16) = weight(16) * phi_temp
-    dens = dens + phi(16)
     vel(1) = vel(1) - phi(16)
     vel(2) = vel(2) + phi(16)
     !vel(3) = vel(3) + 0._rk
 
     !iDir = 17
     phi(17) = weight(17) * phi_temp
-    dens = dens + phi(17)
     vel(1) = vel(1) + phi(17)
     vel(2) = vel(2) - phi(17)
     !vel(3) = vel(3) + 0._rk
@@ -481,56 +430,48 @@ module mus_hrrInit_module
     phi_temp = div1_3 * cs4inv * ( - ( gradRHOU3(1) + gradRHOU3(2) &
       &                                 + gradRHOU3(3) )           )
     phi(19) = weight(19) * phi_temp
-    dens = dens + phi(19)
     vel(1) = vel(1) - phi(19)
     vel(2) = vel(2) - phi(19)
     vel(3) = vel(3) - phi(19)
 
     !iDir = 26
     phi(26) = weight(26) * phi_temp
-    dens = dens + phi(26)
     vel(1) = vel(1) + phi(26)
     vel(2) = vel(2) + phi(26)
     vel(3) = vel(3) + phi(26)
 
     !iDir = 22
     phi(22) = weight(22) * phi_temp
-    dens = dens + phi(22)
     vel(1) = vel(1) - phi(22)
     vel(2) = vel(2) + phi(22)
     vel(3) = vel(3) + phi(22)
 
     !iDir = 23
     phi(23) = weight(23) * phi_temp
-    dens = dens + phi(23)
     vel(1) = vel(1) + phi(23)
     vel(2) = vel(2) - phi(23)
     vel(3) = vel(3) - phi(23)
 
     !iDir = 25
     phi(25) = weight(25) * phi_temp
-    dens = dens + phi(25)
     vel(1) = vel(1) + phi(25)
     vel(2) = vel(2) + phi(25)
     vel(3) = vel(3) - phi(25)
 
     !iDir = 20
     phi(20) = weight(20) * phi_temp
-    dens = dens + phi(20)
     vel(1) = vel(1) - phi(20)
     vel(2) = vel(2) - phi(20)
     vel(3) = vel(3) + phi(20)
 
     !iDir = 24
     phi(24) = weight(24) * phi_temp
-    dens = dens + phi(24)
     vel(1) = vel(1) + phi(24)
     vel(2) = vel(2) - phi(24)
     vel(3) = vel(3) + phi(24)
 
     !iDir = 21
     phi(21) = weight(21) * phi_temp
-    dens = dens + phi(21)
     vel(1) = vel(1) - phi(21)
     vel(2) = vel(2) + phi(21)
     vel(3) = vel(3) - phi(21)
@@ -538,7 +479,6 @@ module mus_hrrInit_module
     !iDir = 27
     phi_temp = -div1_2 * phi_temp
     phi(27) = weight(27) * phi_temp
-    dens = dens + phi(27)
     !vel(1) = vel(1) + 0._rk  
     !vel(2) = vel(2) + 0._rk  
     !vel(3) = vel(3) + 0._rk  

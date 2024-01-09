@@ -48,8 +48,6 @@
 !! [[tem_topology_module]] For a detailed description of the grid
 !!
 module mus_interpolate_quadratic_module
-  use iso_c_binding, only: c_loc, c_ptr, c_f_pointer
-
   ! include treelm modules
   use env_module,              only: rk
   use tem_aux_module,          only: tem_abort
@@ -77,8 +75,9 @@ module mus_interpolate_quadratic_module
   use mus_fluid_module,              only: mus_fluid_type
   use mus_relaxationParam_module,    only: mus_calcOmegaFromVisc
   use mus_derVarPos_module,          only: mus_derVarPos_type
-  use mus_derivedQuantities_module2,  only: getNonEqFac_intp_fine_to_coarse, &
+  use mus_derivedQuantities_module2, only: getNonEqFac_intp_fine_to_coarse, &
     &                                       getNonEqFac_intp_coarse_to_fine
+  use mus_GlobalForce_module,        only: force_discretization
 
   implicit none
 
@@ -350,9 +349,12 @@ contains
     ! pdf to interpolate
     real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_force( layout%fStencil%QQ, layout%fStencil%QQ ) 
     ! source elements' pdf
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: t_f_force( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: force_source(3)   ! discretized force
     ! shear stress scaling factor
     real(kind=rk) :: fac, rho, vel(3)
     integer :: QQ
@@ -375,6 +377,9 @@ contains
     sourceLevel = level
     targetLevel = level + 1
     
+    ! convert force from physical to lattice
+    force_source = fluid%force_phy / physics%fac(sourceLevel)%body_force
+    
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
     
@@ -390,6 +395,15 @@ contains
       targetElem = iElem + tLevelDesc%offset( 1, eT_ghostFromCoarser)
       nSourceElems = tLevelDesc%depFromCoarser( iElem )%elem%nVals
       posInIntpMatLSF = tLevelDesc%depFromCoarser( iElem )%posInIntpMatLSF
+
+      ! get normalized kinematic viscosity on target (fine) element
+      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
+
+      ! relation between coarse and fine grid kinematic viscosity:
+      ! v^s_c = 0.5 v^s_f
+      ! calculate omega on source and target level
+      fOmegaKine = mus_calcOmegaFromVisc(fVisc)
+      cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
       ! First calculate all the required moments for all the source elements
       do iSourceElem = 1, nSourceElems
@@ -419,6 +433,14 @@ contains
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))        
 ?? endif
+        
+        ! discretize the force along the QQ directions
+        f_force (:, iSourceElem) = force_discretization(     &
+          &                        force_phy = force_source, &
+          &                        velocity = vel,           &
+          &                        omega = cOmegaKine,       &
+          &                        QQ = QQ,                  &
+          &                        layout = layout           )
 
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho, &
           &                                   vel = vel,               &
@@ -444,22 +466,22 @@ contains
         &   nSources    = nSourceElems,                             &
         &   nVals       = QQ )
 
-      ! get normalized kinematic viscosity on target (fine) element
-      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
-
-      ! relation between coarse and fine grid kinematic viscosity:
-      ! v^s_c = 0.5 v^s_f
-      ! calculate omega on source and target level
-      fOmegaKine = mus_calcOmegaFromVisc(fVisc)
-      cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
+      t_f_force = mus_interpolate_quad3D_leastSq(                   &
+        &   srcMom      = f_force(1:QQ, 1:nSourceElems),            &
+        &   targetCoord = tLevelDesc%depFromCoarser( iElem )%coord, &
+        &   LSFmat      = method%intpMat_forLSF%matArray            &
+        &                       %val(posInIntpMatLSF),              &
+        &   nSources    = nSourceElems,                             &
+        &   nVals       = QQ )
 
       !evaluate scaling factor 
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
       do iDir=1, QQ
+        t_f_force(iDir) = t_f_force(iDir) * div1_2
         t_f_neq(iDir) = t_f_neq(iDir) * fac
-        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
+        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir) + t_f_force(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
       enddo      
@@ -556,10 +578,13 @@ contains
     ! pdf to interpolate
     real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_force( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: sTurbVisc(layout%fStencil%QQ)
     ! source elements' pdf
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: t_f_force( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: force_source(3)   ! discretized force
     real(kind=rk) :: tTurbVisc(1)
     ! shear stress scaling factor
     real(kind=rk) :: fac, rho, vel(3)
@@ -583,6 +608,9 @@ contains
     sourceLevel = level
     targetLevel = level + 1
     
+    ! convert force from physical to lattice
+    force_source = fluid%force_phy / physics%fac(sourceLevel)%body_force
+    
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -598,6 +626,9 @@ contains
       targetElem = iElem + tLevelDesc%offset( 1, eT_ghostFromCoarser)
       nSourceElems = tLevelDesc%depFromCoarser( iElem )%elem%nVals
       posInIntpMatLSF = tLevelDesc%depFromCoarser( iElem )%posInIntpMatLSF
+
+      ! get normalized kinematic viscosity on target (fine) element
+      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
 
       ! First calculate all the required moments for all the source elements
       do iSourceElem = 1, nSourceElems
@@ -628,11 +659,27 @@ contains
         flush(dbgUnit(5))        
 ?? endif
 
+      ! relation between coarse and fine grid kinematic viscosity:
+      ! v^s_c = 0.5 v^s_f
+      ! calculate omega on source level
+      cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc + &
+        &       fluid%turbulence%dataOnLvl(sourceLevel) &
+        &                              %visc(sourceElem))
+      
+      ! discretize the force along the QQ directions
+      f_force (:, iSourceElem) = force_discretization(     &
+        &                        force_phy = force_source, &
+        &                        velocity = vel,           &
+        &                        omega = cOmegaKine,       &
+        &                        QQ = QQ,                  &
+        &                        layout = layout           )
+
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho, &
           &                                   vel = vel,               &
           &                                   QQ = QQ                  )
         
         f_neq(:, iSourceElem) = f(:) - f_eq(:, iSourceElem)
+
 
         ! get turbulent viscosity
         sTurbVisc(iSourceElem) = fluid%turbulence%dataOnLvl(sourceLevel) &
@@ -655,6 +702,14 @@ contains
         &   nSources    = nSourceElems,                             &
         &   nVals       = QQ )
 
+      t_f_force = mus_interpolate_quad3D_leastSq(                   &
+        &   srcMom      = f_force(1:QQ, 1:nSourceElems),            &
+        &   targetCoord = tLevelDesc%depFromCoarser( iElem )%coord, &
+        &   LSFmat      = method%intpMat_forLSF%matArray            &
+        &                       %val(posInIntpMatLSF),              &
+        &   nSources    = nSourceElems,                             &
+        &   nVals       = QQ )
+
       !interpolate turbulent viscosity to target element
       tTurbVisc = mus_interpolate_quad3D_leastSq(                   &
         &   srcMom      = sTurbVisc(1:nSourceElems),                &
@@ -668,9 +723,6 @@ contains
       fluid%turbulence%dataOnLvl(targetLevel)%visc(targetElem) &
         & = fluid%turbulence%fac_c2f*tTurbVisc(1)
 
-      ! get normalized kinematic viscosity on target (fine) element
-      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
-
       ! relation between coarse and fine grid kinematic viscosity:
       ! v^s_c = 0.5 v^s_f
       ! calculate omega on source and target level
@@ -682,8 +734,9 @@ contains
 
       ! Rescale the non eq pdfs
       do iDir=1, QQ
+        t_f_force(iDir) = t_f_force(iDir) * div1_2
         t_f_neq(iDir) = t_f_neq(iDir) * fac
-        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
+        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir) + t_f_force(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
       enddo      
@@ -780,9 +833,12 @@ contains
     ! pdf to interpolate
     real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_force( layout%fStencil%QQ, layout%fStencil%QQ ) 
     ! source elements' pdf
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: t_f_force( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: force_source(3)   ! discretized force
     ! shear stress scaling factor
     real(kind=rk) :: fac, rho, vel(3)
     integer :: QQ
@@ -805,6 +861,9 @@ contains
     sourceLevel = level
     targetLevel = level + 1
     
+    ! convert force from physical to lattice
+    force_source = fluid%force_phy / physics%fac(sourceLevel)%body_force
+    
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -820,6 +879,15 @@ contains
       targetElem = iElem + tLevelDesc%offset( 1, eT_ghostFromCoarser)
       nSourceElems = tLevelDesc%depFromCoarser( iElem )%elem%nVals
       posInIntpMatLSF = tLevelDesc%depFromCoarser( iElem )%posInIntpMatLSF
+
+      ! get normalized kinematic viscosity on target (fine) element
+      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
+
+      ! relation between coarse and fine grid kinematic viscosity:
+      ! v^s_c = 0.5 v^s_f
+      ! calculate omega on source and target level
+      fOmegaKine = mus_calcOmegaFromVisc(fVisc)
+      cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
       ! First calculate all the required moments for all the source elements
       do iSourceElem = 1, nSourceElems
@@ -847,6 +915,14 @@ contains
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))        
 ?? endif
+        
+        ! discretize the force along the QQ directions
+        f_force (:, iSourceElem) = force_discretization(     &
+          &                        force_phy = force_source, &
+          &                        velocity = vel,           &
+          &                        omega = cOmegaKine,       &
+          &                        QQ = QQ,                  &
+          &                        layout = layout           )
 
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho, &
           &                                   vel = vel,               &
@@ -872,22 +948,22 @@ contains
         &   nSources    = nSourceElems,                             &
         &   nVals       = QQ )
 
-      ! get normalized kinematic viscosity on target (fine) element
-      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
-
-      ! relation between coarse and fine grid kinematic viscosity:
-      ! v^s_c = 0.5 v^s_f
-      ! calculate omega on source and target level
-      fOmegaKine = mus_calcOmegaFromVisc(fVisc)
-      cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
+      t_f_force = mus_interpolate_quad3D_leastSq(                   &
+        &   srcMom      = f_force(1:QQ, 1:nSourceElems),            &
+        &   targetCoord = tLevelDesc%depFromCoarser( iElem )%coord, &
+        &   LSFmat      = method%intpMat_forLSF%matArray            &
+        &                       %val(posInIntpMatLSF),              &
+        &   nSources    = nSourceElems,                             &
+        &   nVals       = QQ )
 
       !evaluate scaling factor 
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
       do iDir=1, QQ
+        t_f_force(iDir) = t_f_force(iDir) * div1_2
         t_f_neq(iDir) = t_f_neq(iDir) * fac
-        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
+        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir) + t_f_force(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
       enddo

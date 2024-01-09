@@ -36,8 +36,6 @@
 !!
 ?? include 'header/lbm_macros.inc'
 module mus_interpolate_tools_module
-  use iso_c_binding, only: c_f_pointer
-
   ! include treelm modules
   use env_module,              only: rk, long_k, newUnit, pathLen
   use treelmesh_module,        only: treelmesh_type

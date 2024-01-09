@@ -253,9 +253,9 @@ module mus_source_var_turbChanForce_module
     
     
           ! Dynamic force term for turbulent channel
-          ! F_dyn = (refVelBulk-avgVelBulk) * refVelBulk / refHeight
-          forceDyn = avgVelTau**2 / fun%turbChanForce%refHeight               &
-            &      + ( fun%turbChanForce%refVelBulk - avgVelBulk )            &
+          ! F_dyn = rho * (refVelBulk-avgVelBulk) * refVelBulk / refHeight
+          forceDyn = physics%rho0 * avgVelTau**2 / fun%turbChanForce%refHeight  &
+            &      + ( fun%turbChanForce%refVelBulk - avgVelBulk )              &
             &      * fun%turbChanForce%refVelBulk / fun%turbChanForce%refHeight
           fun%turbChanForce%forceDyn = 0.0_rk
           !write(dbgunit(1), *) 'avgVelBulk: ', avgVelBulk , 'avgVelTau:', avgVelTau

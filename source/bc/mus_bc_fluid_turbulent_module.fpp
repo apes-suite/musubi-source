@@ -30,8 +30,6 @@
 !! in [[tem_bc_module]].
 !!
 module mus_bc_fluid_turbulent_module
-  use iso_c_binding, only: c_f_pointer
-
   ! include treelm modules
   use env_module,               only: rk, long_k
   use tem_param_module,         only: cs2inv, cs2, rho0, rho0Inv, cs4inv, &

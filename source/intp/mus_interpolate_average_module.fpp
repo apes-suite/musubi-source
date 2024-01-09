@@ -30,8 +30,6 @@
 ?? include 'header/lbm_macros.inc'
 ?? include 'tem/source/logMacros.inc'
 module mus_interpolate_average_module
-  use iso_c_binding, only: c_loc, c_ptr, c_f_pointer
-
   ! include treelm modules
   use env_module,              only: rk
   use tem_aux_module,          only: tem_abort
@@ -58,16 +56,17 @@ module mus_interpolate_average_module
 ?? IF( .not. SOA) then
   use mus_interpolate_debug_module,  only: TGV_2D
 ?? ENDIF
-  use mus_scheme_layout_module,      only: mus_scheme_layout_type
-  use mus_physics_module,            only: mus_physics_type
-  use mus_interpolate_header_module, only: mus_interpolation_method_type
-  use mus_field_prop_module,         only: mus_field_prop_type
-  use mus_fluid_module,              only: mus_fluid_type
-  use mus_relaxationParam_module,    only: mus_calcOmegaFromVisc
-  use mus_derVarPos_module,          only: mus_derVarPos_type
+  use mus_scheme_layout_module,       only: mus_scheme_layout_type
+  use mus_physics_module,             only: mus_physics_type
+  use mus_interpolate_header_module,  only: mus_interpolation_method_type
+  use mus_field_prop_module,          only: mus_field_prop_type
+  use mus_fluid_module,               only: mus_fluid_type
+  use mus_relaxationParam_module,     only: mus_calcOmegaFromVisc
+  use mus_derVarPos_module,           only: mus_derVarPos_type
   use mus_derivedQuantities_module2,  only: getNonEqFac_intp_fine_to_coarse, &
     &                                       getNonEqFac_intp_coarse_to_fine
-  use mus_varSys_module,        only: mus_varSys_data_type
+  use mus_varSys_module,              only: mus_varSys_data_type
+  use mus_GlobalForce_module,         only: force_discretization
 
   implicit none
 
@@ -246,6 +245,8 @@ module mus_interpolate_average_module
     real(kind=rk) :: inv_nSourceElems
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: t_f_force( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: force_discretized( layout%fStencil%QQ ), force_source(3)   ! discretized force
     type(mus_fluid_type), pointer :: fluid
     real(kind=rk) :: cVisc, cOmegaKine, fOmegaKine, rho, vel(3), fac
     integer :: elemOff, dens_pos, vel_pos(3), nScalars
@@ -263,6 +264,9 @@ module mus_interpolate_average_module
     sourceLevel = level + 1
     targetLevel = level
 
+    ! convert force from physical to lattice
+    force_source = fluid%force_phy / physics%fac(sourceLevel)%body_force
+
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -277,15 +281,25 @@ module mus_interpolate_average_module
       iElem = targetList( indElem )
 
       ! Read the target element
-      targetElem = iElem + tLevelDesc%offset( 1, eT_ghostFromFiner)
-
+      targetElem = iElem + tLevelDesc%offset( 1, eT_ghostFromFiner )
 
       ! Get how many fine source elements we have for interpolation.
       nSourceElems = tLevelDesc%depFromFiner( iElem )%elem%nVals
       inv_nSourceElems = 1.0_rk / dble(nSourceElems)
 
       t_f_eq = 0._rk
-      t_f_neq = 0._rk
+      t_f_neq = 0._rk 
+      t_f_force = 0._rk
+
+      ! get normalized kinematic viscosity on target (coarse) element
+      cVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
+
+      ! relation between coarse and fine grid kinematic viscosity:
+      ! v^s_f = 2 v^s_c
+      ! calculate omega on source and target level
+      fOmegaKine = mus_calcOmegaFromVisc(2_rk*cVisc)
+      cOmegaKine = mus_calcOmegaFromVisc(cVisc)
+
       ! Now loop over all fine source elements for this target:
       do iSourceElem = 1, nSourceElems
 
@@ -315,6 +329,14 @@ module mus_interpolate_average_module
         flush(dbgUnit(5))
 ?? endif
         
+        ! discretize the force along the QQ directions
+        force_discretized = force_discretization(           &
+          &                       force_phy = force_source, &
+          &                       velocity = vel,           &
+          &                       omega = fOmegaKine,       &
+          &                       QQ = QQ,                  &
+          &                       layout = layout           )
+
         f_eq(:) = layout%quantities%pdfEq_ptr( rho = rho,               &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
@@ -324,23 +346,15 @@ module mus_interpolate_average_module
 
       end do  ! iSourceElem
 
-      ! get normalized kinematic viscosity on target (coarse) element
-      cVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
-
-      ! relation between coarse and fine grid kinematic viscosity:
-      ! v^s_f = 2 v^s_c
-      ! calculate omega on source and target level
-      fOmegaKine = mus_calcOmegaFromVisc(2_rk*cVisc)
-      cOmegaKine = mus_calcOmegaFromVisc(cVisc)
-
       !evaluate scaling factor 
-      fac = getNonEqFac_intp_fine_to_coarse( cOmegaKine, fOmegaKine)
+      fac = getNonEqFac_intp_fine_to_coarse( cOmegaKine, fOmegaKine )
 
       ! interpolate all pdfs by average and scale accordingly
       do iDir = 1, QQ
         t_f_eq(iDir) = t_f_eq(iDir) * inv_nSourceElems 
+        t_f_force(iDir) = t_f_force(iDir) * inv_nSourceElems * 2._rk
         t_f_neq(iDir) = t_f_neq(iDir) * inv_nSourceElems * fac
-        f(iDir) = t_f_eq(iDir) + t_f_neq(iDir)
+        f(iDir) = t_f_eq(iDir) + t_f_neq(iDir) + t_f_force(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = &
           & f(iDir)
@@ -436,6 +450,8 @@ module mus_interpolate_average_module
     real(kind=rk) :: inv_nSourceElems
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: t_f_force( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: force_discretized( layout%fStencil%QQ ), force_source(3)   ! discretized force
     type(mus_fluid_type), pointer :: fluid
     real(kind=rk) :: cVisc, cOmegaKine, fOmegaKine, rho, vel(3), fac
     real(kind=rk) :: tTurbVisc
@@ -454,6 +470,9 @@ module mus_interpolate_average_module
     sourceLevel = level + 1
     targetLevel = level
 
+    ! convert force from physical to lattice
+    force_source = fluid%force_phy / physics%fac(sourceLevel)%body_force
+
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -468,8 +487,7 @@ module mus_interpolate_average_module
       iElem = targetList( indElem )
 
       ! Read the target element
-      targetElem = iElem + tLevelDesc%offset( 1, eT_ghostFromFiner)
-
+      targetElem = iElem + tLevelDesc%offset( 1, eT_ghostFromFiner )
 
       ! Get how many fine source elements we have for interpolation.
       nSourceElems = tLevelDesc%depFromFiner( iElem )%elem%nVals
@@ -477,7 +495,12 @@ module mus_interpolate_average_module
 
       t_f_eq = 0._rk
       t_f_neq = 0._rk
+      t_f_force = 0._rk
       tTurbVisc = 0.0_rk
+
+      ! get normalized kinematic viscosity on target (coarse) element
+      cVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
+      
       ! Now loop over all fine source elements for this target:
       do iSourceElem = 1, nSourceElems
 
@@ -506,7 +529,22 @@ module mus_interpolate_average_module
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))
 ?? endif
+
+        ! relation between coarse and fine grid kinematic viscosity:
+        ! v^s_f = 2 v^s_c
+        ! calculate omega on source level
+        fOmegaKine = mus_calcOmegaFromVisc(2_rk*cVisc + &
+          &     fluid%turbulence%dataOnLvl(sourceLevel) &
+          &                            %visc(sourceElem))
         
+        ! discretize the force along the QQ directions
+        force_discretized = force_discretization(           &
+          &                       force_phy = force_source, &
+          &                       velocity = vel,           &
+          &                       omega = fOmegaKine,       &
+          &                       QQ = QQ,                  &
+          &                       layout = layout           )
+
         f_eq(:) = layout%quantities%pdfEq_ptr( rho = rho,               &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
@@ -524,9 +562,6 @@ module mus_interpolate_average_module
       ! scale interpolated turbulent viscosity to target element
       fluid%turbulence%dataOnLvl(targetLevel)%visc(targetElem) &
         & = fluid%turbulence%fac_f2c*tTurbVisc
-        
-      ! get normalized kinematic viscosity on target (coarse) element
-      cVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
 
       ! relation between coarse and fine grid kinematic viscosity:
       ! v^s_f = 2 v^s_c
@@ -540,8 +575,9 @@ module mus_interpolate_average_module
       ! interpolate all pdfs by average and scale accordingly
       do iDir = 1, QQ
         t_f_eq(iDir) = t_f_eq(iDir) * inv_nSourceElems 
+        t_f_force(iDir) = t_f_force(iDir) * inv_nSourceElems * 2._rk
         t_f_neq(iDir) = t_f_neq(iDir) * inv_nSourceElems * fac
-        f(iDir) = t_f_eq(iDir) + t_f_neq(iDir)
+        f(iDir) = t_f_eq(iDir) + t_f_neq(iDir) + t_f_force(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
       enddo
@@ -637,6 +673,8 @@ module mus_interpolate_average_module
     ! source elements' pdf
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: t_f_force( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: force_discretized( layout%fStencil%QQ ), force_source(3)   ! discretized force
     type(mus_fluid_type), pointer :: fluid
     real(kind=rk) :: cVisc, cOmegaKine, fOmegaKine, rho, vel(3), fac
     integer :: elemOff, dens_pos, vel_pos(3), nScalars
@@ -655,6 +693,9 @@ module mus_interpolate_average_module
 
     sourceLevel = level + 1
     targetLevel = level
+
+    ! convert force from physical to lattice
+    force_source = fluid%force_phy / physics%fac(sourceLevel)%body_force
 
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
@@ -679,6 +720,17 @@ module mus_interpolate_average_module
       ! Now loop over all fine source elements for this target:
       t_f_eq = 0._rk
       t_f_neq = 0._rk
+      t_f_force = 0._rk
+
+      ! get normalized kinematic viscosity on target (coarse) element
+      cVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
+
+      ! relation between coarse and fine grid kinematic viscosity:
+      ! v^s_f = 2 v^s_c
+      ! calculate omega on source and target level
+      fOmegaKine = mus_calcOmegaFromVisc(2_rk*cVisc)
+      cOmegaKine = mus_calcOmegaFromVisc(cVisc)
+
       do iSourceElem = 1, nSourceElems
 
         ! Get the source element position
@@ -705,7 +757,15 @@ module mus_interpolate_average_module
         flush(dbgUnit(5))
 ?? endif
         
-      f_eq(:) = layout%quantities%pdfEq_ptr( rho = rho,               &
+        ! discretize the force along the QQ directions
+        force_discretized = force_discretization(           &
+          &                       force_phy = force_source, &
+          &                       velocity = vel,           &
+          &                       omega = fOmegaKine,       &
+          &                       QQ = QQ,                  &
+          &                       layout = layout           )
+        
+        f_eq(:) = layout%quantities%pdfEq_ptr( rho = rho,               &
         &                                    vel = vel,               &
         &                                    QQ = QQ                  )
       
@@ -714,23 +774,15 @@ module mus_interpolate_average_module
 
       end do ! iSourceElem
 
-      ! get normalized kinematic viscosity on target (coarse) element
-      cVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
-
-      ! relation between coarse and fine grid kinematic viscosity:
-      ! v^s_f = 2 v^s_c
-      ! calculate omega on source and target level
-      fOmegaKine = mus_calcOmegaFromVisc(2_rk*cVisc)
-      cOmegaKine = mus_calcOmegaFromVisc(cVisc)
-
       !evaluate scaling factor 
       fac = getNonEqFac_intp_fine_to_coarse( cOmegaKine, fOmegaKine)
 
       ! interpolate all pdfs by average and scale accordingly
       do iDir = 1, QQ
         t_f_eq(iDir) = t_f_eq(iDir) * inv_nSourceElems 
+        t_f_force(iDir) = t_f_force(iDir) * inv_nSourceElems * 2._rk
         t_f_neq(iDir) = t_f_neq(iDir) * inv_nSourceElems * fac
-        f(iDir) = t_f_eq(iDir) + t_f_neq(iDir)
+        f(iDir) = t_f_eq(iDir) + t_f_neq(iDir) + t_f_force(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
       enddo
@@ -911,9 +963,12 @@ module mus_interpolate_average_module
     integer :: nSourceElems   ! number of source elements for the current target
     real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_force( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: weight(layout%fStencil%QQ)
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: t_f_force( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: force_source(3)   ! discretized force
     ! pdf to reconstruct from
     real(kind=rk) :: f( layout%fStencil%QQ )
     integer :: QQ
@@ -934,6 +989,9 @@ module mus_interpolate_average_module
     sourceLevel = level
     targetLevel = level + 1
     
+    ! convert force from physical to lattice
+    force_source = fluid%force_phy / physics%fac(sourceLevel)%body_force
+
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -956,6 +1014,15 @@ module mus_interpolate_average_module
       ! Read the pre-calculated weights (like in Average intp.)
       weight(1:nSourceElems) = tLevelDesc%depFromCoarser( iElem ) &
         &                                %weight(1:nSourceElems)
+
+      ! get normalized kinematic viscosity on target (coarse) element
+      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
+      
+      ! relation between coarse and fine grid kinematic viscosity:
+      ! v^s_f = 2 v^s_c
+      ! calculate omega on source and target level
+      fOmegaKine = mus_calcOmegaFromVisc(fVisc)
+      cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
       ! Now loop over all fine source elements for this target:
       do iSourceElem = 1, nSourceElems
@@ -986,6 +1053,14 @@ module mus_interpolate_average_module
         flush(dbgUnit(5))
 ?? endif
         
+        ! discretize the force along the QQ directions
+        f_force (:, iSourceElem) = force_discretization( &
+          &                        force_phy = force_source, &
+          &                        velocity = vel,           &
+          &                        omega = cOmegaKine,       &
+          &                        QQ = QQ,                  &
+          &                        layout = layout           )
+
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho,  &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
@@ -997,25 +1072,18 @@ module mus_interpolate_average_module
       ! interpolate all pdfs by weighted average
       do iDir = 1,QQ
         t_f_eq(iDir) = sum(weight(1:nSourceElems)*f_eq(iDir,1:nSourceElems))
+        t_f_force(iDir) = sum(weight(1:nSourceElems)*f_force(iDir,1:nSourceElems))
         t_f_neq(iDir) = sum(weight(1:nSourceElems)*f_neq(iDir,1:nSourceElems))
       end do
-
-      ! get normalized kinematic viscosity on target (fine) element
-      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
-
-      ! relation between coarse and fine grid kinematic viscosity:
-      ! v^s_c = 0.5 v^s_f
-      ! calculate omega on source and target level
-      fOmegaKine = mus_calcOmegaFromVisc(fVisc)
-      cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
       !evaluate scaling factor 
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
       do iDir=1, QQ
+        t_f_force(iDir) = t_f_force(iDir) * div1_2
         t_f_neq(iDir) = t_f_neq(iDir) * fac
-        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
+        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir) + t_f_force(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
       enddo      
@@ -1107,9 +1175,12 @@ module mus_interpolate_average_module
     integer :: nSourceElems   ! number of source elements for the current target
     real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_force( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: weight(layout%fStencil%QQ), sTurbVisc(layout%fStencil%QQ)
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: t_f_force( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: force_source(3)   ! discretized force
     ! pdf to reconstruct from
     real(kind=rk) :: f( layout%fStencil%QQ ), tTurbVisc
     integer :: QQ
@@ -1129,6 +1200,9 @@ module mus_interpolate_average_module
 
     sourceLevel = level
     targetLevel = level + 1
+
+    ! convert force from physical to lattice
+    force_source = fluid%force_phy / physics%fac(sourceLevel)%body_force
     
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
@@ -1153,6 +1227,9 @@ module mus_interpolate_average_module
       weight(1:nSourceElems) = tLevelDesc%depFromCoarser( iElem ) &
         &                                %weight(1:nSourceElems)
 
+      ! get normalized kinematic viscosity on target (fine) element
+      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
+      
       ! Now loop over all fine source elements for this target:
       do iSourceElem = 1, nSourceElems
 
@@ -1181,7 +1258,22 @@ module mus_interpolate_average_module
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))
 ?? endif
+
+        ! relation between coarse and fine grid kinematic viscosity:
+        ! v^s_c = 0.5 v^s_f
+        ! calculate omega on source level
+        cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc + &
+          &       fluid%turbulence%dataOnLvl(sourceLevel) &
+          &                              %visc(sourceElem))
         
+        ! discretize the force along the QQ directions
+        f_force(:, iSourceElem) = force_discretization(     &
+          &                       force_phy = force_source, &
+          &                       velocity = vel,           &
+          &                       omega = cOmegaKine,       &
+          &                       QQ = QQ,                  &
+          &                       layout = layout           )
+
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho,  &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
@@ -1199,14 +1291,12 @@ module mus_interpolate_average_module
       do iDir = 1,QQ
         t_f_eq(iDir) = sum(weight(1:nSourceElems)*f_eq(iDir,1:nSourceElems))
         t_f_neq(iDir) = sum(weight(1:nSourceElems)*f_neq(iDir,1:nSourceElems))
+        t_f_force(iDir) = sum(weight(1:nSourceElems)*f_force(iDir,1:nSourceElems))
       end do                                        
 
       ! scale interpolated turbulent viscosity to target element
       fluid%turbulence%dataOnLvl(targetLevel)%visc(targetElem) &
         & = fluid%turbulence%fac_c2f*tTurbVisc
-
-      ! get normalized kinematic viscosity on target (fine) element
-      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
 
       ! relation between coarse and fine grid kinematic viscosity:
       ! v^s_c = 0.5 v^s_f
@@ -1220,7 +1310,8 @@ module mus_interpolate_average_module
       ! Rescale the non eq pdfs
       do iDir=1, QQ
         t_f_neq(iDir) = t_f_neq(iDir) * fac
-        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
+        t_f_force(iDir) = t_f_force(iDir) * div1_2
+        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir) + t_f_force(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
       enddo      
@@ -1312,9 +1403,12 @@ module mus_interpolate_average_module
     integer :: nSourceElems   ! number of source elements for the current target
     real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_force( layout%fStencil%QQ, layout%fStencil%QQ ) 
     real(kind=rk) :: weight(layout%fStencil%QQ)
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: t_f_force( layout%fStencil%QQ )  ! temp pdf calculation
+    real(kind=rk) :: force_source(3)   ! discretized force
     ! pdf to reconstruct from
     real(kind=rk) :: f( layout%fStencil%QQ )
     integer :: QQ
@@ -1335,6 +1429,9 @@ module mus_interpolate_average_module
 
     sourceLevel = level
     targetLevel = level + 1
+    
+    ! convert force from physical to lattice
+    force_source = fluid%force_phy / physics%fac(sourceLevel)%body_force
     
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
@@ -1358,6 +1455,15 @@ module mus_interpolate_average_module
       ! Read the pre-calculated weights (like in Average intp.)
       weight(1:nSourceElems) = tLevelDesc%depFromCoarser( iElem ) &
         &                                %weight(1:nSourceElems)
+
+      ! get normalized kinematic viscosity on target (coarse) element
+      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
+      
+      ! relation between coarse and fine grid kinematic viscosity:
+      ! v^s_f = 2 v^s_c
+      ! calculate omega on source and target level
+      fOmegaKine = mus_calcOmegaFromVisc(fVisc)
+      cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
       ! Now loop over all fine source elements for this target:
       do iSourceElem = 1, nSourceElems
@@ -1386,6 +1492,14 @@ module mus_interpolate_average_module
         flush(dbgUnit(5))
 ?? endif
         
+        ! discretize the force along the QQ directions
+        f_force (:, iSourceElem) = force_discretization( &
+          &                        force_phy = force_source, &
+          &                        velocity = vel,           &
+          &                        omega = cOmegaKine,       &
+          &                        QQ = QQ,                  &
+          &                        layout = layout           )
+
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho,  &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
@@ -1397,25 +1511,18 @@ module mus_interpolate_average_module
       ! interpolate all pdfs by weighted average
       do iDir = 1,QQ
         t_f_eq(iDir) = sum(weight(1:nSourceElems)*f_eq(iDir,1:nSourceElems))
+        t_f_force(iDir) = sum(weight(1:nSourceElems)*f_force(iDir,1:nSourceElems))
         t_f_neq(iDir) = sum(weight(1:nSourceElems)*f_neq(iDir,1:nSourceElems))
       end do
-
-      ! get normalized kinematic viscosity on target (fine) element
-      fVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
-
-      ! relation between coarse and fine grid kinematic viscosity:
-      ! v^s_c = 0.5 v^s_f
-      ! calculate omega on source and target level
-      fOmegaKine = mus_calcOmegaFromVisc(fVisc)
-      cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
       !evaluate scaling factor 
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
       do iDir=1, QQ
+        t_f_force(iDir) = t_f_force(iDir) * div1_2
         t_f_neq(iDir) = t_f_neq(iDir) * fac
-        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
+        f(iDir) = t_f_neq(iDir) + t_f_eq(iDir) + t_f_force(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
       enddo      

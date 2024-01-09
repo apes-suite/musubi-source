@@ -46,8 +46,6 @@
 !! s(10) = bulk_omega
 !! s(11:27) = 1.0
 module mus_mrt_d3q27_module
-  use iso_c_binding,            only: c_f_pointer
-
   ! include treelm modules
   use env_module,               only: rk
   use tem_varSys_module,        only: tem_varSys_type, tem_varSys_op_type

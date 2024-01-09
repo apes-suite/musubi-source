@@ -181,11 +181,6 @@ module mus_derQuan_module
   public :: applySrc_force_MRT_d2q9
   public :: applySrc_force_MRT_d3q19
   public :: applySrc_force_MRT_d3q27
-  public :: applySrc_turbChanForce
-  public :: applySrc_turbChanForce_MRT
-  public :: applySrc_turbChanForce_MRT_d2q9
-  public :: applySrc_turbChanForce_MRT_d3q19
-  public :: applySrc_turbChanForce_MRT_d3q27
   public :: applySrc_force1stOrd
 
 contains
@@ -1934,7 +1929,7 @@ contains
     integer :: statePos, iElem, iLevel, QQ, iVar, HRRVar
     integer :: denspos, velpos(3)
     type(mus_varSys_data_type), pointer :: fPtr
-    real(kind=rk) :: gradRhoU3(2,1), S_Corr(9), dens, vel(2)
+    real(kind=rk) :: gradRhoU3(2,1), S_Corr(9), vel(2) 
     ! -------------------------------------------------------------------- !
 
     call C_F_POINTER( fun%method_Data, fPtr )
@@ -1989,7 +1984,6 @@ contains
           &    weight    = weight,                    &
           &    gradRHOU3 = gradRHOU3(:, 1),           &
           &    phi       = S_corr(:),                 &
-          &    dens      = dens,                      &
           &    vel       = vel(:)                     )
 
         res( (iElem-1)*QQ+1:(iElem-1)*QQ+QQ ) = S_Corr(:)
@@ -2047,7 +2041,7 @@ contains
     integer :: denspos, velpos(3)
     type(mus_varSys_data_type), pointer :: fPtr
     real(kind=rk) :: gradRhoU3(3,1), gradRhoUVZ(3,1)
-    real(kind=rk) :: S_Corr(19), dens, vel(3)
+    real(kind=rk) :: S_Corr(19), vel(3)
     ! -------------------------------------------------------------------- !
 
     call C_F_POINTER( fun%method_Data, fPtr )
@@ -2114,7 +2108,6 @@ contains
           &    gradRHOU3  = gradRHOU3(:, 1),   &
           &    gradRHOUVZ = gradRHOUVZ(:, 1),  &
           &    phi        = S_corr(:),         &
-          &    dens       = dens,              &
           &    vel        = vel(:)             )
 
         res( (iElem-1)*QQ+1:(iElem-1)*QQ+QQ ) = S_Corr(:)
@@ -2169,7 +2162,7 @@ contains
     integer :: statePos, iElem, iLevel, QQ, iVar, HRRVar
     integer :: denspos, velpos(3)
     type(mus_varSys_data_type), pointer :: fPtr
-    real(kind=rk) :: gradRhoU3(3,1), S_Corr(27), dens, vel(3)
+    real(kind=rk) :: gradRhoU3(3,1), S_Corr(27), vel(3)
     ! -------------------------------------------------------------------- !
 
     call C_F_POINTER( fun%method_Data, fPtr )
@@ -2224,7 +2217,6 @@ contains
           &    weight    = weight,                    &
           &    gradRHOU3 = gradRHOU3(:, 1),           &
           &    phi       = S_corr(:),                 &
-          &    dens      = dens,                      &
           &    vel       = vel(:)                     )
 
         res( (iElem-1)*QQ+1:(iElem-1)*QQ+QQ ) = S_Corr(:)
@@ -2319,8 +2311,8 @@ contains
       & nVals   = nElems,                                   &
       & res     = spongeField                               )
 
-    inv_rho_phy = 1.0_rk / fPtr%solverData%physics%fac(iLevel)%press * cs2inv
-    inv_vel_phy = 1.0_rk / fPtr%solverData%physics%fac(iLevel)%vel
+    inv_rho_phy = 1.0_rk / phyConvFac%press * cs2inv
+    inv_vel_phy = 1.0_rk / phyConvFac%vel
 
     ! target pressure and velocity in lattice unit
     dens_ref = fun%absLayer%config%target_pressure * inv_rho_phy
@@ -2465,8 +2457,8 @@ contains
       & nVals   = nElems,                                   &
       & res     = spongeField                               )
 
-    inv_rho_phy = 1.0_rk / fPtr%solverData%physics%fac(iLevel)%press * cs2inv
-    inv_vel_phy = 1.0_rk / fPtr%solverData%physics%fac(iLevel)%vel
+    inv_rho_phy = 1.0_rk / phyConvFac%press * cs2inv
+    inv_vel_phy = 1.0_rk / phyConvFac%vel
 
     ! target pressure and velocity in lattice unit
     dens_ref = fun%absLayer%config%target_pressure * inv_rho_phy
@@ -2934,7 +2926,7 @@ contains
       & res     = forceField                                )
 
     ! convert physical to lattice
-    forceField = forceField / fPtr%solverData%physics%fac(iLevel)%body_force
+    forceField = forceField / phyConvFac%body_force
 
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
@@ -3072,7 +3064,7 @@ contains
       & res     = forceField                                )
 
     ! convert physical to lattice
-    forceField = forceField / fPtr%solverData%physics%fac(iLevel)%body_force
+    forceField = forceField / phyConvFac%body_force
 
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
@@ -3149,6 +3141,7 @@ contains
 
   end subroutine applySrc_force_MRT
 ! ****************************************************************************** !
+
 ! ****************************************************************************** !
   !> Update state with source variable "force" for MRT collision model.
   !! Force term used here is from:
@@ -3234,7 +3227,7 @@ contains
       & res     = forceField                                )
 
     ! convert physical to lattice
-    forceField = forceField / fPtr%solverData%physics%fac(iLevel)%body_force
+    forceField = forceField / phyConvFac%body_force
 
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
@@ -3395,7 +3388,7 @@ contains
       & res     = forceField                                )
 
     ! convert physical to lattice
-    forceField = forceField / fPtr%solverData%physics%fac(iLevel)%body_force
+    forceField = forceField / phyConvFac%body_force
 
     ! constant parameter
     QQ = 19
@@ -3564,7 +3557,7 @@ contains
       & res     = forceField                                )
 
     ! convert physical to lattice
-    forceField = forceField / fPtr%solverData%physics%fac(iLevel)%body_force
+    forceField = forceField / phyConvFac%body_force
 
     ! constant parameter
     QQ = 9
@@ -3728,7 +3721,7 @@ contains
 !    end do
 
     ! convert physical to lattice
-    forceField = forceField / fPtr%solverData%physics%fac(iLevel)%body_force
+    forceField = forceField / phyConvFac%body_force
 
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
@@ -3758,693 +3751,6 @@ contains
     end do !iElem
   end subroutine applySrc_force1stOrd
 ! ************************************************************************** !
-
-
-! ****************************************************************************** !
-  !> Update state with source variable "turb_channel_force" for BGK.
-  !!
-  !! This subroutine's interface must match the abstract interface definition
-  !! [[proc_apply_source]] in derived/[[mus_source_var_module]].f90 in order to
-  !! be callable via [[mus_source_op_type:applySrc]] function pointer.
-  subroutine applySrc_turbChanForce( fun, inState, outState, neigh, auxField,  &
-    &                                nPdfSize, iLevel, varSys, time,           &
-    &                                phyConvFac, derVarPos                     )
-    ! -------------------------------------------------------------------- !
-    !> Description of method to apply source terms
-    class(mus_source_op_type), intent(in) :: fun
-
-    !> input  pdf vector
-    real(kind=rk), intent(in) :: inState(:)
-
-    !> output pdf vector
-    real(kind=rk), intent(inout) :: outState(:)
-
-    !> connectivity Array corresponding to state vector
-    integer,intent(in) :: neigh(:)
-
-    !> auxField array
-    real(kind=rk), intent(in) :: auxField(:)
-
-    !> number of elements in state Array
-    integer, intent(in) :: nPdfSize
-
-    !> current level
-    integer, intent(in) :: iLevel
-
-    !> variable system
-    type(tem_varSys_type), intent(in) :: varSys
-
-    !> Point in time at which to evaluate the variable.
-    type(tem_time_type), intent(in)  :: time
-
-    !> Physics conversion factor for current level
-    type(mus_convertFac_type), intent(in) :: phyConvFac
-
-    !> position of derived quantities in varsys
-    type(mus_derVarPos_type), intent(in) :: derVarPos(:)
-    ! -------------------------------------------------------------------- !
-    type(mus_varSys_data_type), pointer :: fPtr
-    type(mus_scheme_type), pointer :: scheme
-    real(kind=rk) :: velocity(3), ucx, uMinusCX(3), forceTerm, dens
-    integer :: nElems, iElem, iDir, QQ, nScalars, posInTotal, statePos, elemOff
-    integer :: vel_pos(3), dens_pos
-    real(kind=rk) :: omega, omega_fac
-    real(kind=rk) :: forceDynL(3)
-    ! ---------------------------------------------------------------------------
-    ! convert c pointer to solver type fortran pointer
-    call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
-      &               fPtr )
-    scheme => fPtr%solverData%scheme
-
-    ! Number of elements to apply source terms
-    nElems = fun%elemLvl(iLevel)%nElems
-
-    ! Convert Dynamic force in m/s^2 to lattice
-    forceDynL = fun%turbChanForce%forceDyn              &
-      &       / fPtr%solverData%physics%fac(iLevel)%accel
-
-    ! constant parameter
-    QQ = scheme%layout%fStencil%QQ
-    nScalars = varSys%nScalars
-    ! Position of density and velocity variable in auxField
-    dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
-    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-    do iElem = 1, nElems
-      posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
-
-      ! element offset
-      elemoff = (posInTotal-1)*varSys%nAuxScalars
-      ! obtain density from auxField
-      dens = auxField(elemOff + dens_pos)
-      ! obtain velocity from auxField
-      velocity(1) = auxField(elemOff + vel_pos(1))
-      velocity(2) = auxField(elemOff + vel_pos(2))
-      velocity(3) = auxField(elemOff + vel_pos(3))
-
-      ! get the correct omega value
-      omega = scheme%field(1)%fieldProp%fluid%viscKine              &
-        &                              %omLvl(iLevel)%val(posInTotal)
-      omega_fac = 1.0_rk - omega * 0.5_rk
-
-      ! force term:
-      ! F_i = w_i*(1-omega/2)*rho*( (\vec{e}_i-\vec{u}*)/cs2 +
-      !       (\vec{e}_i \cdot \vec{u}*)\vec{e}_i/cs4) \cdot \vec{g}
-      do iDir = 1, QQ
-        ucx = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), &
-          &                velocity )
-        uMinusCx = scheme%layout%fStencil%cxDirRK(:, iDir) - velocity
-
-        forceTerm = dot_product( uMinusCx * cs2inv               &
-          &       + ucx * scheme%layout%fStencil%cxDirRK(:,iDir) &
-          &       * cs4inv, forceDynL )
-
-        ! position in state array
-        statePos = ?SAVE?(iDir, 1, posInTotal, QQ, nScalars, nPdfSize, neigh)
-        ! update outstate
-        outState(statePos) = outState(statePos)                         &
-          & + omega_fac * scheme%layout%weight( iDir ) * dens * forceTerm
-
-      end do
-
-    end do !iElem
-
-  end subroutine applySrc_turbChanForce
-! ****************************************************************************** !
-
-! ****************************************************************************** !
-  !> Update state with source variable "force" for generic MRT collision model
-  !! for turb_channel_force. It uses velocityX average in bulk to adapt the
-  !! driving force for turbulent channel.
-  !!
-  !! This subroutine's interface must match the abstract interface definition
-  !! [[proc_apply_source]] in derived/[[mus_source_var_module]].f90 in order to
-  !! be callable via [[mus_source_op_type:applySrc]] function pointer.
-  subroutine applySrc_turbChanForce_MRT( fun, inState, outState, neigh,  &
-    &                                    auxField, nPdfSize, iLevel,     &
-    &                                    varSys, time, phyConvFac,       &
-    &                                    derVarPos                       )
-    ! -------------------------------------------------------------------- !
-    !> Description of method to apply source terms
-    class(mus_source_op_type), intent(in) :: fun
-
-    !> input  pdf vector
-    real(kind=rk), intent(in) :: inState(:)
-
-    !> output pdf vector
-    real(kind=rk), intent(inout) :: outState(:)
-
-    !> connectivity Array corresponding to state vector
-    integer,intent(in) :: neigh(:)
-
-    !> auxField array
-    real(kind=rk), intent(in) :: auxField(:)
-
-    !> number of elements in state Array
-    integer, intent(in) :: nPdfSize
-
-    !> current level
-    integer, intent(in) :: iLevel
-
-    !> variable system
-    type(tem_varSys_type), intent(in) :: varSys
-
-    !> Point in time at which to evaluate the variable.
-    type(tem_time_type), intent(in)  :: time
-
-    !> Physics conversion factor for current level
-    type(mus_convertFac_type), intent(in) :: phyConvFac
-
-    !> position of derived quantities in varsys
-    type(mus_derVarPos_type), intent(in) :: derVarPos(:)
-    ! -------------------------------------------------------------------- !
-    type(mus_varSys_data_type), pointer :: fPtr
-    type(mus_scheme_type), pointer :: scheme
-    real(kind=rk) :: velocity(3), ucx, uMinusCX(3), dens
-    integer :: nElems, iElem, iDir, QQ, nScalars, posInTotal, statePos, elemOff
-    integer :: vel_pos(3), dens_pos
-    real(kind=rk) :: omegaKine, omegaBulk, discForce
-    real(kind=rk) :: forceTerm(27), momForce(27), s_mrt(27)
-    real(kind=rk) :: mInvXOmega(27,27)
-    real(kind=rk) :: forceDynL(3)
-    ! ---------------------------------------------------------------------------
-    ! convert c pointer to solver type fortran pointer
-    call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
-      &               fPtr )
-    scheme => fPtr%solverData%scheme
-
-    ! Number of elements to apply source terms
-    nElems = fun%elemLvl(iLevel)%nElems
-
-    ! convert physical to lattice, force is defined in acceleration m/s^2
-    ! Convert Dynamic force in m/s^2 to lattice
-    forceDynL = fun%turbChanForce%forceDyn              &
-      &       / fPtr%solverData%physics%fac(iLevel)%accel
-
-    ! constant parameter
-    QQ = scheme%layout%fStencil%QQ
-
-    nScalars = varSys%nScalars
-    ! Position of density and velocity variable in auxField
-    dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
-    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-    omegaBulk = scheme%field(1)%fieldProp%fluid%omegaBulkLvl(iLevel)
-
-    do iElem = 1, nElems
-      posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
-
-      ! element offset
-      elemoff = (posInTotal-1)*varSys%nAuxScalars
-      ! obtain density from auxField
-      dens = auxField(elemOff + dens_pos)
-      ! obtain velocity from auxField
-      velocity(1) = auxField(elemOff + vel_pos(1))
-      velocity(2) = auxField(elemOff + vel_pos(2))
-      velocity(3) = auxField(elemOff + vel_pos(3))
-
-      ! get the correct omega value
-      omegaKine = scheme%field(1)%fieldProp%fluid%viscKine          &
-        &                              %omLvl(iLevel)%val(posInTotal)
-      ! MRT omegas
-      ! overwrite omegaKine term in the element loop
-      s_mrt(1:QQ) = scheme%field(1)%fieldProp%fluid                              &
-        &           %mrtPtr(omegaKine=omegaKine, omegaBulk=omegaBulk, QQ=QQ)
-
-      ! M^-1 * (I-0.5 S)
-      s_mrt(1:QQ) = 1.0_rk - 0.5_rk * s_mrt(1:QQ)
-      do iDir = 1, QQ
-        mInvXOmega(1:QQ,iDir) = scheme%layout%moment%toPDF%A(1:QQ,iDir) &
-          &                   * s_mrt(iDir)
-      end do
-
-      ! force term:
-      ! F_i = w_i*(1-omega/2)*rho*( (\vec{e}_i-\vec{u}*)/cs2 +
-      !       (\vec{e}_i \cdot \vec{u}*)\vec{e}_i/cs4) \cdot \vec{F}
-      do iDir = 1, QQ
-        ucx = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), &
-          &                velocity )
-        uMinusCx = scheme%layout%fStencil%cxDirRK(:, iDir) - velocity
-
-        forceTerm(iDir) = scheme%layout%weight(iDir) * dens      &
-          &       * dot_product( uMinusCx * cs2inv               &
-          &       + ucx * scheme%layout%fStencil%cxDirRK(:,iDir) &
-          &       * cs4inv, forceDynL )
-      end do
-
-      ! Force moments: M * F
-      !do iDir = 1, QQ
-      !  momForce(iDir) = sum(scheme%layout%moment%toMoments%A(iDir,:) * forceTerm)
-      !end do
-      momForce(1:QQ) = matmul(scheme%layout%moment%toMoments%A(1:QQ,1:QQ), &
-        &               forceTerm(1:QQ))
-
-      do iDir = 1, QQ
-        ! discrete force
-        ! \bar{F} =  M^-1 (I-S/2) M F
-        discForce = sum(mInvXOmega(iDir,1:QQ) * momForce(1:QQ))
-        ! position in state array
-        statePos = ?SAVE?(iDir, 1, posInTotal, QQ, nScalars, nPdfSize, neigh)
-        ! update outstate
-        outState(statePos) = outState(statePos) + discForce
-      end do
-
-    end do !iElem
-
-  end subroutine applySrc_turbChanForce_MRT
-! ****************************************************************************** !
-
-! ****************************************************************************** !
-  !> Update state with source variable "force" for generic MRT collision model
-  !! for turb_channel_force. It uses velocityX average in bulk to adapt the
-  !! driving force for turbulent channel.
-  !!
-  !! This subroutine's interface must match the abstract interface definition
-  !! [[proc_apply_source]] in derived/[[mus_source_var_module]].f90 in order to
-  !! be callable via [[mus_source_op_type:applySrc]] function pointer.
-  subroutine applySrc_turbChanForce_MRT_d3q27( fun, inState, outState, neigh, &
-    &                                    auxField, nPdfSize, iLevel,          &
-    &                                    varSys, time, phyConvFac,            &
-    &                                    derVarPos                            )
-    ! -------------------------------------------------------------------- !
-    !> Description of method to apply source terms
-    class(mus_source_op_type), intent(in) :: fun
-
-    !> input  pdf vector
-    real(kind=rk), intent(in) :: inState(:)
-
-    !> output pdf vector
-    real(kind=rk), intent(inout) :: outState(:)
-
-    !> connectivity Array corresponding to state vector
-    integer,intent(in) :: neigh(:)
-
-    !> auxField array
-    real(kind=rk), intent(in) :: auxField(:)
-
-    !> number of elements in state Array
-    integer, intent(in) :: nPdfSize
-
-    !> current level
-    integer, intent(in) :: iLevel
-
-    !> variable system
-    type(tem_varSys_type), intent(in) :: varSys
-
-    !> Point in time at which to evaluate the variable.
-    type(tem_time_type), intent(in)  :: time
-
-    !> Physics conversion factor for current level
-    type(mus_convertFac_type), intent(in) :: phyConvFac
-
-    !> position of derived quantities in varsys
-    type(mus_derVarPos_type), intent(in) :: derVarPos(:)
-    ! -------------------------------------------------------------------- !
-    type(mus_varSys_data_type), pointer :: fPtr
-    type(mus_scheme_type), pointer :: scheme
-    real(kind=rk) :: F(3), velocity(3), dens
-    integer :: nElems, iElem, iDir, QQ, nScalars, posInTotal, statePos, elemOff
-    integer :: vel_pos(3), dens_pos
-    real(kind=rk) :: omegaBulk, discForce
-    real(kind=rk) :: momForce(27), s_mrt(27)
-    real(kind=rk) :: mInvXOmega(27,27)
-    real(kind=rk) :: forceDynL(3)
-    ! ---------------------------------------------------------------------------
-    ! convert c pointer to solver type fortran pointer
-    call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
-      &               fPtr )
-    scheme => fPtr%solverData%scheme
-
-    ! Number of elements to apply source terms
-    nElems = fun%elemLvl(iLevel)%nElems
-
-    ! convert physical to lattice, force is defined in acceleration m/s^2
-    ! Convert Dynamic force in m/s^2 to lattice
-    forceDynL = fun%turbChanForce%forceDyn              &
-      &       / fPtr%solverData%physics%fac(iLevel)%accel
-
-    ! constant parameter
-    QQ = scheme%layout%fStencil%QQ
-
-    nScalars = varSys%nScalars
-    ! Position of density and velocity variable in auxField
-    dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
-    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-    omegaBulk = scheme%field(1)%fieldProp%fluid%omegaBulkLvl(iLevel)
-    ! MRT omegas
-    s_mrt(1:QQ) = scheme%field(1)%fieldProp%fluid                              &
-      &           %mrtPtr(omegaKine=1._rk, omegaBulk=omegaBulk, QQ=QQ)
-    ! M^-1 * (I-0.5 S)
-    s_mrt(2:4) = 1.0_rk - 0.5_rk * s_mrt(2:4)
-    s_mrt(10) = 1.0_rk - 0.5_rk * s_mrt(10)
-
-    do iElem = 1, nElems
-      posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
-
-      ! element offset
-      elemoff = (posInTotal-1)*varSys%nAuxScalars
-      ! obtain density from auxField
-      dens = auxField(elemOff + dens_pos)
-      ! obtain velocity from auxField
-      velocity(1) = auxField(elemOff + vel_pos(1))
-      velocity(2) = auxField(elemOff + vel_pos(2))
-      velocity(3) = auxField(elemOff + vel_pos(3))
-
-      ! MRT omegas
-      ! overwrite omegaKine term in the element loop
-      ! get the correct omega value
-      s_mrt(5:9) = scheme%field(1)%fieldProp%fluid%viscKine          &
-      &                              %omLvl(iLevel)%val(posInTotal)
-
-      ! M^-1 * (I-0.5 S)
-      s_mrt(5:9) = 1.0_rk - 0.5_rk * s_mrt(5:9)
-      do iDir = 2, 10
-        mInvXOmega(1:QQ,iDir) = scheme%layout%moment%toPDF%A(1:QQ,iDir) &
-          &                   * s_mrt(iDir)
-      end do
-
-      ! force term:
-      ! F_i = w_i( (\vec{e}_i-\vec{u}*)/cs2 +
-      !       (\vec{e}_i \cdot \vec{u}*)\vec{e}_i/cs4) \cdot \vec{F}
-      ! Force moments: M * F
-      F = dens * forceDynL
-      momForce(1:QQ) = 0._rk
-      momForce(2:4) = F(1:3)
-      momForce(5) = F(1) * velocity(2) + F(2) * velocity(1)
-      momForce(6) = F(2) * velocity(3) + F(3) * velocity(2)
-      momForce(7) = F(1) * velocity(3) + F(3) * velocity(1)
-      momForce(8) = -2._rk * ( F(2) * velocity(2) - 2._rk * F(1) * velocity(1) &
-        &                      + F(3) * velocity(3) )
-      momForce(9) = 2._rk * ( F(2) * velocity(2) - F(3) * velocity(3) )
-      momForce(10) = 2._rk * ( F(1) * velocity(1) + F(2) * velocity(2) &
-        &                      + F(3) * velocity(3) )
-
-      do iDir = 1, QQ
-        ! discrete force
-        ! \bar{F} =  M^-1 (I-S/2) M F
-        discForce = sum(mInvXOmega(iDir,2:10) * momForce(2:10))
-        ! position in state array
-        statePos = ?SAVE?(iDir, 1, posInTotal, QQ, nScalars, nPdfSize, neigh)
-        ! update outstate
-        outState(statePos) = outState(statePos) + discForce
-      end do
-
-    end do !iElem
-
-  end subroutine applySrc_turbChanForce_MRT_d3q27
-! ****************************************************************************** !
-
-! ****************************************************************************** !
-  !> Update state with source variable "force" for d3q19 MRT collision model
-  !! for turb_channel_force. It uses velocityX average in bulk to adapt the
-  !! driving force for turbulent channel.
-  !!
-  !! This subroutine's interface must match the abstract interface definition
-  !! [[proc_apply_source]] in derived/[[mus_source_var_module]].f90 in order to
-  !! be callable via [[mus_source_op_type:applySrc]] function pointer.
-  subroutine applySrc_turbChanForce_MRT_d3q19( fun, inState, outState, neigh,  &
-    &                                          auxField, nPdfSize, iLevel,     &
-    &                                          varSys, time, phyConvFac,       &
-    &                                          derVarPos                       )
-    ! -------------------------------------------------------------------- !
-    !> Description of method to apply source terms
-    class(mus_source_op_type), intent(in) :: fun
-
-    !> input  pdf vector
-    real(kind=rk), intent(in) :: inState(:)
-
-    !> output pdf vector
-    real(kind=rk), intent(inout) :: outState(:)
-
-    !> connectivity Array corresponding to state vector
-    integer,intent(in) :: neigh(:)
-
-    !> auxField array
-    real(kind=rk), intent(in) :: auxField(:)
-
-    !> number of elements in state Array
-    integer, intent(in) :: nPdfSize
-
-    !> current level
-    integer, intent(in) :: iLevel
-
-    !> variable system
-    type(tem_varSys_type), intent(in) :: varSys
-
-    !> Point in time at which to evaluate the variable.
-    type(tem_time_type), intent(in)  :: time
-
-    !> Physics conversion factor for current level
-    type(mus_convertFac_type), intent(in) :: phyConvFac
-
-    !> position of derived quantities in varsys
-    type(mus_derVarPos_type), intent(in) :: derVarPos(:)
-    ! -------------------------------------------------------------------- !
-    type(mus_varSys_data_type), pointer :: fPtr
-    type(mus_scheme_type), pointer :: scheme
-    real(kind=rk) :: F(3), velocity(3), dens
-    integer :: nElems, iElem, iDir, QQ, nScalars, posInTotal, statePos, elemOff
-    integer :: vel_pos(3), dens_pos
-    real(kind=rk) :: omegaKine, omegaBulk, discForce
-    real(kind=rk) :: momForce(19), s_mrt(19)
-    real(kind=rk) :: mInvXOmega(19,19)
-    real(kind=rk) :: forceDynL(3)
-    ! ---------------------------------------------------------------------------
-    ! convert c pointer to solver type fortran pointer
-    call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
-      &               fPtr )
-    scheme => fPtr%solverData%scheme
-
-    ! Number of elements to apply source terms
-    nElems = fun%elemLvl(iLevel)%nElems
-
-    ! convert physical to lattice, force is defined in acceleration m/s^2
-    ! Convert Dynamic force in m/s^2 to lattice
-    forceDynL = fun%turbChanForce%forceDyn              &
-      &       / fPtr%solverData%physics%fac(iLevel)%accel
-
-    ! constant parameter
-    QQ = 19
-
-    nScalars = varSys%nScalars
-    ! Position of density and velocity variable in auxField
-    dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
-    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-    omegaBulk = scheme%field(1)%fieldProp%fluid%omegaBulkLvl(iLevel)
-    ! MRT omegas
-    ! overwrite omegaKine term in the element loop
-    ! KM: For incompressible model: omegaBulk is unused in mrtPtr
-    s_mrt = scheme%field(1)%fieldProp%fluid                           &
-      &           %mrtPtr(omegaKine=1.0_rk, omegaBulk=omegaBulk, QQ=QQ)
-
-    ! F = M^-1 (I-0.5 S) M F
-    ! (I-0.5 S) - omega for force term
-    s_mrt = 1.0_rk - 0.5_rk * s_mrt
-
-    do iElem = 1, nElems
-      posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
-
-      ! element offset
-      elemoff = (posInTotal-1)*varSys%nAuxScalars
-      ! obtain density from auxField
-      dens = auxField(elemOff + dens_pos)
-      ! obtain velocity from auxField
-      velocity(1) = auxField(elemOff + vel_pos(1))
-      velocity(2) = auxField(elemOff + vel_pos(2))
-      velocity(3) = auxField(elemOff + vel_pos(3))
-
-      ! get the correct omega value
-      omegaKine = scheme%field(1)%fieldProp%fluid%viscKine          &
-        &                              %omLvl(iLevel)%val(posInTotal)
-      ! MRT omegas
-      ! overwrite omegaKine term in the element loop
-      s_mrt(10) = 1.0_rk - 0.5_rk * omegaKine
-      s_mrt(12) = s_mrt(10)
-      s_mrt(14) = s_mrt(10)
-      s_mrt(15) = s_mrt(10)
-      s_mrt(16) = s_mrt(10)
-
-      ! M^-1 (1-0.5 S)
-      do iDir = 1, QQ
-        mInvXOmega(:,iDir) = scheme%layout%moment%toPDF%A(:,iDir) * s_mrt(iDir)
-      end do
-
-      ! force term:
-      ! F_i = w_i( (\vec{e}_i-\vec{u}*)/cs2 +
-      !       (\vec{e}_i \cdot \vec{u}*)\vec{e}_i/cs4) \cdot \vec{F}
-      ! Force moments: M * F
-      F = dens * forceDynL
-      momForce(1:QQ) = 0._rk
-      momForce(2) = 2._rk * ( F(1) * velocity(1) + F(2) * velocity(2) &
-        &                     + F(3) * velocity(3) )
-      momForce(4) = F(1)
-      momForce(6) = F(2)
-      momForce(8) = F(3)
-      momForce(10) = -2._rk * ( F(2) * velocity(2) - 2._rk * F(1) * velocity(1) &
-        &                       + F(3) * velocity(3) )
-      momForce(12) = 2._rk * ( F(2) * velocity(2) - F(3) * velocity(3) )
-      momForce(14) = F(1) * velocity(2) + F(2) * velocity(1)
-      momForce(15) = F(2) * velocity(3) + F(3) * velocity(2)
-      momForce(16) = F(1) * velocity(3) + F(3) * velocity(1)
-
-      do iDir = 1, QQ
-        ! discrete force
-        ! \bar{F} =  M^-1 (I-S/2) M F
-        discForce = sum(mInvXOmega(iDir,1:QQ) * momForce(1:QQ))
-        ! position in state array
-        statePos = ?SAVE?(iDir, 1, posInTotal, QQ, nScalars, nPdfSize, neigh)
-        ! update outstate
-        outState(statePos) = outState(statePos) + discForce
-      end do
-
-    end do !iElem
-
-  end subroutine applySrc_turbChanForce_MRT_d3q19
-! ****************************************************************************** !
-
-! ****************************************************************************** !
-  !> Update state with source variable "force" for d3q19 MRT collision model
-  !! for turb_channel_force. It uses velocityX average in bulk to adapt the
-  !! driving force for turbulent channel.
-  !!
-  !! This subroutine's interface must match the abstract interface definition
-  !! [[proc_apply_source]] in derived/[[mus_source_var_module]].f90 in order to
-  !! be callable via [[mus_source_op_type:applySrc]] function pointer.
-  subroutine applySrc_turbChanForce_MRT_d2q9( fun, inState, outState, neigh,  &
-    &                                          auxField, nPdfSize, iLevel,     &
-    &                                          varSys, time, phyConvFac,       &
-    &                                          derVarPos                       )
-    ! -------------------------------------------------------------------- !
-    !> Description of method to apply source terms
-    class(mus_source_op_type), intent(in) :: fun
-
-    !> input  pdf vector
-    real(kind=rk), intent(in) :: inState(:)
-
-    !> output pdf vector
-    real(kind=rk), intent(inout) :: outState(:)
-
-    !> connectivity Array corresponding to state vector
-    integer,intent(in) :: neigh(:)
-
-    !> auxField array
-    real(kind=rk), intent(in) :: auxField(:)
-
-    !> number of elements in state Array
-    integer, intent(in) :: nPdfSize
-
-    !> current level
-    integer, intent(in) :: iLevel
-
-    !> variable system
-    type(tem_varSys_type), intent(in) :: varSys
-
-    !> Point in time at which to evaluate the variable.
-    type(tem_time_type), intent(in)  :: time
-
-    !> Physics conversion factor for current level
-    type(mus_convertFac_type), intent(in) :: phyConvFac
-
-    !> position of derived quantities in varsys
-    type(mus_derVarPos_type), intent(in) :: derVarPos(:)
-    ! -------------------------------------------------------------------- !
-    type(mus_varSys_data_type), pointer :: fPtr
-    type(mus_scheme_type), pointer :: scheme
-    real(kind=rk) :: F(3), velocity(3), dens
-    integer :: nElems, iElem, iDir, QQ, nScalars, posInTotal, statePos, elemOff
-    integer :: vel_pos(3), dens_pos
-    real(kind=rk) :: omegaKine, omegaBulk, discForce
-    real(kind=rk) :: momForce(9), s_mrt(9)
-    real(kind=rk) :: mInvXOmega(9,9)
-    real(kind=rk) :: forceDynL(3)
-    ! ---------------------------------------------------------------------------
-    ! convert c pointer to solver type fortran pointer
-    call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
-      &               fPtr )
-    scheme => fPtr%solverData%scheme
-
-    ! Number of elements to apply source terms
-    nElems = fun%elemLvl(iLevel)%nElems
-
-    ! convert physical to lattice, force is defined in acceleration m/s^2
-    ! Convert Dynamic force in m/s^2 to lattice
-    forceDynL = fun%turbChanForce%forceDyn              &
-      &       / fPtr%solverData%physics%fac(iLevel)%accel
-
-    ! constant parameter
-    QQ = 9
-
-    nScalars = varSys%nScalars
-    ! Position of density and velocity variable in auxField
-    dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
-    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-    omegaBulk = scheme%field(1)%fieldProp%fluid%omegaBulkLvl(iLevel)
-    ! MRT omegas
-    ! overwrite omegaKine term in the element loop
-    ! KM: For incompressible model: omegaBulk is unused in mrtPtr
-    s_mrt = scheme%field(1)%fieldProp%fluid                           &
-      &           %mrtPtr(omegaKine=1.0_rk, omegaBulk=omegaBulk, QQ=QQ)
-
-    ! F = M^-1 (I-0.5 S) M F
-    ! (I-0.5 S) - omega for force term
-    s_mrt = 1.0_rk - 0.5_rk * s_mrt
-
-    do iElem = 1, nElems
-      posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
-
-      ! element offset
-      elemoff = (posInTotal-1)*varSys%nAuxScalars
-      ! obtain density from auxField
-      dens = auxField(elemOff + dens_pos)
-      ! obtain velocity from auxField
-      velocity(1) = auxField(elemOff + vel_pos(1))
-      velocity(2) = auxField(elemOff + vel_pos(2))
-
-      ! get the correct omega value
-      omegaKine = scheme%field(1)%fieldProp%fluid%viscKine          &
-        &                              %omLvl(iLevel)%val(posInTotal)
-      ! MRT omegas
-      ! overwrite omegaKine term in the element loop
-      s_mrt(8:9) = 1.0_rk - 0.5_rk * omegaKine
-
-      ! M^-1 (1-0.5 S)
-      do iDir = 1, QQ
-        mInvXOmega(:,iDir) = scheme%layout%moment%toPDF%A(:,iDir) * s_mrt(iDir)
-      end do
-
-      ! force term:
-      ! F_i = w_i( (\vec{e}_i-\vec{u}*)/cs2 +
-      !       (\vec{e}_i \cdot \vec{u}*)\vec{e}_i/cs4) \cdot \vec{F}
-      ! Force moments: M * F
-      F = dens * forceDynL
-      momForce(1) = 0._rk
-      momForce(2) = 6._rk * ( F(1) * velocity(1) + F(2) * velocity(2) )
-      momForce(3) = -momForce(2)
-      momForce(4) = F(1)
-      momForce(5) = -F(1)
-      momForce(6) = F(2)
-      momForce(7) = -F(2)
-      momForce(8) = 2._rk * ( F(1) * velocity(1) - F(2) * velocity(2) )
-      momForce(9) = F(1) * velocity(2) + F(2) * velocity(1)
-
-      do iDir = 1, QQ
-        ! discrete force
-        ! \bar{F} =  M^-1 (I-S/2) M F
-        discForce = sum(mInvXOmega(iDir,1:QQ) * momForce(1:QQ))
-        ! position in state array
-        statePos = ?SAVE?(iDir, 1, posInTotal, QQ, nScalars, nPdfSize, neigh)
-        ! update outstate
-        outState(statePos) = outState(statePos) + discForce
-      end do
-
-    end do !iElem
-
-  end subroutine applySrc_turbChanForce_MRT_d2q9
-! ****************************************************************************** !
-
 
 ! ****************************************************************************** !
   !> Calculate wss from shear stress (tau)

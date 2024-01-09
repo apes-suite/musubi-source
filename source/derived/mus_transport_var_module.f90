@@ -27,8 +27,6 @@
 !! variables to use in compute kernels and source update
 !!
 module mus_transport_var_module
-  use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
-
   ! include treelm modules
   use env_module,               only: rk, long_k, labelLen, solSpecLen, newUnit
   use tem_aux_module,           only: tem_abort

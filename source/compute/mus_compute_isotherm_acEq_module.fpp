@@ -31,8 +31,6 @@
 !! Routines and parameter definitions for the isothermal acoustic Eq D3Q19 model
 ?? include 'header/lbm_macros.inc'
 module mus_isotherm_acEq_module
-  use iso_c_binding, only: c_f_pointer
-
   ! include treelm modules
   use env_module,            only: rk
   use tem_param_module,      only: rho0, rho0Inv

@@ -1051,7 +1051,7 @@ subroutine bgk_Regularized_d2q9 ( fieldProp, inState, outState, auxField, &
     ! indeces
     integer :: iElem, iDir
     ! temporary distribution variables
-    real(kind=rk) :: f( QQ ), SOM(3), SOM_neq(3)
+    real(kind=rk) :: f( QQ ), SOM(3), SOM_neq(3), force(3)
     real(kind=rk) :: rho, u_x, u_y, a12xx, a12xy, a12yy
     real(kind=rk) :: omega, cmpl_o, feq(QQ), f1(QQ)
     integer :: denspos, velpos(3), elemOff, nScalars
@@ -1067,6 +1067,9 @@ subroutine bgk_Regularized_d2q9 ( fieldProp, inState, outState, auxField, &
     velpos(1:2) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:2)
 
     nScalars = varSys%nScalars
+
+    ! convert force from physical to lattice
+    force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
 
 !$omp do schedule(static)
     !NEC$ ivdep
@@ -1086,11 +1089,11 @@ subroutine bgk_Regularized_d2q9 ( fieldProp, inState, outState, auxField, &
       u_y = auxField(elemOff + velpos(2))
 
       ! non equilibrium second-order moments
-      ! SOM_neq = SOM - SOM_eq
+      ! SOM_neq = SOM - SOM_eq + 0.5Fcc
       SOM = secondMom_2D(layout%fStencil%cxcx, f, layout%fStencil%QQ)
-      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      SOM_neq(3) = SOM(3) - rho * u_x * u_y
+      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+      SOM_neq(3) = SOM(3) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
 
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
@@ -1149,7 +1152,7 @@ subroutine bgk_RecursiveRegularized_d2q9 ( fieldProp, inState, outState, auxFiel
     ! indeces
     integer :: iElem, iDir
     ! temporary distribution variables
-    real(kind=rk) :: f( QQ ), SOM(3), SOM_neq(3)
+    real(kind=rk) :: f( QQ ), SOM(3), SOM_neq(3), force(3)
     real(kind=rk) :: rho, u_x, u_y, a12xx, a12xy, a12yy
     real(kind=rk) :: omega, cmpl_o, feq(QQ), f1(QQ)
     integer :: denspos, velpos(3), elemOff, nScalars
@@ -1165,6 +1168,9 @@ subroutine bgk_RecursiveRegularized_d2q9 ( fieldProp, inState, outState, auxFiel
     velpos(1:2) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:2)
 
     nScalars = varSys%nScalars
+
+    ! convert force from physical to lattice
+    force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
 
 !$omp do schedule(static)
     !NEC$ ivdep
@@ -1184,11 +1190,11 @@ subroutine bgk_RecursiveRegularized_d2q9 ( fieldProp, inState, outState, auxFiel
       u_y = auxField(elemOff + velpos(2))
 
       ! non equilibrium second-order moments
-      ! SOM_neq = SOM - SOM_eq
+      ! SOM_neq = SOM - SOM_eq + 0.5Fcc
       SOM = secondMom_2D(layout%fStencil%cxcx, f, layout%fStencil%QQ)
-      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      SOM_neq(3) = SOM(3) - rho * u_x * u_y
+      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+      SOM_neq(3) = SOM(3) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
 
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
@@ -1384,7 +1390,7 @@ subroutine bgk_HybridRecursiveRegularized_d2q9( fieldProp, inState, outState,  &
     ! Self-describing variables, loop indices, etc.
     integer :: iElem, iDir
     ! Temporary distribution variables
-    real(kind=rk) :: pdfTmp(QQ)
+    real(kind=rk) :: pdfTmp(QQ), force(3)
     !symmetric strain rate tensor (SR) and it's trace (tr)
     real(kind=rk) :: SR(3)!TODO::, tr_SR
     ! Velocity gradient
@@ -1427,6 +1433,9 @@ subroutine bgk_HybridRecursiveRegularized_d2q9( fieldProp, inState, outState,  &
     ! Sigma value
     sigma = fieldProp(1)%fluid%HRR_sigma 
 
+    ! convert force from physical to lattice
+    force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
+
 !$omp do schedule(static)
     !NEC$ ivdep
     !DIR$ NOVECTOR
@@ -1468,13 +1477,11 @@ subroutine bgk_HybridRecursiveRegularized_d2q9( fieldProp, inState, outState,  &
       SR(3) = gradU(1, 2, 1) + gradU(2, 1, 1)   !S_XY
 
       ! Determine the non-equilibrium second-order moments via
-      ! SOM_neq = SOM - SOM_eq
-      ! First, get the second-order moments
+      ! SOM_neq = SOM - SOM_eq + 0.5Fcc
       SOM = secondMom_2D(layout%fStencil%cxcx, pdfTmp, layout%fStencil%QQ)
-      ! Second, subtract it's equilibrium: SOM_eq = rho*(cs²+u²)
-      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      SOM_neq(3) = SOM(3) - rho * u_x * u_y
+      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+      SOM_neq(3) = SOM(3) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
 
       ! Hermitian coefficients
       ! Relaxation parameter
@@ -1553,7 +1560,7 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
   ! Self-describing variables, loop indices, etc.
   integer :: iElem, iDir
   ! Temporary distribution variables
-  real(kind=rk) :: pdfTmp(QQ)
+  real(kind=rk) :: pdfTmp(QQ), force(3)
   !symmetric strain rate tensor (SR) and it's trace (tr)
   real(kind=rk) :: SR(3)!TODO::, tr_SR
   ! Velocity gradient
@@ -1596,6 +1603,9 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
   ! Sigma value, read from input
   ! standard value is 0.98
   sigma = fieldProp(1)%fluid%HRR_sigma 
+
+  ! convert force from physical to lattice
+  force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
 
   ! allocate internalSource element array
   do iSrc = 1, scheme%field(1)%internalSource%varDict%nVals
@@ -1652,7 +1662,6 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
         &    weight    = layout%weight(:),     &
         &    gradRHOU3 = gradRHOU3(:, 1),      &
         &    phi       = S_corr(:),            &
-        &    dens      = HRR_Corr%dens(iElem), &
         &    vel       = HRR_Corr%vel(iElem,:) )
   
       ! Calculate symmetric strain rate tensor (SR) and it's trace (tr)
@@ -1664,15 +1673,15 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
       SR(3) = gradU(1, 2, 1) + gradU(2, 1, 1)   !S_XY
   
       ! Determine the non-equilibrium second-order moments via
-      ! SOM_neq = SOM - SOM_eq
+      ! SOM_neq = SOM - SOM_eq + 0.5Fcc
       ! Apply correction
       pdfTmp(:) = pdfTmp(:) + 0.5_rk * S_corr(:)
       ! First, get the second-order moments
       SOM = secondMom_2D(layout%fStencil%cxcx, pdfTmp, layout%fStencil%QQ)
       ! Second, subtract it's equilibrium: SOM_eq = rho*(cs²+u²)
-      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      SOM_neq(3) = SOM(3) - rho * u_x * u_y
+      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+      SOM_neq(3) = SOM(3) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
   
       ! Hermitian coefficients
       ! Relaxation parameter
@@ -1740,7 +1749,7 @@ end subroutine bgk_HybridRecursiveRegularizedCorr_d2q9
   ! indeces
   integer :: iElem, iDir
   ! temporary distribution variables
-  real(kind=rk) :: f( QQ ), SOM(3), SOM_neq(3)
+  real(kind=rk) :: f( QQ ), SOM(3), SOM_neq(3), force(3)
   real(kind=rk) :: rho, u_x, u_y, a12xx, a12xy, a12yy
   real(kind=rk) :: omega, tau, tauN, CoefTauNTau
   real(kind=rk) :: feq(QQ), f1(QQ), f_temp
@@ -1760,6 +1769,9 @@ end subroutine bgk_HybridRecursiveRegularizedCorr_d2q9
     nScalars = varSys%nScalars
 
     tauN = fieldProp(1)%fluid%DRT_tauN
+    
+    ! convert force from physical to lattice
+    force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
 
 !$omp do schedule(static)
     !NEC$ ivdep
@@ -1778,11 +1790,11 @@ end subroutine bgk_HybridRecursiveRegularizedCorr_d2q9
       u_y = auxField(elemOff + velpos(2))
 
       ! non equilibrium second-order moments
-      ! SOM_neq = SOM - SOM_eq
+      ! SOM_neq = SOM - SOM_eq + 0.5Fcc
       SOM = secondMom_2D(layout%fStencil%cxcx, f, layout%fStencil%QQ)
-      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      SOM_neq(3) = SOM(3) - rho * u_x * u_y
+      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+      SOM_neq(3) = SOM(3) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
 
       !Relaxation coefficients
       ! remains constant on uniform mesh. Does loop over elements include voxels off different size?

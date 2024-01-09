@@ -52,8 +52,6 @@
 !! $$G = -\frac{-2 c_{\infty} N_A z e}{\epsilon_r \epsilon_0}
 !!       sinh(\frac{z e }{k_b T}\phi)  $$
 module mus_compute_Poisson_module
-  use iso_c_binding, only: c_f_pointer
-
   ! include treelm modules
   use env_module,               only: rk
   use tem_varSys_module,        only: tem_varSys_type

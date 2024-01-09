@@ -325,7 +325,7 @@ contains
 
     ! calculate auxField only for fluids and ghostfromcoarser (buffer ghost).
     ! ghostFromFiner are interpolated
-    nSolve = pdfData%nElems_fluid + pdfData%nElems_ghostFromCoarser
+    nSolve = pdfData%nElems_solve
     ! calculate velocity for fluid and ghost elements
     call calcAuxField( auxField   = auxField%val(:), &
       &                state      = state,           &
@@ -375,6 +375,19 @@ contains
         & derVarPos  = derVarPos                  )
     end do
 
+    ! apply global force term
+    if (trim(schemeHeader%kind) == 'fluid' .or.          &
+      & trim(schemeHeader%kind) == 'fluid_incompressible') then
+      call mus_addGlobalForceToAuxField_fluid(             &
+        & force_phy  = field(1)%fieldProp%fluid%force_phy, &
+        & auxField   = auxField%val(:),                    &
+        & iLevel     = iLevel,                             &
+        & varSys     = varSys,                             &
+        & derVarPos  = derVarPos(1),                       &
+        & phyConvFac = phyConvFac,                         &
+        & nSolve     = nSolve                              )
+    end if
+
     ! communicate velocity field. Requires for tubulence to compute ShearRate
     ! from velocity gradient.
     ! exchange velocity halo on current level
@@ -397,6 +410,59 @@ contains
 
   end subroutine mus_calcAuxFieldAndExchange
   ! ************************************************************************* !
+
+
+  ! ************************************************************************** !
+  !> This routine add body force to velocity in auxField for weakly-compressible
+  !! model.
+  subroutine mus_addGlobalForceToAuxField_fluid(force_phy, auxField, iLevel,   &
+    &                                           varSys, phyConvFac, derVarPos, &
+    &                                           nSolve )
+    ! ------------------------------------------------------------------------ !
+    !> global force to be applied to auxField
+    real(kind=rk), intent(in)         :: force_phy(3)
+    !> output auxField array
+    real(kind=rk), intent(inout)      :: auxField(:)
+    !> current level
+    integer, intent(in)                :: iLevel
+    !> variable system definition
+    type(tem_varSys_type), intent(in) :: varSys
+    !> Physics conversion factor for current level
+    type(mus_convertFac_type), intent(in) :: phyConvFac
+    !> position of derived quantities in varsys
+    type(mus_derVarPos_type), intent(in) :: derVarPos
+    !> nSolve for fluid elements and ghostFromCoarser
+    integer, intent(in)               :: nSolve
+    ! ------------------------------------------------------------------------ !
+    integer :: dens_pos, vel_pos(3)
+    real(kind=rk) :: forceTerm(3)
+    integer :: iElem, elemOff
+    real(kind=rk) :: forceField(3), inv_rho
+    ! ------------------------------------------------------------------------ !
+    ! position of density and velocity field in auxField
+    dens_pos = varSys%method%val(derVarPos%density)%auxField_varPos(1)
+    vel_pos = varSys%method%val(derVarPos%velocity)%auxField_varPos(1:3)
+
+    ! convert physical to lattice
+    forceField = force_phy / phyConvFac%body_force
+
+!$omp parallel do schedule(static), private( forceTerm, inv_rho, elemOff )
+    !NEC$ ivdep
+    do iElem = 1, nSolve
+      ! element offset
+      elemoff = (iElem-1)*varSys%nAuxScalars
+      ! inverse of density
+      inv_rho = 1.0_rk/auxField(elemOff+dens_pos)
+      ! forceterm to add to velocity: F/(2*rho)
+      forceTerm = forceField(1:3)*0.5_rk*inv_rho
+      ! add force to velocity
+      auxField(elemOff+vel_pos(1)) = auxField(elemOff+vel_pos(1)) + forceTerm(1)
+      auxField(elemOff+vel_pos(2)) = auxField(elemOff+vel_pos(2)) + forceTerm(2)
+      auxField(elemOff+vel_pos(3)) = auxField(elemOff+vel_pos(3)) + forceTerm(3)
+    end do
+
+  end subroutine mus_addGlobalForceToAuxField_fluid
+  ! ************************************************************************** !
 
   ! ************************************************************************* !
   !> This routine interpolate auxField variable for ghostFromFiner and exchange
