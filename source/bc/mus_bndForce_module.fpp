@@ -1,4 +1,5 @@
 ! Copyright (c) 2022 Kannan Masilamani <kannan.masilamani@dlr.de>
+! Copyright (c) 2023 jana.gericke@dlr.de <jana.gericke@dlr.de>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -21,7 +22,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
-!> This module contains routines to bnd_force type and routines to initialize 
+!> This module contains routines to bnd_force type and routines to initialize
 !! bndForce array and compute bndForce on all boundary elements
 !!
 !! author: Kannan Masilamani
@@ -91,18 +92,18 @@ contains
           bc(iBnd)%calcBndForce => mus_calcBndForce_wall
         case('wall_libb')
           bc(iBnd)%calcBndForce => mus_calcBndForce_wall_libb
-        case('turbulent_wall', 'turbulent_wall_noneq_expol', &
-          & 'turbulent_wall_eq')
+        case('turbulent_wall', 'turbulent_wall_noneq_expol',       &
+          &  'turbulent_wall_eq','turbulent_wall_curved_highorder' )
           bc(iBnd)%calcBndForce => mus_calcBndForce_turbWall
         case default
-          bc(iBnd)%calcBndForce => mus_calcBndForce_dummy 
+          bc(iBnd)%calcBndForce => mus_calcBndForce_dummy
         end select
       end do
     case default
       write(logUnit(1),'(A)') 'WARNING: BndForce calculation is not supported' &
         &                    //' for '//trim(schemeHeader%kind)
       do iBnd = 1, bc_prop%nBCtypes
-        bc(iBnd)%calcBndForce => mus_calcBndForce_dummy 
+        bc(iBnd)%calcBndForce => mus_calcBndForce_dummy
       end do
     end select
 

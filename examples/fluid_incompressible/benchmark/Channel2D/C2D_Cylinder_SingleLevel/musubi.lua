@@ -437,13 +437,12 @@ tracking = {
     variable = { 'coeffPressureAvg'},
     shape = {
       kind = 'boundary',
-      boundary = {'cylinder'},
-      cutoff_qvalue = 0.75 -- Cutoff boundary elements above this qvalue
+      boundary = {'cylinder'}
     },
-    time_control = { min = tmax_phy, max = tmax_phy, interval = 10*T_c },
+    time_control = { min = 10*T_c, max = tmax_phy, interval = 10*T_c },
     -- ascii format writes variable values and simulation time into a single
     -- file at every tracking interval. It is usally used for point tracking.
-    output = {format = 'asciiSpatial', use_get_point=true}
+    output = {format = 'asciiSpatial'}
   }
 }
 --! [Tracking]

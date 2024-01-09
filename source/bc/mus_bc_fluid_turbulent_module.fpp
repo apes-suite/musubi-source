@@ -1,5 +1,6 @@
 ! Copyright (c) 2021-2022 Kannan Masilamani <kannan.masilamani@dlr.de>
 ! Copyright (c) 2021 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2023 jana.gericke@dlr.de <jana.gericke@dlr.de>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -74,6 +75,7 @@ module mus_bc_fluid_turbulent_module
   public :: turbulent_wall_eq_curved
   public :: turbulent_wall_noneq_expol
   public :: turbulent_wall_noneq_expol_curved
+  public :: turbulent_wall_curved_highorder
   !! Constant parameters for van-driest damping function
   real(kind=rk), parameter :: vd_Aplus = 26.0_rk
 
@@ -83,10 +85,10 @@ contains
   !> BC routine for turbulent wall.
   !! It uses wall model to compute velocity on the boundary node.
   !! The implementation is based on the following paper:
-  !! Haussmann, Marc; Ries, Florian; Jeppener-Haltenhoff, Jonathan B.; Li, 
-  !! Yongxiang; Schmidt, Marius; Welch, Cooper et al. (2020): Evaluation of a 
-  !! Near-Wall-Modeled Large Eddy Lattice Boltzmann Method for the Analysis of 
-  !! Complex Flows Relevant to IC Engines. In Computation 8 (2), p. 43. 
+  !! Haussmann, Marc; Ries, Florian; Jeppener-Haltenhoff, Jonathan B.; Li,
+  !! Yongxiang; Schmidt, Marius; Welch, Cooper et al. (2020): Evaluation of a
+  !! Near-Wall-Modeled Large Eddy Lattice Boltzmann Method for the Analysis of
+  !! Complex Flows Relevant to IC Engines. In Computation 8 (2), p. 43.
   !! DOI: 10.3390/computation8020043.
   !!
   !! Usage
@@ -96,7 +98,7 @@ contains
   !!  {
   !!    label = 'wall',
   !!    kind = 'turbulent_wall',
-  !!    wall_model = 'musker', 
+  !!    wall_model = 'musker',
   !!    nonlinear_solver = 'fixed_point'
   !!  }
   !!}
@@ -235,10 +237,10 @@ contains
   !> BC routine for turbulent wall.
   !! It uses wall model to compute velocity on the boundary node.
   !! The implementation is based on the following paper:
-  !! Haussmann, Marc; Ries, Florian; Jeppener-Haltenhoff, Jonathan B.; Li, 
-  !! Yongxiang; Schmidt, Marius; Welch, Cooper et al. (2020): Evaluation of a 
-  !! Near-Wall-Modeled Large Eddy Lattice Boltzmann Method for the Analysis of 
-  !! Complex Flows Relevant to IC Engines. In Computation 8 (2), p. 43. 
+  !! Haussmann, Marc; Ries, Florian; Jeppener-Haltenhoff, Jonathan B.; Li,
+  !! Yongxiang; Schmidt, Marius; Welch, Cooper et al. (2020): Evaluation of a
+  !! Near-Wall-Modeled Large Eddy Lattice Boltzmann Method for the Analysis of
+  !! Complex Flows Relevant to IC Engines. In Computation 8 (2), p. 43.
   !! DOI: 10.3390/computation8020043.
   !!
   !! Usage
@@ -249,7 +251,7 @@ contains
   !!    label = 'wall',
   !!    kind = 'turbulent_wall',
   !!    curved = true,
-  !!    wall_model = 'musker', 
+  !!    wall_model = 'musker',
   !!    nonlinear_solver = 'fixed_point'
   !!  }
   !!}
@@ -380,7 +382,7 @@ contains
             &                                         iDir = iDir,                               &
             &                                         cxDirRK = layout%fStencil%cxDirRK(:,iDir), &
             &                                         weight = layout%weight(iDir)               )
-  
+
           fEq = layout%quantities%pdfEq_iDir_ptr( rho = dens,                                &
             &                                     vel = vel,                                 &
             &                                     iDir = iDir,                               &
@@ -425,13 +427,13 @@ contains
   !!
   !! It uses wall model to compute velocity on the boundary node.
   !! All directions of PDF in the boundary elements are updated with
-  !! Equilibrium plus non-equilibrium. 
+  !! Equilibrium plus non-equilibrium.
   !! Density is computed using Zho-He approach for straight walls.
-  !! "On pressure and velocity boundary conditions for the lattice Boltzmann 
-  !!  BGK model", Physics of Fluids 9, 1591-1598 (1997) 
+  !! "On pressure and velocity boundary conditions for the lattice Boltzmann
+  !!  BGK model", Physics of Fluids 9, 1591-1598 (1997)
   !! https://doi.org/10.1063/1.869307
   !!
-  !! non-equilibrium are computed from PDF on neighbor and extrapolated to 
+  !! non-equilibrium are computed from PDF on neighbor and extrapolated to
   !! boundary. This routine is used for straight wall boundaries.
   !!
   !! Usage
@@ -441,7 +443,7 @@ contains
   !!  {
   !!    label = 'wall',
   !!    kind = 'turbulent_wall_noneq_expol',
-  !!    wall_model = 'musker', 
+  !!    wall_model = 'musker',
   !!    nonlinear_solver = 'fixed_point'
   !!  }
   !!}
@@ -596,7 +598,7 @@ contains
   !!
   !! It uses wall model to compute velocity on the boundary node.
   !! All directions of PDF in the boundary elements are updated with
-  !! Equilibrium plus non-equilibrium. Density and non-equilibrium are commputed 
+  !! Equilibrium plus non-equilibrium. Density and non-equilibrium are commputed
   !! from PDF on neighbor and extrapolated to boundary.
   !! This routine is used for curved boundaries.
   !!
@@ -608,7 +610,7 @@ contains
   !!    label = 'wall',
   !!    kind = 'turbulent_wall_noneq_expol',
   !!    curved = true,
-  !!    wall_model = 'musker', 
+  !!    wall_model = 'musker',
   !!    nonlinear_solver = 'fixed_point'
   !!  }
   !!}
@@ -737,6 +739,86 @@ contains
 
 
   ! ************************************************************************** !
+  !> BC routine for improved (higher order), curved turbulent wall.
+  !! The implementation is based on the following paper:
+  !! Degrigny, Johan, et al. "Improved wall model treatment for aerodynamic
+  !! flows in LBM." Computers & Fluids 227 (2021): 105041.
+  !!
+  !! It uses a wall model to compute velocity on the boundary node.
+  !! 2023-08-10_JG: ToDo - Add more information at ...
+  !! All directions of PDF in the boundary elements are updated with ...
+  !!
+  !! Non-equilibrium is computed from ...
+  !! This routine is used for curved wall boundaries.
+  !!
+  !! Usage
+  !! -----
+  !!```lua
+  !!boundary_condition = {
+  !!  {
+  !!    label = 'wall',
+  !!    kind = 'turbulent_wall_curved_highorder',
+  !!    curved = true,
+  !!    wall_model = 'musker',
+  !!    nonlinear_solver = 'fixed_point'
+  !!  }
+  !!}
+  !!
+  !! This subroutine's interface must match the abstract interface definition
+  !! [[boundaryRoutine]] in bc/[[mus_bc_header_module]].f90 in order to be
+  !! callable via [[boundary_type:fnct]] function pointer.
+  subroutine turbulent_wall_curved_highorder( me, state, bcBuffer, globBC,   &
+    &          levelDesc, tree, nSize, iLevel, sim_time, neigh, layout,  &
+    &          fieldProp, varPos, nScalars, varSys, derVarPos, physics,  &
+    &          iField, mixture )
+    ! ------------------------------------------------------------------------ !
+    !> Global boundary type
+    class(boundary_type) :: me
+    !> Current state vector of iLevel
+    real(kind=rk), intent(inout) :: state(:)
+    !> Size of state array ( in terms of elements )
+    integer, intent(in) :: nSize
+    !> State values of boundary elements of all fields of iLevel
+    real(kind=rk), intent(in) :: bcBuffer(:)
+    !> iLevel descriptor
+    type(tem_levelDesc_type), intent(in) :: levelDesc
+    !> Treelm Mesh
+    type(treelmesh_type), intent(in) :: tree
+    !> Fluid parameters and properties
+    type(mus_field_prop_type), intent(in) :: fieldProp
+    !> Stencil layout information
+    type(mus_scheme_layout_type), intent(in) :: layout
+    !> The level on which this boundary was invoked
+    integer, intent(in) :: iLevel
+    !> Connectivity array corresponding to state vector
+    integer, intent(in) :: neigh(:)
+    !> Global time information
+    type(tem_time_type), intent(in)  :: sim_time
+    !> Pointer to field variable in the state vector
+    integer, intent(in) :: varPos(:)
+    !> Number of scalars in the scheme var system
+    integer, intent(in) :: nScalars
+    !> Scheme variable system
+    type(tem_varSys_type), intent(in) :: varSys
+    !> Position of derived quantities in varsys
+    type(mus_derVarPos_type), intent(in) :: derVarPos
+    !> Scheme global boundary type
+    type(glob_boundary_type), intent(in) :: globBC
+    !> Contains physics conversion factors
+    type(mus_physics_type), intent(in) :: physics
+    !> Current field
+    integer, intent(in) :: iField
+    !> Mixture info
+    type(mus_mixture_type), intent(in) :: mixture
+    ! ------------------------------------------------------------------------ !
+
+  ! 2023-08-10_JG: ToDo - state as output
+
+  end subroutine turbulent_wall_curved_highorder
+  ! ************************************************************************** !
+
+
+  ! ************************************************************************** !
   !> BC routine for turbulent wall based on equilibrium BC.
   !! The implementation is based on the following paper:
   !! Haussmann, M. et al. (2019) ‘Large-eddy simulation coupled with wall models
@@ -748,8 +830,8 @@ contains
   !! All directions of PDF in the boundary elements are updated with
   !! Equilibrium.
   !! Density is computed using Zho-He approach for straight walls.
-  !! "On pressure and velocity boundary conditions for the lattice Boltzmann 
-  !!  BGK model", Physics of Fluids 9, 1591-1598 (1997) 
+  !! "On pressure and velocity boundary conditions for the lattice Boltzmann
+  !!  BGK model", Physics of Fluids 9, 1591-1598 (1997)
   !! https://doi.org/10.1063/1.869307
   !!
   !! Usage
@@ -759,7 +841,7 @@ contains
   !!  {
   !!    label = 'wall',
   !!    kind = 'turbulent_wall_eq',
-  !!    wall_model = 'musker', 
+  !!    wall_model = 'musker',
   !!    nonlinear_solver = 'fixed_point'
   !!  }
   !!}
@@ -913,7 +995,7 @@ contains
   !!    label = 'wall',
   !!    kind = 'turbulent_wall_eq',
   !!    curved = true,
-  !!    wall_model = 'musker', 
+  !!    wall_model = 'musker',
   !!    nonlinear_solver = 'fixed_point'
   !!  }
   !!}
@@ -1099,7 +1181,7 @@ contains
           &          //"Stream-wise velocity mag is NaN.")
       end if
       ! Unit vector
-      if (vec_mag .fne. 0.0_rk) then 
+      if (vec_mag .fne. 0.0_rk) then
         unitSW(:, iElem) = vec / vec_mag
       end if
       ! stream-wise velocity component
@@ -1127,8 +1209,8 @@ contains
       & nElems    = nElems,                                       &
       & wall_function = turbwallFunc%wall_function                )
 
-    ! Calculate Turbulent viscosity according to mixing length formulation 
-    ! with von karman constant. 
+    ! Calculate Turbulent viscosity according to mixing length formulation
+    ! with von karman constant.
     ! only if LES turbulence model is smagorinsky because turb viscosity
     ! from Vreman and WALE reduces towards the wall
     ! nu_t = (k*y)**2 * |dudy|

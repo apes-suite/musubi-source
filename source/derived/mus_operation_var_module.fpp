@@ -36,7 +36,6 @@ module mus_operation_var_module
 
   use tem_logging_module,            only: logUnit
   use tem_debug_module,              only: dbgUnit
-  use tem_aux_module,                only: tem_abort
   use tem_float_module,              only: operator(.fne.)
   use tem_varSys_module,             only: tem_varSys_type,                    &
     &                                      tem_varSys_op_type,                 &
@@ -59,8 +58,8 @@ module mus_operation_var_module
   use mus_varSys_module,       only: mus_varSys_data_type,            &
     &                                mus_varSys_solverData_type,      &
     &                                mus_get_new_solver_ptr,          &
-    &                                mus_derVar_intpOnPoint
-  use mus_connectivity_module, only: mus_intp_getSrcElemPosInTree
+    &                                mus_deriveVar_forPoint,          &
+    &                                mus_createSrcElemInTreeForGetPoint
 
   implicit none
 
@@ -148,22 +147,77 @@ contains
     type(mus_varSys_data_type), pointer :: fPtr
     type(tem_varSys_op_Data_type), pointer :: fptr_temOpData
     type(mus_scheme_type), pointer :: scheme
+    integer, allocatable :: srcElemPos(:)
+    real(kind=rk), allocatable :: srcRes(:), pntVal(:)
+    real(kind=rk) :: weight
+    integer :: iPnt, posInPntData, first, last
+    integer :: iSrc, nTreeIds, nSrcElems, iSrcElem
     ! -------------------------------------------------------------------- !
     call C_F_POINTER( fun%method_Data, fPtr_temOpData )
     call C_F_POINTER(fPtr_temOpData%solver_bundle, fPtr)
     scheme => fPtr%solverData%scheme
-    call mus_derVar_intpOnPoint( varPos       = fun%myPos,               &
-      &                          varSys       = varSys,                  &
-      &                          tree         = tree,                    &
-      &                          time         = time,                    &
-      &                          point        = point,                   &
-      &                          nPnts        = nPnts,                   &
-      &                          stencil      = scheme%layout%fStencil,  &
-      &                          levelPointer = fPtr%solverData%geometry &
-      &                                             %levelPointer,       &
-      &                          levelDesc    = scheme%levelDesc,        &
-      &                          res          = res                      )
+    allocate(srcElemPos(scheme%layout%fStencil%QQ))
+    allocate(srcRes(scheme%layout%fStencil%QQ*fun%nComponents))
+    allocate(pntVal(fun%nComponents))
 
+    ! Create source element list for all points and store them in
+    ! pointData type. To avoid adding a point twice, a unique treeID
+    ! is created at finesh possible level in treelm i.e. level 20.
+    ! The position of this treeID in the unique dynamic array is used
+    ! to access the source element position in pointData type.
+    call mus_createSrcElemInTreeForGetPoint(                      &
+      & pntDataMapToTree = fPtr%pointData%mapToTree,              &
+      & point            = point,                                 &
+      & nPnts            = nPnts,                                 &
+      & stencil          = scheme%layout%fStencil,                &
+      & tree             = tree,                                  &
+      & levelPointer     = fPtr%solverData%geometry%levelPointer, &
+      & levelDesc        = scheme%levelDesc(:)                    )
+
+    res = 0.0_rk
+    nTreeIds = fPtr%pointData%mapToTree%treeID%nVals
+    do iPnt = 1, nPnts
+      srcRes = 0.0_rk
+
+      posInPntData = tem_PosofId(                                             &
+        &              tem_IdOfCoord( tem_CoordOfReal(tree, point(iPnt,:)) ), &
+        &              fPtr%pointData%mapToTree%treeID%val(1:nTreeIds) )
+
+      first = fPtr%pointData%mapToTree%srcElem%first%val(posInPntData)
+      last = fPtr%pointData%mapToTree%srcElem%last%val(posInPntData)
+
+      nSrcElems = 0
+      do iSrc = first, last
+        nSrcElems = nSrcElems + 1
+        srcElemPos(nSrcElems) = fPtr%pointData%mapToTree%srcElem         &
+          &                                             %elemPos%val(iSrc)
+      end do
+
+      ! Skip this element if no source element found
+      if (nSrcElems == 0) cycle
+
+      ! get source element values
+      call varSys%method%val(fun%myPos)%get_element( &
+         & varSys  = varSys,                         &
+         & elemPos = srcElemPos(1:nSrcElems),        &
+         & time    = time,                           &
+         & tree    = tree,                           &
+         & nElems  = nSrcElems,                      &
+         & nDofs   = 1,                              &
+         & res     = srcRes                          )
+
+      ! Linear interpolation res = sum(weight_i*phi_i)
+      pntVal = 0.0_rk
+      iSrcElem = 0
+      do iSrc = first, last
+        iSrcElem = iSrcElem + 1
+        weight = fPtr%pointData%mapToTree%srcElem%weight%val(iSrc)
+        pntVal(:) = pntVal(:) + weight                                        &
+          & * srcRes((iSrcElem-1)*fun%nComponents+1 : iSrcElem*fun%nComponents)
+      end do
+      res( (iPnt-1)*fun%nComponents+1 : iPnt*fun%nComponents ) = pntVal
+
+    end do !iPnt
   end subroutine mus_reductionTransient_forPoint
   ! ************************************************************************** !
 
