@@ -70,11 +70,13 @@ intensity). A lot of physical units are derived from this system. It is
 normally used to present the solutions to scientific researches.
 But for the program, it is necessary to use the numerical LB methods to gain
 solutions. Therefore both unit systems are defined for *Musubi* and it is possible
-to convert each other in both directions. In general, these tables look like
-this:
+to convert each other in both directions.
+
+In general, these tables look like this:
 
 
 ```lua
+-- EXAMPLE ! (physical table)--
 nu_phy   = 1e-3 -- Kinematic viscosity
 rho0_phy =  1.0 -- Density
 vel_phy  =  1.0 -- Velocity
@@ -82,6 +84,7 @@ cs_phy   =  340 -- m/s speed of sound
 ```
 
 ```lua
+-- EXAMPLE ! (lattice units) --
 Ma_lat  = 0.1                   -- Lattice Mach number
 cs_lat  = 1/math.sqrt(3)        -- Lattice speed of sound
 vel_lat = Ma_lat * cs_lat       -- Lattice velocity
@@ -93,14 +96,23 @@ examples @endnote
 
 `nu_phy` is the kinematic viscosity of the fluid, `rho0_phy` and `vel_phy` are
 the macroscopic density and velocity. The kinematic viscosity needs to be given
-inside the table called `fluid`, most times the bulk_viscosity is also needed.
+inside the table called `fluid`, most times the `bulk_viscosity` is also needed.
 (Lua has a single neat concept [tables](http://www.lua.org/pil/2.5.html) for
 representing multiple data in a structure. It allows you to treat variables a
 bit like trees: they can contain more variables, other tables, or even
-references to functions.) Tables are denoted by curly braces in Lua. Thus the
-configuration file for these options looks so far as follows:
+references to functions.) Tables are denoted by curly braces in Lua.
+
+In this example we set `nu_phy`, the density `rho0` and the square of the lattice
+speed of sound `cs2`.
+From these values we also compute the reference pressure `p0`.
+
+Thus the configuration file for these options looks so far as follows:
 
 ```lua
+nu_phy = 0.03 -- m^2 / s
+rho0 = 1.0
+cs2 = 1/3.
+p0 = rho0*cs2
 fluid = {
   kinematic_viscosity =     nu_phy,
   bulk_viscosity      = 2/3*nu_phy
@@ -108,8 +120,9 @@ fluid = {
 ```
 
 @note `nu_phy` is an global lua variable name and might change within different
-config files (the default should be nu_phy). The entries kinematic_viscosity
-and bulk_viscosity are part of the lua table and must not be changed! @endnote
+config files (the default should be `nu_phy`).
+The entries `kinematic_viscosity` and `bulk_viscosity` are part of the Lua table
+and must have these names! @endnote
 
 ## Time Settings ##
 
@@ -121,7 +134,7 @@ debug output: after a predefinded number of iterations, the total density of
 the system is calculated and written to the console, this defaults to 1.
 The number of iterations can be set by using `{iter=#}` to set the number of
 iterations. Alternative one can use `{sim=#}` to trigger the check after certain
-timesteps in your simulation or use `{clock=#}` to trigger the check after a 
+timesteps in your simulation or use `{clock=#}` to trigger the check after a
 certain runtime. Since we have conservation of mass, the total density should
 not change much, so if it does, it is a hint for the user that the results of
 the simulation are probably wrong. Setting the interval to something around
