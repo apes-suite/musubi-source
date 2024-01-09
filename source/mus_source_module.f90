@@ -56,6 +56,7 @@ module mus_source_module
   use tem_stencil_module,       only: tem_stencilHeader_type
 
   ! include musubi modules
+  use mus_scheme_header_module,  only: mus_scheme_header_type
   use mus_derVarPos_module,      only: mus_derVarPos_type
   use mus_pdf_module,            only: pdf_data_type
   use mus_field_module,          only: mus_field_type
@@ -415,9 +416,7 @@ contains
     !> number of dimensions
     integer, intent(in) :: nDim
     ! --------------------------------------------------------------------------
-    allocate(HRR_Corr%dens(nElems))
     allocate(HRR_Corr%vel(nElems,nDim))
-    HRR_Corr%dens(:) = 0.0_rk
     HRR_Corr%vel(:,:) = 0.0_rk
 
   end subroutine mus_init_hrrCorrection
@@ -508,6 +507,19 @@ contains
         & phyConvFac = phyConvFac          )
     end do
 
+!KM!    ! apply global force term
+!KM!    call field(1)%fieldProp%fluid%applyGlobalForce(     &
+!KM!      & force_phy = field(1)%fieldProp%fluid%force_phy, &
+!KM!      & inState    = state(:, now),                     &
+!KM!      & outState   = state(:, next),                    &
+!KM!      & neigh      = pdf%neigh(:),                      &
+!KM!      & auxField   = auxField,                          &
+!KM!      & nPdfSize   = pdf%nSize,                         &
+!KM!      & iLevel     = iLevel,                            &
+!KM!      & varSys     = varSys,                            &
+!KM!      & derVarPos  = derVarPos(1),                      &
+!KM!      & phyConvFac = phyConvFac                         )
+
     call tem_stopTimer( timerHandle = mus_timerHandles%source )
   end subroutine mus_apply_sourceTerms
 ! **************************************************************************** !
@@ -516,8 +528,8 @@ contains
   !> Updated all source variables i.e field specific source and global source on
   !! all fields.
   !!
-  subroutine mus_update_sourceVars( nFields, field, globSrc, varSys, iLevel, &
-    &                               auxField, phyConvFac, derVarPos )
+  subroutine mus_update_sourceVars( nFields, field, globSrc, varSys, iLevel,      &
+    &                               auxField, phyConvFac, derVarPos, schemeHeader )
     ! --------------------------------------------------------------------------
     !> Number of fields
     integer, intent(in) :: nFields
@@ -542,11 +554,16 @@ contains
 
     !> position of derived quantities in varsys
     type(mus_derVarPos_type), intent(in) :: derVarPos(:)
+
+    !> scheme definition
+    type(mus_scheme_header_type), intent(in) :: schemeHeader
+
     ! --------------------------------------------------------------------------
     ! counter variables
     integer :: iSrc, iField
     ! --------------------------------------------------------------------------
     call tem_startTimer( timerHandle = mus_timerHandles%source )
+
 
     ! update field source variables
     do iField = 1, nFields
@@ -569,6 +586,23 @@ contains
         & phyConvFac = phyConvFac,               &
         & derVarPos  = derVarPos                 )
     end do
+
+    select case ( trim(schemeHeader%kind) )
+    case ('fluid', 'fluid_incompressible')
+      associate ( force_phy => field(1)%fieldProp%fluid%force_phy, &
+        &         source => field(1)%source                        )
+        force_phy = field(1)%fieldProp%fluid%force_config_phy
+
+        do iSrc = 1, source%varDict%nVals
+          select case ( trim(source%varDict%val(iSrc)%key) )
+          case ('turb_channel_force_accel')
+            force_phy = force_phy + source%method(iSrc)%turbChanForce%forceDyn
+          end select
+        enddo
+
+      end associate
+
+    end select
 
     call tem_stopTimer( timerHandle = mus_timerHandles%source )
   end subroutine mus_update_sourceVars

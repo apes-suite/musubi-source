@@ -202,14 +202,15 @@ contains
     ! and auxField such that both auxField and apply_source uses same source in 
     ! one multilevel cycle.
     write(logUnit(10), "(A)") 'Update source variables which depend on auxField'
-    call mus_update_sourceVars( nFields    = scheme%nFields,              &
-      &                         field      = scheme%field,                &
-      &                         globSrc    = scheme%globSrc,              &
-      &                         varSys     = scheme%varSys,               &
-      &                         iLevel     = iLevel,                      &
-      &                         auxField   = scheme%auxField(iLevel)%val, &
-      &                         phyConvFac = params%physics%fac(iLevel),  &
-      &                         derVarPos  = scheme%derVarPos             )
+    call mus_update_sourceVars( nFields      = scheme%nFields,              &
+      &                         field        = scheme%field,                &
+      &                         globSrc      = scheme%globSrc,              &
+      &                         varSys       = scheme%varSys,               &
+      &                         iLevel       = iLevel,                      &
+      &                         auxField     = scheme%auxField(iLevel)%val, &
+      &                         phyConvFac   = params%physics%fac(iLevel),  &
+      &                         derVarPos    = scheme%derVarPos,            &
+      &                         schemeHeader = scheme%header                )
 
     ! when not on finest level, go to next level
     if( iLevel < geometry%tree%global%maxLevel ) then
@@ -433,6 +434,19 @@ contains
       call do_intpCoarserAndExchange( scheme, params, iLevel )
     end if ! if not on finest level
    ! --------------------------------------------------------------------------
+
+    ! apply global force term
+    call scheme%field(1)%fieldProp%fluid%applyGlobalForce(     &
+      & force_phy = scheme%field(1)%fieldProp%fluid%force_phy, &
+      & inState    = scheme%state(iLevel)%val(:, now),         &
+      & outState   = scheme%state(iLevel)%val(:, next),        &
+      & neigh      = scheme%pdf(iLevel)%neigh(:),              &
+      & auxField   = scheme%auxField(iLevel)%val(:),           &
+      & nPdfSize   = scheme%pdf(iLevel)%nSize,                 &
+      & iLevel     = iLevel,                                   &
+      & varSys     = scheme%varSys,                            &
+      & derVarPos  = scheme%derVarPos(1),                      &
+      & phyConvFac = params%physics%fac(iLevel)                )
 
     ! --------------------------------------------------------------------------
     if( iLevel == geometry%tree%global%minLevel ) then
@@ -668,14 +682,15 @@ contains
 
     ! Update auxField dependent source fields before adding source term to state
     ! and auxField such that both auxField and apply_source uses same source.
-    call mus_update_sourceVars( nFields    = scheme%nFields,              &
-      &                         field      = scheme%field,                &
-      &                         globSrc    = scheme%globSrc,              &
-      &                         varSys     = scheme%varSys,               &
-      &                         iLevel     = iLevel,                      &
-      &                         auxField   = scheme%auxField(iLevel)%val, &
-      &                         phyConvFac = params%physics%fac(iLevel),  &
-      &                         derVarPos  = scheme%derVarPos             )
+    call mus_update_sourceVars( nFields      = scheme%nFields,              &
+      &                         field        = scheme%field,                &
+      &                         globSrc      = scheme%globSrc,              &
+      &                         varSys       = scheme%varSys,               &
+      &                         iLevel       = iLevel,                      &
+      &                         auxField     = scheme%auxField(iLevel)%val, &
+      &                         phyConvFac   = params%physics%fac(iLevel),  &
+      &                         derVarPos    = scheme%derVarPos,            &
+      &                         schemeHeader = scheme%header                )
 
     ! -------------------------------------------------------------------------
     ! Increasing with the smallest time step (maxLevel)
@@ -807,6 +822,19 @@ contains
     end if
     call tem_stopTimer( timerHandle =  mus_timerHandles%comm(iLevel) )
 
+    ! apply global force term
+    call scheme%field(1)%fieldProp%fluid%applyGlobalForce(     &
+      & force_phy = scheme%field(1)%fieldProp%fluid%force_phy, &
+      & inState    = scheme%state(iLevel)%val(:, now),         &
+      & outState   = scheme%state(iLevel)%val(:, next),        &
+      & neigh      = scheme%pdf(iLevel)%neigh(:),              &
+      & auxField   = scheme%auxField(iLevel)%val(:),           &
+      & nPdfSize   = scheme%pdf(iLevel)%nSize,                 &
+      & iLevel     = iLevel,                                   &
+      & varSys     = scheme%varSys,                            &
+      & derVarPos  = scheme%derVarPos(1),                      &
+      & phyConvFac = params%physics%fac(iLevel)                )
+
     ! ... check if at least one of the IBMs is active
     if ( geometry%globIBM%nIBMs > 0 ) then
       call mus_buildBuffIBM(                              &
@@ -864,14 +892,15 @@ contains
 
     ! Update auxField dependent source fields before adding source term to state
     ! and auxField such that both auxField and apply_source uses same source.
-    call mus_update_sourceVars( nFields    = scheme%nFields,              &
-      &                         field      = scheme%field,                &
-      &                         globSrc    = scheme%globSrc,              &
-      &                         varSys     = scheme%varSys,               &
-      &                         iLevel     = iLevel,                      &
-      &                         auxField   = scheme%auxField(iLevel)%val, &
-      &                         phyConvFac = params%physics%fac(iLevel),  &
-      &                         derVarPos  = scheme%derVarPos             )
+    call mus_update_sourceVars( nFields      = scheme%nFields,              &
+      &                         field        = scheme%field,                &
+      &                         globSrc      = scheme%globSrc,              &
+      &                         varSys       = scheme%varSys,               &
+      &                         iLevel       = iLevel,                      &
+      &                         auxField     = scheme%auxField(iLevel)%val, &
+      &                         phyConvFac   = params%physics%fac(iLevel),  &
+      &                         derVarPos    = scheme%derVarPos,            &
+      &                         schemeHeader = scheme%header                )
 
     ! Increasing with the smallest time step (maxLevel)
     call tem_time_advance( me = params%general%simControl%now,   &
@@ -997,6 +1026,19 @@ contains
     end if
     call tem_stopTimer( timerHandle = mus_timerHandles%comm(iLevel) )
    ! -------------------------------------------------------------------------
+
+    ! apply global force term
+    call scheme%field(1)%fieldProp%fluid%applyGlobalForce(     &
+      & force_phy = scheme%field(1)%fieldProp%fluid%force_phy, &
+      & inState    = scheme%state(iLevel)%val(:, now),         &
+      & outState   = scheme%state(iLevel)%val(:, next),        &
+      & neigh      = scheme%pdf(iLevel)%neigh(:),              &
+      & auxField   = scheme%auxField(iLevel)%val(:),           &
+      & nPdfSize   = scheme%pdf(iLevel)%nSize,                 &
+      & iLevel     = iLevel,                                   &
+      & varSys     = scheme%varSys,                            &
+      & derVarPos  = scheme%derVarPos(1),                      &
+      & phyConvFac = params%physics%fac(iLevel)                )
 
   end subroutine do_benchmark
   ! ------------------------------------------------------------------------ !

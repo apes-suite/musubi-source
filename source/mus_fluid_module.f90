@@ -55,6 +55,7 @@ module mus_fluid_module
   use tem_spacetime_fun_module, only: tem_load_spacetime
   use tem_construction_module,  only: tem_levelDesc_type
   use tem_grow_array_module,    only: init
+  use tem_varSys_module,    only: tem_varSys_type
 
   ! include aotus modules
   use aotus_module,     only: flu_State,          &
@@ -83,6 +84,8 @@ module mus_fluid_module
   use mus_mrtRelaxation_module,   only: mus_proc_mrt,                      &
     &                                   mus_assign_mrt_ptr
   use mus_cumulantInit_module,    only: cumulant_omega_check
+  use mus_derVarPos_module,       only: mus_derVarPos_type
+  use mus_physics_module,         only: mus_convertFac_type
 
   implicit none
 
@@ -93,6 +96,7 @@ module mus_fluid_module
   public :: mus_fluid_save2lua
   public :: mus_init_fluid
   public :: mus_fluid_cleanup
+  public :: proc_applyGlobalForce
 
   !> collection of properties of the fluid
   type mus_fluid_type
@@ -124,7 +128,11 @@ module mus_fluid_module
 
     real(kind=rk) :: viscBulk_phy  !< physical bulk viscosity
 
-    real(kind=rk) :: force(3)        !< forcing term
+    real(kind=rk) :: force_phy(3)         !< forcing term
+    real(kind=rk) :: force_config_phy(3)  !< forcing term from input
+
+    !> Function to update state with global force
+    procedure(proc_applyGlobalForce), nopass, pointer :: applyGlobalForce => null()
 
     ! also works around ICE in Intel 19.1
     ! HRR
@@ -139,6 +147,51 @@ module mus_fluid_module
 
   end type mus_fluid_type
 
+  abstract interface
+    !> Abstract interface to update state with source terms
+    subroutine proc_applyGlobalForce( force_phy, inState, outState, neigh,   &
+      &                               auxField, nPdfSize, iLevel, varSys,    &
+      &                               phyConvFac, derVarPos                  )
+      import :: rk, tem_varSys_type,                    &
+        &       mus_convertFac_type, mus_derVarPos_type
+
+      !> Global Force to be applied on state
+      real(kind=rk), intent(in) :: force_phy(3)
+
+      !> input  pdf vector
+      !! \todo KM: instate is passed to compute auxField.
+      !! Since auxField is precomputed from instate and passed to this routine.
+      !! instate can be removed
+      real(kind=rk), intent(in)  ::  inState(:)
+
+      !> output pdf vector
+      real(kind=rk), intent(inout) :: outState(:)
+
+      !> connectivity Array corresponding to state vector
+      integer,intent(in) :: neigh(:)
+
+      !> auxField array
+      real(kind=rk), intent(in) :: auxField(:)
+
+      !> number of elements in state Array
+      integer, intent(in) :: nPdfSize
+
+      !> current level
+      integer, intent(in) :: iLevel
+
+      !> variable system
+      type(tem_varSys_type), intent(in) :: varSys
+
+      !> Physics conversion factor for current level
+      type(mus_convertFac_type), intent(in) :: phyConvFac
+
+      !> position of derived quantities in varsys
+      type(mus_derVarPos_type), intent(in) :: derVarPos
+
+    end subroutine proc_applyGlobalForce
+
+  end interface
+  ! *************************************************************************** !
 
 contains
 
@@ -267,12 +320,9 @@ contains
     call aot_get_val( L       = conf,                &
       &               thandle = fluid_table,         &
       &               key     = 'force',             &
-      &               val     = me%force,            &
+      &               val     = me%force_config_phy, &
       &               default = [0._rk,0._rk,0._rk], &
       &               ErrCode = vecError             )
-
-    ! convert force to lattice
-    me%force = me%force / physics%fac(minLevel)%force
 
     select case(trim(schemeHeader%relaxation))
 
@@ -605,8 +655,8 @@ contains
       enddo
     end if
 
-    if( maxval( abs( me%force )) > 0._rk )  &
-      & write(outUnit,*) ' Forcing:             ', real(me%force)
+    if( maxval( abs( me%force_config_phy )) > 0._rk )  &
+      & write(outUnit,*) ' Forcing:             ', real(me%force_config_phy)
 
     ! Dump nonNewtonian parameters to outUnit
     call mus_nNwtn_dump2outUnit( me%nNwtn, outUnit )
@@ -670,6 +720,7 @@ contains
 
   end subroutine mus_fluid_cleanup
   ! ************************************************************************** !
+  
 
 end module mus_fluid_module
 ! ****************************************************************************** !

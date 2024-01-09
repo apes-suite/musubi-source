@@ -76,8 +76,10 @@ module mus_source_type_module
   ! ************************************************************************** !
   !> Stores correction term for HRR_bgk
   type mus_HRRCorrectionTerm_type
-    !> density
-    real(kind=rk), allocatable :: dens(:)
+    !> the correction term is implemented as a force therefore the contribution
+    !> to the density is always 0!!! I am removing it everywhere.
+    !> check paper Guo et al. "An efficient lattice Boltzmann method for 
+    !> compressible aerodynamics on D3Q19 lattice", JCP 2020, Section 2.1
     !> velocity
     real(kind=rk), allocatable :: vel(:,:)
   end type mus_HRRCorrectionTerm_type
@@ -89,8 +91,16 @@ module mus_source_type_module
   !! In turb_channel_force, the force term is adapted according to difference
   !! between reference bulk velocity and simulated plane average bulk velocity
   !! to avoid linear increase in simulated bulk velocits.
-  !! For more information:
-  !! https://www.wias-berlin.de/people/john/ELECTRONIC_PAPERS/JR07.IJNMF.pdf
+  !! Force definition:
+  !! Force = rho*u_tau^2/H + rho*(u_bulk_ref-uX_bulk_avg)*u_bulk_ref/H
+  !! Reference:
+  !! 1) https://www.wias-berlin.de/people/john/ELECTRONIC_PAPERS/JR07.IJNMF.pdf
+  !! 2) Haussmann, Marc; BARRETO, Alejandro CLARO; KOUYI, Gislain LIPEME;
+  !! Rivière, Nicolas; Nirschl, Hermann; Krause, Mathias J. (2019):
+  !! Large-eddy simulation coupled with wall models for turbulent channel flows
+  !! at high Reynolds numbers with a lattice Boltzmann method — Application to
+  !! Coriolis mass flowmeter. In Computers & Mathematics with Applications 78
+  !! (10), pp. 3285–3302. DOI: 10.1016/j.camwa.2019.04.033.
   type mus_turbChannelForce_type
     !> tracking shapes
     type(tem_shape_type)  :: geom_utau(1) !1
@@ -112,8 +122,8 @@ module mus_source_type_module
     !! x=1, y=2, z=3
     integer :: flow_direction
 
-    !> Dynamic Force term for turbulent channel in physical unit [m/s^2]
-    !! F_dyn = (refVelBulk-avgVelXBulk) * refVelBulk / refHeight
+    !> Dynamic Force term for turbulent channel in physical unit [N/m^3]
+    !! F_dyn = rho * (refVelBulk-avgVelXBulk) * refVelBulk / refHeight
     real(kind=rk) :: forceDyn(3)
 
     !> Global number of elements in defined shape 

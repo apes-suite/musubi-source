@@ -59,8 +59,6 @@
 ?? include 'header/lbm_macros.inc'
 ?? include 'tem/source/logMacros.inc'
 module mus_interpolate_debug_module
-  use iso_c_binding, only: c_f_pointer
-
   ! include treelm modules
   use env_module,            only: rk, long_k
   use tem_param_module,      only: cs2inv, PI

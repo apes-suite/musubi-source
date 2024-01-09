@@ -120,16 +120,11 @@ module mus_variable_module
     &                                   applySrc_absorbLayerDyn,          &
     &                                   applySrc_absorbLayerDyn_MRT,      &
     &                                   applySrc_force,                   &
+    &                                   applySrc_force1stOrd,             &
     &                                   applySrc_force_MRT,               &
     &                                   applySrc_force_MRT_d2q9,          &
     &                                   applySrc_force_MRT_d3q19,         &
-    &                                   applySrc_force_MRT_d3q27,         &
-    &                                   applySrc_turbChanForce,           &
-    &                                   applySrc_turbChanForce_MRT,       &
-    &                                   applySrc_turbChanForce_MRT_d2q9,  &
-    &                                   applySrc_turbChanForce_MRT_d3q19, &
-    &                                   applySrc_turbChanForce_MRT_d3q27, &
-    &                                   applySrc_force1stOrd
+    &                                   applySrc_force_MRT_d3q27
   use mus_derQuanIncomp_module,   only: mus_append_derVar_fluidIncomp,     &
     &                                   derive_absorbLayerIncomp,          &
     &                                   applySrc_absorbLayerIncomp
@@ -199,7 +194,6 @@ module mus_variable_module
     &                                       mus_access_auxFieldVar_forElement,   &
     &                                       mus_auxFieldVar_forPoint,            &
     &                                       mus_auxFieldVar_fromIndex,           &
-    &                                       mus_addTurbChanForceToAuxField_fluid,&
     &                                       mus_addHRRCorrToAuxField_fluid_2D,   &
     &                                       mus_addHRRCorrToAuxField_fluid_3D
   use mus_turbulence_var_module,      only: mus_append_turbVar
@@ -1057,30 +1051,16 @@ contains
         case ('turb_channel_force_accel')
           ! Select apply force according to scheme kind.
           select case (trim(schemeHeader%kind))
-          case ('fluid')
-            select case (trim(schemeHeader%relaxation))
-            case ('mrt', 'mrt_bgk','mrt_generic')
-              select case (trim(schemeHeader%layout))
-              case ('d2q9')
-                me%method(iSrc)%applySrc => applySrc_turbChanForce_MRT_d2q9
-              case ('d3q19')
-                me%method(iSrc)%applySrc => applySrc_turbChanForce_MRT_d3q19
-              case ('d3q27')
-                me%method(iSrc)%applySrc => applySrc_turbChanForce_MRT_d3q27
-              case default
-                me%method(iSrc)%applySrc => applySrc_turbChanForce_MRT
-              end select
-            case default
-              me%method(iSrc)%applySrc => applySrc_turbChanForce
-            end select
           case ('fluid_incompressible')
             call tem_abort('TurbChannel only implemented for fluid scheme')
           end select
 
           ! Add force acceleration to velocity field.
           ! It is same for both fluid and fluid_incompressible.
-          me%method(iSrc)%addSrcToAuxField                      &
-            &             => mus_addTurbChanForceToAuxField_fluid
+          ! the source method, as shown below is not set here, because it is 
+          ! treated in the global force as fluid%force_phy already
+          !me%method(iSrc)%addSrcToAuxField                      &
+          !  &             => mus_addTurbChanForceToAuxField_fluid
           me%method(iSrc)%updateSourceVar => mus_updateSrcVar_turbChanForce
 
         case ('absorb_layer', 'absorb_layer_inlet', 'absorb_layer_outlet')

@@ -1343,7 +1343,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     ! indeces
     integer :: iElem, iDir
     ! temporary distribution variables
-    real(kind=rk) :: f( QQ ), SOM(6), SOM_neq(6)
+    real(kind=rk) :: f( QQ ), SOM(6), SOM_neq(6), force(3)
     real(kind=rk) :: rho, u_x, u_y, u_z, a12xx, a12xy, a12yy, a12zz, a12xz, a12yz
     real(kind=rk) :: omega, cmpl_o, feq(QQ), f1(QQ)
     integer :: denspos, velpos(3), elemOff, nScalars
@@ -1359,6 +1359,9 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     nScalars = varSys%nScalars
+    
+    ! convert force from physical to lattice
+    force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
 
 !$omp do schedule(static)
     !NEC$ ivdep
@@ -1379,16 +1382,16 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
       u_z = auxField(elemOff + velpos(3))
 
       ! non equilibrium second-order moments
-      ! SOM_neq = SOM - SOM_eq
+      ! SOM_neq = SOM - SOM_eq + 0.5Fcc
       ! SOM = Second order moments
       ! 1=xx, 2=yy, 3=zz, 4=xy, 5=yz, 6=xz
       SOM = secondMom_3D(layout%fStencil%cxcx, f, layout%fStencil%QQ)
-      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z))
-      SOM_neq(4) = SOM(4) - rho * u_x * u_y
-      SOM_neq(5) = SOM(5) - rho * u_y * u_z
-      SOM_neq(6) = SOM(6) - rho * u_x * u_z
+      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+      SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z)) + u_z * force(3)
+      SOM_neq(4) = SOM(4) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
+      SOM_neq(5) = SOM(5) - rho * u_y * u_z + div1_2 * (u_z * force(2) + u_y * force(3))
+      SOM_neq(6) = SOM(6) - rho * u_x * u_z + div1_2 * (u_x * force(3) + u_z * force(1))
 
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
@@ -1455,7 +1458,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     ! indeces
     integer :: iElem, iDir
     ! temporary distribution variables
-    real(kind=rk) :: f( QQ ), SOM(6), SOM_neq(6)
+    real(kind=rk) :: f( QQ ), SOM(6), SOM_neq(6), force(3)
     real(kind=rk) :: rho, u_x, u_y, u_z, a12xx, a12xy, a12yy, a12zz, a12xz, a12yz
     real(kind=rk) :: omega, cmpl_o, feq(QQ), f1(QQ)
     integer :: denspos, velpos(3), elemOff, nScalars
@@ -1471,6 +1474,9 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     nScalars = varSys%nScalars
+    
+    ! convert force from physical to lattice
+    force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
 
 !$omp do schedule(static)
     !NEC$ ivdep
@@ -1491,16 +1497,16 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
       u_z = auxField(elemOff + velpos(3))
 
       ! non equilibrium second-order moments
-      ! SOM_neq = SOM - SOM_eq
+      ! SOM_neq = SOM - SOM_eq + 0.5Fcc
       ! SOM = Second order moments
       ! 1=xx, 2=yy, 3=zz, 4=xy, 5=yz, 6=xz
       SOM = secondMom_3D(layout%fStencil%cxcx, f, layout%fStencil%QQ)
-      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z))
-      SOM_neq(4) = SOM(4) - rho * u_x * u_y
-      SOM_neq(5) = SOM(5) - rho * u_y * u_z
-      SOM_neq(6) = SOM(6) - rho * u_x * u_z
+      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+      SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z)) + u_z * force(3)
+      SOM_neq(4) = SOM(4) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
+      SOM_neq(5) = SOM(5) - rho * u_y * u_z + div1_2 * (u_z * force(2) + u_y * force(3))
+      SOM_neq(6) = SOM(6) - rho * u_x * u_z + div1_2 * (u_x * force(3) + u_z * force(1))
 
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
@@ -1637,18 +1643,6 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
       SR(5) = gradU(2, 3, 1)+gradU(3, 2, 1)  !S_YZ
       SR(6) = gradU(1, 3, 1)+gradU(3, 1, 1)  !S_XZ
 
-      ! non equilibrium second-order moments
-      ! SOM_neq = SOM - SOM_eq
-      ! SOM = Second order moments
-      ! 1=xx, 2=yy, 3=zz, 4=xy, 5=yz, 6=xz
-      !SOM = secondMom_3D(layout%fStencil%cxcx, f, layout%fStencil%QQ)
-      !SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      !SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      !SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z))
-      !SOM_neq(4) = SOM(4) - rho * u_x * u_y
-      !SOM_neq(5) = SOM(5) - rho * u_y * u_z
-      !SOM_neq(6) = SOM(6) - rho * u_x * u_z
-
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
       cmpl_o = 1.0_rk - omega
@@ -1723,7 +1717,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     ! temporary distribution variables
     real(kind=rk) :: f( QQ ), SR(6), gradU(3,3,1), SOM(6), SOM_neq(6)!!TODO:, tr_SR
     real(kind=rk) :: rho, u_x, u_y, u_z, a12xx, a12xy, a12yy, a12zz, a12xz, a12yz
-    real(kind=rk) :: omega, taup, cmpl_o, feq(QQ), f1(QQ), sigma
+    real(kind=rk) :: omega, taup, cmpl_o, feq(QQ), f1(QQ), sigma, force(3)
     integer :: denspos, velpos(3), elemOff, nScalars
     ! ---------------------------------------------------------------------------
 
@@ -1749,6 +1743,9 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
 
     ! sigma value, ideally read from input
     sigma = fieldProp(1)%fluid%HRR_sigma ! if sigma == 1 --> no HRR
+    
+    ! convert force from physical to lattice
+    force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
 
 !$omp do schedule(static)
     !NEC$ ivdep
@@ -1791,16 +1788,16 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
       SR(6) = gradU(1, 3, 1)+gradU(3, 1, 1)  !S_XZ
 
       ! non equilibrium second-order moments
-      ! SOM_neq = SOM - SOM_eq
+      ! SOM_neq = SOM - SOM_eq + 0.5Fcc
       ! SOM = Second order moments
       ! 1=xx, 2=yy, 3=zz, 4=xy, 5=yz, 6=xz
       SOM = secondMom_3D(layout%fStencil%cxcx, f, layout%fStencil%QQ)
-      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z))
-      SOM_neq(4) = SOM(4) - rho * u_x * u_y
-      SOM_neq(5) = SOM(5) - rho * u_y * u_z
-      SOM_neq(6) = SOM(6) - rho * u_x * u_z
+      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+      SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z)) + u_z * force(3)
+      SOM_neq(4) = SOM(4) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
+      SOM_neq(5) = SOM(5) - rho * u_y * u_z + div1_2 * (u_z * force(2) + u_y * force(3))
+      SOM_neq(6) = SOM(6) - rho * u_x * u_z + div1_2 * (u_x * force(3) + u_z * force(1))
 
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
@@ -1876,7 +1873,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     ! temporary distribution variables
     real(kind=rk) :: f( QQ ), SR(6), gradU(3,3,1), SOM(6), SOM_neq(6)
     real(kind=rk) :: rho, u_x, u_y, u_z, a12xx, a12xy, a12yy, a12zz, a12xz, a12yz
-    real(kind=rk) :: omega, taup, cmpl_o, feq(QQ), f1(QQ), sigma
+    real(kind=rk) :: omega, taup, cmpl_o, feq(QQ), f1(QQ), sigma, force(3)
     real(kind=rk) :: gradRhoU3(3,1), S_Corr(QQ)!!TODO:, tr_SR
     integer :: denspos, velpos(3), elemOff, nScalars, iSrc
     ! ---------------------------------------------------------------------------
@@ -1899,9 +1896,12 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     scheme => fPtr%solverData%scheme
     gradData => scheme%gradData(level)
 
-  ! Sigma value, read from input
-  ! standard value is 0.98
+    ! Sigma value, read from input
+    ! standard value is 0.98
     sigma = fieldProp(1)%fluid%HRR_sigma
+    
+    ! convert force from physical to lattice
+    force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
 
     ! allocate internalSource element array
     do iSrc = 1, scheme%field(1)%internalSource%varDict%nVals
@@ -1955,7 +1955,6 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
             &    weight     = layout%weight(:),     &
             &    gradRHOU3  = gradRHOU3(:, 1),      &
             &    phi        = S_corr(:),            &
-            &    dens       = HRR_Corr%dens(iElem), &
             &    vel        = HRR_Corr%vel(iElem,:) )
   
         ! symmetric strain rate tensors
@@ -1971,18 +1970,18 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
         SR(6) = gradU(1, 3, 1)+gradU(3, 1, 1)  !S_XZ
   
         ! non equilibrium second-order moments
-        ! SOM_neq = SOM - SOM_eq
+        ! SOM_neq = SOM - SOM_eq + 0.5Fcc
         ! Apply correction
         f(:) = f(:) + 0.5_rk * S_corr(:)
         ! SOM = Second order moments
         ! 1=xx, 2=yy, 3=zz, 4=xy, 5=yz, 6=xz
         SOM = secondMom_3D(layout%fStencil%cxcx, f, layout%fStencil%QQ)
-        SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-        SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-        SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z))
-        SOM_neq(4) = SOM(4) - rho * u_x * u_y
-        SOM_neq(5) = SOM(5) - rho * u_y * u_z
-        SOM_neq(6) = SOM(6) - rho * u_x * u_z
+        SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+        SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+        SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z)) + u_z * force(3)
+        SOM_neq(4) = SOM(4) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
+        SOM_neq(5) = SOM(5) - rho * u_y * u_z + div1_2 * (u_z * force(2) + u_y * force(3))
+        SOM_neq(6) = SOM(6) - rho * u_x * u_z + div1_2 * (u_x * force(3) + u_z * force(1))
   
         ! Hermitian coefficients
         omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
@@ -2105,7 +2104,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     ! indeces
     integer :: iElem, iDir
     ! temporary distribution variables
-    real(kind=rk) :: f( QQ ), SOM(6), SOM_neq(6)
+    real(kind=rk) :: f( QQ ), SOM(6), SOM_neq(6), force(3)
     real(kind=rk) :: rho, u_x, u_y, u_z, a12xx, a12xy, a12yy, a12zz, a12xz, a12yz
     real(kind=rk) :: omega, tau, tauN, CoefTauNTau, feq(QQ), f_temp, f1(QQ)
     integer :: denspos, velpos(3), elemOff, nScalars
@@ -2123,6 +2122,9 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     nScalars = varSys%nScalars
 
     tauN = fieldProp(1)%fluid%DRT_tauN
+    
+    ! convert force from physical to lattice
+    force = fieldProp(1)%fluid%force_phy / params%physics%fac(level)%body_force
 
 !$omp do schedule(static)
     !NEC$ ivdep
@@ -2143,16 +2145,16 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
       u_z = auxField(elemOff + velpos(3))
 
       ! non equilibrium second-order moments
-      ! SOM_neq = SOM - SOM_eq
+      ! SOM_neq = SOM - SOM_eq + 0.5Fcc
       ! SOM = Second order moments
       ! 1=xx, 2=yy, 3=zz, 4=xy, 5=yz, 6=xz
       SOM = secondMom_3D(layout%fStencil%cxcx, f, layout%fStencil%QQ)
-      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
-      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
-      SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z))
-      SOM_neq(4) = SOM(4) - rho * u_x * u_y
-      SOM_neq(5) = SOM(5) - rho * u_y * u_z
-      SOM_neq(6) = SOM(6) - rho * u_x * u_z
+      SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x)) + u_x * force(1)
+      SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y)) + u_y * force(2)
+      SOM_neq(3) = SOM(3) - rho * (cs2 + (u_z * u_z)) + u_z * force(3)
+      SOM_neq(4) = SOM(4) - rho * u_x * u_y + div1_2 * (u_y * force(1) + u_x * force(2))
+      SOM_neq(5) = SOM(5) - rho * u_y * u_z + div1_2 * (u_z * force(2) + u_y * force(3))
+      SOM_neq(6) = SOM(6) - rho * u_x * u_z + div1_2 * (u_x * force(3) + u_z * force(1))
 
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
