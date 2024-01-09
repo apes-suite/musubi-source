@@ -1,6 +1,6 @@
 ! Copyright (c) 2012-2014 Kartik Jain <kartik.jain@uni-siegen.de>
 ! Copyright (c) 2012-2013 Manuel Hasert <m.hasert@grs-sim.de>
-! Copyright (c) 2012, 2014 Harald Klimach <harald.klimach@uni-siegen.de>
+! Copyright (c) 2012, 2014, 2023 Harald Klimach <harald.klimach@dlr.de>
 ! Copyright (c) 2013-2014 Simon Zimny <s.zimny@grs-sim.de>
 ! Copyright (c) 2013-2016, 2020 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
 ! Copyright (c) 2013 Monika Harlacher <monika.harlacher@uni-siegen.de>
@@ -29,17 +29,17 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! ****************************************************************************** !
-!> This module contains the definition of geometry type and routines to 
+!> This module contains the definition of geometry type and routines to
 !! geometry information like mesh, boundary, immersed_boundary and restart
 module mus_geom_module
 
   ! include treelm modules
   use env_module,              only: rk, long_k, globalMaxLevels
   use tem_global_module,       only: tem_global_mesh_read
-  use tem_property_module,     only: prp_hasBnd, prp_hasQVal
+  use tem_property_module,     only: prp_hasBnd, prp_hasQVal, prp_hasNormal
   use treelmesh_module,        only: treelmesh_type, load_tem
   use tem_bc_prop_module,      only: tem_bc_prop_type, init_tem_bc_prop, &
-    &                                load_tem_bc_qVal
+    &                                load_tem_bc_qVal, load_tem_bc_normal
   use tem_geometry_module,     only: tem_build_treeToProp_pointer
   use tem_solveHead_module,    only: tem_solveHead_type
   use tem_timeControl_module,  only: tem_timeControl_start_at_sim
@@ -291,7 +291,7 @@ contains
     ! ----------------------Load the boundary conditions------------------------
     ! Boundary conditions are loaded even in the case of dynamic load balancing
     ! when the restart is done at requisite load balancing intervals
-    call init_tem_bc_prop( geometry%tree, rank, &
+    call init_tem_bc_prop( geometry%tree, rank,    &
       &                    comm, geometry%boundary )
 
     do iProp = 1, geometry%tree%global%nProperties
@@ -303,15 +303,29 @@ contains
           ! Load qVal from disk
           ! prp_hasQVal is the 2nd property in mesh
           write(logUnit(1),"(A)") 'Loading qVal data from directory: '&
-            &                     //trim(geometry%tree%global%dirname)
+            &                     // trim(geometry%tree%global%dirname)
           call load_tem_BC_qVal(                                               &
             &           me       = geometry%boundary,                          &
             &           offset   = geometry%tree%Property(iProp)%Offset,       &
             &           nElems   = geometry%tree%Property(iProp)%nElems,       &
             &           basename = trim(geometry%tree%global%dirname)//'qval', &
-            &           mypart   = rank,                   &
-            &           comm     = comm                    )
+            &           mypart   = rank,                                       &
+            &           comm     = comm                                        )
           write(logUnit(1),*)'Done, reading the qVal!'
+
+        case( prp_hasNormal )
+          ! Load Normals from disk
+          write(logUnit(1),"(A)") 'Loading normal data from directory: ' &
+            &                     //trim(geometry%tree%global%dirname)
+          call load_tem_BC_normal(                                       &
+            &           me       = geometry%boundary,                    &
+            &           offset   = geometry%tree%Property(iProp)%Offset, &
+            &           nElems   = geometry%tree%Property(iProp)%nElems, &
+            &           basename = trim(geometry%tree%global%dirname)    &
+            &                      // 'normals',                         &
+            &           mypart   = rank,                                 &
+            &           comm     = comm                                  )
+          write(logUnit(1),*) 'Done, reading the normals!'
 
         end select ! property( iProp )%bitpos
       endif ! property( iProp )%nElems > 0
