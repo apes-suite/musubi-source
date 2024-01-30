@@ -140,10 +140,20 @@ contains
         compute => mrt_advRel_generic
       end select
 
+    case ('mrt_weighted')
+      if ( trim(layout) == 'd3q27' ) then
+        compute => weighted_mrt_advRel_d3q27
+      else
+        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
+        call tem_abort()
+      end if
+
     case ('mrt')
       select case (trim(layout))
       case ('d3q27')
-        compute => weighted_mrt_advRel_d3q27
+        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
+        write(logUnit(1),*) 'But you can use "mrt_weighted" !'
+        call tem_abort()
       case ('d3q19')
         compute => mrt_advRel_d3q19
       case ('d2q9')
