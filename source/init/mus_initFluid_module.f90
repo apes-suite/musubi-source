@@ -183,7 +183,7 @@ contains
         call tem_abort()
       end select
 
-    case ('cumulant_extended')
+    case ('cumulant_extended_fast')
       select case (trim(layout))
       case ('d3q27')
         compute => cumulant_d3q27_extended_fast
@@ -191,7 +191,7 @@ contains
         write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
         call tem_abort()
       end select
-    
+
     case ('cumulant_extended_generic')
       select case (trim(layout))
       case ('d3q27')
@@ -200,7 +200,7 @@ contains
         write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
         call tem_abort()
       end select
-      
+
     case ('cascaded')
       select case (trim(layout))
       case ('d3q27')

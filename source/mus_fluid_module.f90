@@ -319,7 +319,7 @@ contains
             &          // 'fluid table')
       end if
 
-    case('cumulant_extended', 'cumulant_extended_generic')
+    case('cumulant_extended_fast', 'cumulant_extended_generic')
       ! load omega vec for cumulant and limiter
       me%omega_Cum = -1._rk
 
@@ -582,7 +582,7 @@ contains
 
     write(outUnit, "(A,F10.7)") 'DRT tauN: ', me%DRT_tauN
 
-    if (trim(schemeHeader%relaxation) == 'cumulant_extended' .or. &
+    if (trim(schemeHeader%relaxation) == 'cumulant_extended_fast' .or. &
       & trim(schemeHeader%relaxation) == 'cumulant_extended_generic') then
       write(outUnit, "(A)") 'omega Cumulant: -1.000 means adjust during runtime'
       do iLevel = 1, 10
