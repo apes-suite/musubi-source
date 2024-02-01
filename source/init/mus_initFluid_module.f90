@@ -4,6 +4,7 @@
 ! Copyright (c) 2016 Tobias Schneider <tobias1.schneider@student.uni-siegen.de>
 ! Copyright (c) 2017 Raphael Haupt <raphael.haupt@uni-siegen.de>
 ! Copyright (c) 2021 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2024 Jana Gericke <jana.gericke@dlr.de>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -35,7 +36,7 @@ module mus_initFluid_module
 
   use mus_bgk_module,       only: bgk_advRel_generic
   use mus_compute_cumulant_module,  only: cumulant_d3q27, cascaded_d3q27,  &
-    &                                     cumulant_d3q27_extended_generic, &
+    &                                     cumulant_d3q27_extended,         &
     &                                     cumulant_d3q27_extended_fast
   use mus_d3q27_module,     only: bgk_advRel_d3q27, &
     &                             trt_advRel_d3q27, &
@@ -192,10 +193,10 @@ contains
         call tem_abort()
       end select
 
-    case ('cumulant_extended_generic')
+    case ('cumulant_extended')
       select case (trim(layout))
       case ('d3q27')
-        compute => cumulant_d3q27_extended_generic
+        compute => cumulant_d3q27_extended
       case default
         write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
         call tem_abort()
@@ -297,7 +298,7 @@ contains
     end select
 
   end subroutine mus_init_advRel_fluid
-  ! **************************************************************************** !
+  ! ************************************************************************** !
 
 end module mus_initFluid_module
-! ****************************************************************************** !
+! **************************************************************************** !

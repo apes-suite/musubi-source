@@ -11,6 +11,7 @@
 ! Copyright (c) 2018 Raphael Haupt <raphael.haupt@uni-siegen.de>
 ! Copyright (c) 2019, 2020 Peter Vitt <peter.vitt2@uni-siegen.de>
 ! Copyright (c) 2021-2022 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2024 Jana Gericke <jana.gericke@dlr.de>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -284,7 +285,7 @@ contains
         &              val     = me%lambda,   &
         &              default = 0.25_rk,     &
         &              ErrCode = iError       )
-    
+
     case('hrr_bgk', 'hrr_bgk_corrected')
       ! load sigma for HRR_bgk
       call aot_get_val(L       = conf,        &
@@ -319,7 +320,7 @@ contains
             &          // 'fluid table')
       end if
 
-    case('cumulant_extended_fast', 'cumulant_extended_generic')
+    case('cumulant_extended_fast', 'cumulant_extended')
       ! load omega vec for cumulant and limiter
       me%omega_Cum = -1._rk
 
@@ -583,7 +584,7 @@ contains
     write(outUnit, "(A,F10.7)") 'DRT tauN: ', me%DRT_tauN
 
     if (trim(schemeHeader%relaxation) == 'cumulant_extended_fast' .or. &
-      & trim(schemeHeader%relaxation) == 'cumulant_extended_generic') then
+      & trim(schemeHeader%relaxation) == 'cumulant_extended') then
       write(outUnit, "(A)") 'omega Cumulant: -1.000 means adjust during runtime'
       do iLevel = 1, 10
         write(outUnit, "(A,I2,A,F10.7)") '  ', iLevel,' = ', me%omega_Cum(iLevel)
@@ -592,16 +593,18 @@ contains
       do iLevel = 1, 3
         write(outUnit, "(A,I2,A,F10.7)") '  ', iLevel,' = ', me%omega_Lim(iLevel)
       enddo
-      
+
       ! check Cumulant_extended range of admissibility for omegas
-      write(logUnit(1),*) 'Checking admissibility of omegas for parametrized Cumulant scheme'
+      write(logUnit(1),*) 'Checking admissibility of omegas for parametrized &
+        &                  Cumulant scheme'
 
       do iLevel = minLevel, maxLevel
-        call cumulant_omega_check( omegaVisc = me%viscKine%omLvl(iLevel)%val(:), &
-          &                        omegaBulk = me%omegaBulkLvl(iLevel),          &
-          &                        omegaIn   = me%omega_Cum(:),                  &
-          &                        nSolve    = nSolve(iLevel),                   &
-          &                        level     = iLevel                            )
+        call cumulant_omega_check(                           &
+          &    omegaVisc = me%viscKine%omLvl(iLevel)%val(:), &
+          &    omegaBulk = me%omegaBulkLvl(iLevel),          &
+          &    omegaIn   = me%omega_Cum(:),                  &
+          &    nSolve    = nSolve(iLevel),                   &
+          &    level     = iLevel                            )
       enddo
     end if
 
@@ -618,11 +621,11 @@ contains
   !> write fluid prop into a lua file
   !!
   subroutine mus_fluid_save2lua( me, conf )
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     !> single fluid type
     type( mus_fluid_type ), intent(in) :: me
     type( aot_out_type ) :: conf
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     call aot_out_open_table( put_conf = conf, tname = 'fluid' )
 
@@ -640,15 +643,15 @@ contains
     call aot_out_close_table( put_conf = conf )
 
   end subroutine mus_fluid_save2lua
-  ! **************************************************************************** !
+  ! ************************************************************************** !
 
   ! ************************************************************************** !
   !> This routines act as a destructor for fluid type
   subroutine mus_fluid_cleanup( me )
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     !> single fluid type
     type( mus_fluid_type ), intent(inout) :: me
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     if (allocated(me%viscKine%dataOnLvl)) then
       deallocate(me%viscKine%dataOnLvl)
@@ -672,4 +675,4 @@ contains
   ! ************************************************************************** !
 
 end module mus_fluid_module
-! ****************************************************************************** !
+! **************************************************************************** !
