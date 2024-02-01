@@ -1,4 +1,5 @@
 ! Copyright (c) 2021-2022 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2024 Jana Gericke <jana.gericke@dlr.de>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -25,7 +26,7 @@
 ?? include 'header/lbm_macros.inc'
 module mus_compute_cumulant_module
   use iso_c_binding,            only: c_f_pointer
-  
+
   use env_module,               only: rk
   use tem_varSys_module,        only: tem_varSys_type
   use tem_aux_module,           only: tem_abort
@@ -68,7 +69,7 @@ module mus_compute_cumulant_module
   public :: kpc_i_bg
   public :: kpc_ij_g
   public :: kpc_ijk
-  public :: cumulant_d3q27_extended_generic
+  public :: cumulant_d3q27_extended
   public :: cumulant_d3q27_extended_fast
   public :: cascaded_d3q27
 
@@ -189,7 +190,7 @@ contains
   end function
 ! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> Calculating central moment by spliting among directions.
   !! This follows equations 43, 44, 45 in cumulent paper (Geier .et al 2015)
   !! We first do x direction for better performance.
@@ -199,12 +200,12 @@ contains
     !> order of central moments
     integer, intent(in) :: a, b, g
     real(kind=rk), intent(in) :: ux, uy, uz
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     real(kind=rk) :: ka(-1:1, -1:1), kb(-1:1)
     real(kind=rk) :: kappa
     integer :: ii, jj, kk
     real(kind=rk), parameter :: ii_rk(-1:1) = [ -1._rk, 0._rk, 1._rk ]
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     ka = 0.0_rk
     kb = 0.0_rk
@@ -221,9 +222,9 @@ contains
     end do
 
   end function
-! ****************************************************************************** !
+! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> Calculating central moment.
   !! This follows equations 21 in cumulent paper ( Geier .et al 2015 )
   pure function central_moment( f, a, b, g, ux, uy, uz ) result ( kappa )
@@ -232,11 +233,11 @@ contains
     !> order of central moments
     integer, intent(in) :: a, b, g
     real(kind=rk), intent(in) :: ux, uy, uz
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     real(kind=rk) :: kappa
     integer :: ii, jj, kk
     real(kind=rk), parameter :: ii_rk(-1:1) = [ -1._rk, 0._rk, 1._rk ]
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     kappa = 0.0_rk
 
@@ -251,9 +252,9 @@ contains
     end do
 
   end function
-! ****************************************************************************** !
+! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> No comment yet!
   !!
   !! TODO Add comment!
@@ -299,7 +300,7 @@ contains
     ! k = central moment, c = cumulant
     real(kind=rk) :: k(0:2,0:2,0:2), c(0:2,0:2,0:2)
     integer :: dens_pos, vel_pos(3), elemOff
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -348,7 +349,7 @@ contains
       uz = auxField(elemOff + vel_pos(3))
       ! ------------------------------------------------------------------------
 
-      ! Central moments ---------------------------------------------------------
+      ! Central moments --------------------------------------------------------
       ! eq 43 - 45
       do kk = 0,2
         do jj = 0,2
@@ -357,14 +358,14 @@ contains
           end do
         end do
       end do
-      ! Central moments ---------------------------------------------------------
+      ! Central moments --------------------------------------------------------
 
 
       ! this omega refers to the w1 in the paper
       ! other relaxation parameters are assumed to be 1, thus omitted
       omega = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
 
-      ! Cumulants and Collision -------------------------------------------------
+      ! Cumulants and Collision ------------------------------------------------
       ! Not sure how to calcuate the post collision value for 0th and 1st order
       c(0,0,0) = k(0,0,0)
       c(1,0,0) = k(1,0,0)
@@ -377,7 +378,8 @@ contains
       c(0,1,1) = com_omega * k(0,1,1)
 
       ! eq 58 - 60
-      Dxu = -omega * 0.5_rk * inv_rho * ( 2.0_rk * k(2,0,0) - k(0,2,0) - k(0,0,2))&
+      Dxu = -omega * 0.5_rk * inv_rho
+        &   * ( 2.0_rk * k(2,0,0) - k(0,2,0) - k(0,0,2) )                    &
         &   - 0.5_rk * inv_rho * ( k(2,0,0) + k(0,2,0) + k(0,0,2) - k(0,0,0) )
       Dyv = Dxu + 1.5_rk * omega * inv_rho * ( k(2,0,0) - k(0,2,0) )
       Dzw = Dxu + 1.5_rk * omega * inv_rho * ( k(2,0,0) - k(0,0,2) )
@@ -429,12 +431,15 @@ contains
       k(2,2,0) = ( k(2,0,0)*k(0,2,0) + 2.0_rk*k(1,1,0)*k(1,1,0) ) * inv_rho
       k(2,0,2) = ( k(2,0,0)*k(0,0,2) + 2.0_rk*k(1,0,1)*k(1,0,1) ) * inv_rho
       k(0,2,2) = ( k(0,2,0)*k(0,0,2) + 2.0_rk*k(0,1,1)*k(0,1,1) ) * inv_rho
-      ! for k 222 half ot the formula was missing!!!! but it has all 0 entries!!!
-      k(2,2,2) = - ( 16.0_rk*k(1,1,0)*k(1,0,1)*k(0,1,1) &
-        &          + 4.0_rk*(k(1,0,1)**2*k(0,2,0) + k(0,1,1)**2*k(2,0,0) + k(1,1,0)**2*k(0,0,2) ) &
-        &          + 2.0_rk*k(2,0,0)*k(0,2,0)*k(0,0,2) ) * inv_rho * inv_rho &
-        &        + ( k(2,0,0)*k(0,2,2) + k(0,2,0)*k(2,0,2) + k(0,0,2)*k(2,2,0)  &
-        &          + 4.0_rk * ( k(0,1,1)*k(2,1,1) + k(1,0,1)*k(1,2,1) + k(1,1,0)*k(1,1,2) ) &
+      ! for k 222 half ot the formula was missing!!!! but it has all 0 entries!!
+      k(2,2,2) = - ( 16.0_rk*k(1,1,0)*k(1,0,1)*k(0,1,1)                        &
+        &          + 4.0_rk*(k(1,0,1)**2*k(0,2,0) + k(0,1,1)**2*k(2,0,0)       &
+        &          + k(1,1,0)**2*k(0,0,2) )                                    &
+        &          + 2.0_rk*k(2,0,0)*k(0,2,0)*k(0,0,2)                         &
+        &          ) * inv_rho * inv_rho                                       &
+        &        + ( k(2,0,0)*k(0,2,2) + k(0,2,0)*k(2,0,2) + k(0,0,2)*k(2,2,0) &
+        &          + 4.0_rk * ( k(0,1,1)*k(2,1,1) + k(1,0,1)*k(1,2,1)          &
+        &        + k(1,1,0)*k(1,1,2) ) &
         &          ) * inv_rho
         ! the previous 3 lines are zeros
       ! Back to central moment -------------------------------------------------
@@ -475,9 +480,9 @@ contains
     end do nodeloop
 
   end subroutine cumulant_d3q27
-! ****************************************************************************** !
+! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> Calculating central moment
   !! This follows equations 6-8 in cumulent paper (Geier .et al 2017)
   pure function kum_ij_g( f, ii, jj, gg, uz, w_ij_g ) result ( kappa )
@@ -491,9 +496,9 @@ contains
     real(kind=rk), intent(in) :: uz
     !> partial weights_ij_g
     real(kind=rk), intent(in) :: w_ij_g(-1:1, -1:1, 0:2)
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     real(kind=rk) :: kappa, k_0
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     k_0 = f(ii,jj,1) + f(ii,jj,-1) + f(ii,jj,0)
     if (gg == 0) then
@@ -501,14 +506,14 @@ contains
     else if (gg == 1) then
       kappa = f(ii,jj,1) - f(ii,jj,-1) - uz * (k_0 + w_ij_g( ii, jj, 0 ))
     else
-      kappa = f(ii,jj,1) + f(ii,jj,-1) - 2._rk * uz * (f(ii,jj,1) - f(ii,jj,-1)) &
-      & + uz**2 * (k_0 + w_ij_g( ii, jj, 0 ))
+      kappa = f(ii,jj,1) + f(ii,jj,-1) - 2._rk * uz * (f(ii,jj,1) &
+        &     - f(ii,jj,-1)) + uz**2 * (k_0 + w_ij_g( ii, jj, 0 ) )
     endif
 
   end function
-! ****************************************************************************** !
+! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> Calculating central moment
   !! This follows equations 9-11 in cumulent paper (Geier .et al 2017)
   pure function kum_i_bg( ii, bb, gg, uy, w_i_bg, k_ij_g ) result ( kappa )
@@ -522,24 +527,26 @@ contains
     real(kind=rk), intent(in) :: w_i_bg(-1:1, 0:2, 0:2)
     !> partial cumulants_ij_g
     real(kind=rk), intent(in) :: k_ij_g(-1:1, -1:1, 0:2)
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     real(kind=rk) :: kappa, k_0
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     k_0 = k_ij_g( ii, 1, gg ) + k_ij_g( ii, -1, gg ) + k_ij_g( ii, 0, gg )
     if (bb == 0) then
       kappa = k_0
     else if (bb == 1) then
-      kappa = k_ij_g( ii, 1, gg ) - k_ij_g( ii, -1, gg ) - uy * ( k_0 + w_i_bg( ii, 0, gg ) )
+      kappa = k_ij_g( ii, 1, gg ) - k_ij_g( ii, -1, gg ) &
+        &     - uy * ( k_0 + w_i_bg( ii, 0, gg ) )
     else
-      kappa = k_ij_g( ii, 1, gg ) + k_ij_g( ii, -1, gg ) - 2._rk * uy * ( k_ij_g( ii, 1, gg ) &
-        & - k_ij_g( ii, -1, gg ) ) + uy**2 * ( k_0 + w_i_bg( ii, 0, gg ) )
+      kappa = k_ij_g( ii, 1, gg ) + k_ij_g( ii, -1, gg )                    &
+        &     - 2._rk * uy * ( k_ij_g( ii, 1, gg ) - k_ij_g( ii, -1, gg ) ) &
+        &     + uy**2 * ( k_0 + w_i_bg( ii, 0, gg ) )
     endif
 
   end function
-! ****************************************************************************** !
+! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> Calculating central moment
   !! This follows equations 12-14 in cumulent paper (Geier .et al 2017)
   pure function kum_abg( aa, bb, gg, ux, w_abg, k_i_bg ) result ( kappa )
@@ -551,24 +558,26 @@ contains
     real(kind=rk), intent(in) :: w_abg(0:2, 0:2, 0:2)
     !> partial cumulants_i_bg
     real(kind=rk), intent(in) :: k_i_bg(-1:1, 0:2, 0:2)
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     real(kind=rk) :: kappa, k_0
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     k_0 = k_i_bg( 1, bb, gg) + k_i_bg( -1, bb, gg) + k_i_bg( 0, bb, gg)
     if (aa == 0) then
       kappa = k_0
     else if (aa == 1) then
-      kappa = k_i_bg( 1, bb, gg) - k_i_bg( -1, bb, gg) - ux * (k_0 + w_abg( 0, bb, gg ))
+      kappa = k_i_bg( 1, bb, gg) - k_i_bg( -1, bb, gg ) &
+        &     - ux * (k_0 + w_abg( 0, bb, gg ) )
     else
-      kappa = k_i_bg( 1, bb, gg) + k_i_bg( -1, bb, gg) - 2._rk * ux * (k_i_bg( 1, bb, gg) &
-        & - k_i_bg( -1, bb, gg) ) + ux**2 * (k_0 + w_abg( 0, bb, gg ))
+      kappa = k_i_bg( 1, bb, gg) + k_i_bg( -1, bb, gg)                     &
+        &     - 2._rk * ux * ( k_i_bg( 1, bb, gg ) - k_i_bg( -1, bb, gg) ) &
+        &     + ux**2 * ( k_0 + w_abg( 0, bb, gg ) )
     endif
 
   end function
-! ****************************************************************************** !
+! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> Back to central moment
   !! This follows equations 57-59 in cumulent paper (Geier .et al 2017)
   pure function kpc_i_bg( k, ii, bb, gg, ux, w_abg ) result ( kappa )
@@ -582,13 +591,13 @@ contains
     real(kind=rk), intent(in) :: ux
     !> partial weights_abg
     real(kind=rk), intent(in) :: w_abg(0:2, 0:2, 0:2)
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     real(kind=rk) :: kappa
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     if (ii == 0) then
-      kappa = k(0,bb,gg) * (1._rk - ux**2) - 2._rk * ux * k(1,bb,gg) - k(2,bb,gg) &
-      & - w_abg(0, bb, gg) * ux**2
+      kappa = k(0,bb,gg) * (1._rk - ux**2) - 2._rk * ux * k(1,bb,gg) &
+        &     - k(2,bb,gg) - w_abg(0, bb, gg) * ux**2
     else if (ii == -1) then
       kappa = ( ( k(0,bb,gg) + w_abg(0, bb, gg) ) * ux * (ux - 1._rk) &
         & + k(1,bb,gg) * (2._rk * ux - 1._rk) + k(2,bb,gg) ) * div1_2
@@ -598,9 +607,9 @@ contains
     endif
 
   end function
-! ****************************************************************************** !
+! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> Back to central moment
   !! This follows equations 60-62 in cumulent paper (Geier .et al 2017)
   pure function kpc_ij_g( ii, jj, gg, uy, w_i_bg, k_i_bg ) result ( kappa )
@@ -614,25 +623,28 @@ contains
     real(kind=rk), intent(in) :: w_i_bg(-1:1, 0:2, 0:2)
     !> partial cumulant_i_bg
     real(kind=rk), intent(in) :: k_i_bg(-1:1, 0:2, 0:2)
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     real(kind=rk) :: kappa
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     if (jj == 0) then
-      kappa = k_i_bg(ii, 0, gg) * (1._rk - uy**2) - 2._rk * uy * k_i_bg(ii, 1, gg) &
-        & - k_i_bg(ii, 2, gg) - w_i_bg(ii, 0, gg) * uy**2
+      kappa = k_i_bg(ii, 0, gg) * (1._rk - uy**2) - 2._rk * uy            &
+        &     * k_i_bg(ii, 1, gg) - k_i_bg(ii, 2, gg) - w_i_bg(ii, 0, gg) &
+        &     * uy**2
     else if (jj == -1) then
-      kappa = ( ( k_i_bg(ii, 0, gg) + w_i_bg(ii, 0, gg) ) * uy * (uy - 1._rk) &
-        & + k_i_bg(ii, 1, gg) * (2._rk * uy - 1._rk) + k_i_bg(ii, 2, gg) ) * div1_2
+      kappa = ( ( k_i_bg(ii, 0, gg) + w_i_bg(ii, 0, gg) ) * uy * (uy - 1._rk)  &
+        &     + k_i_bg(ii, 1, gg) * (2._rk * uy - 1._rk) + k_i_bg(ii, 2, gg) ) &
+        &     * div1_2
     else
-      kappa = ( ( k_i_bg(ii, 0, gg) + w_i_bg(ii, 0, gg) ) * uy * (uy + 1._rk) &
-        & + k_i_bg(ii, 1, gg) * (2._rk * uy + 1._rk) + k_i_bg(ii, 2, gg) ) * div1_2
+      kappa = ( ( k_i_bg(ii, 0, gg) + w_i_bg(ii, 0, gg) ) * uy * (uy + 1._rk)  &
+        &     + k_i_bg(ii, 1, gg) * (2._rk * uy + 1._rk) + k_i_bg(ii, 2, gg) ) &
+        &     * div1_2
     endif
 
   end function
-! ****************************************************************************** !
+! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> Back to central moment
   !! This follows equations 63-65 in cumulent paper (Geier .et al 2017)
   pure function kpc_ijk( ii, jj, kk, uz, w_ij_g, k_ij_g ) result ( kappa )
@@ -644,9 +656,9 @@ contains
     real(kind=rk), intent(in) :: w_ij_g(-1:1, -1:1, 0:2)
     !> partial cumulants_ij_g
     real(kind=rk), intent(in) :: k_ij_g(-1:1, -1:1, 0:2)
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
     real(kind=rk) :: kappa
-    ! ---------------------------------------------------------------------------
+    ! --------------------------------------------------------------------------
 
     if (kk == 0) then
       kappa = k_ij_g(ii, jj, 0) * (1._rk - uz**2) - 2._rk * uz * k_ij_g(ii, jj, 1) &
@@ -660,9 +672,9 @@ contains
     endif
 
   end function
-! ****************************************************************************** !
+! **************************************************************************** !
 
-! ****************************************************************************** !
+! **************************************************************************** !
   !> Cumulant kernel based on Geier2017 and optimized.
   !! Just omega(2) is given in input. omega(2)=-1 means omega2=omegaBulk.
   !! Limiters read from input. lim(N)=10^10 means unlimited.
@@ -994,7 +1006,7 @@ contains
 
       ! switch to non parametrized Cumulant when omega 3, 4, 5 are not within
       ! the limits 0 < omega < 2
-      if (      omega(3) <= 0._rk .or. omega(3) >= 2._rk & 
+      if (      omega(3) <= 0._rk .or. omega(3) >= 2._rk &
         &  .or. omega(4) <= 0._rk .or. omega(4) >= 2._rk &
         &  .or. omega(5) <= 0._rk .or. omega(5) >= 2._rk ) then
         omega(2:10) = 1._rk
@@ -1123,7 +1135,7 @@ contains
       ! Collision --------------------------------------------------------------
 
       ! Back to central moment -------------------------------------------------
-      k = c      
+      k = c
       ! 1st order with inverted sign
       k(1,0,0) = -c(1,0,0)
       k(0,1,0) = -c(0,1,0)
@@ -1269,7 +1281,7 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine cumulant_d3q27_extended_generic( fieldProp, inState, outState, auxField, &
+  subroutine cumulant_d3q27_extended( fieldProp, inState, outState, auxField, &
     &                        neigh, nElems, nSolve, level, layout,   &
     &                        params, varSys, derVarPos               )
     ! -------------------------------------------------------------------- !
@@ -1450,25 +1462,25 @@ contains
 ?? if (DEBUG) then
       ! check only for fluid cell
       if ( iElem <= nElems_fluid ) then
-        delta_rho_pre = f(-1, 0, 0) + f( 0,-1, 0) + f( 0, 0,-1) + f( 1, 0, 0) & 
-          & + f( 0, 1, 0) + f( 0, 0, 1) + f( 0,-1,-1) + f( 0,-1, 1) + f( 0, 1,-1) & 
-          & + f( 0, 1, 1) + f(-1, 0,-1) + f( 1, 0,-1) + f(-1, 0, 1) + f( 1, 0, 1) & 
-          & + f(-1,-1, 0) + f(-1, 1, 0) + f( 1,-1, 0) + f( 1, 1, 0) + f(-1,-1,-1) & 
-          & + f(-1,-1, 1) + f(-1, 1,-1) + f(-1, 1, 1) + f( 1,-1,-1) + f( 1,-1, 1) & 
+        delta_rho_pre = f(-1, 0, 0) + f( 0,-1, 0) + f( 0, 0,-1) + f( 1, 0, 0) &
+          & + f( 0, 1, 0) + f( 0, 0, 1) + f( 0,-1,-1) + f( 0,-1, 1) + f( 0, 1,-1) &
+          & + f( 0, 1, 1) + f(-1, 0,-1) + f( 1, 0,-1) + f(-1, 0, 1) + f( 1, 0, 1) &
+          & + f(-1,-1, 0) + f(-1, 1, 0) + f( 1,-1, 0) + f( 1, 1, 0) + f(-1,-1,-1) &
+          & + f(-1,-1, 1) + f(-1, 1,-1) + f(-1, 1, 1) + f( 1,-1,-1) + f( 1,-1, 1) &
           & + f( 1, 1,-1) + f( 1, 1, 1) + f( 0, 0, 0)
-          
+
         rho_pre = 0._rk
         do ii = 1, QQ
           rho_pre = rho_pre + inState(?FETCH?( ii, 1, iElem, QQ, nScalars, nElems,neigh ))
         end do
-        
+
         if (abs(rho_pre - rho) >= 1e-8) then
           write (*,*) 'ERROR! >>> |rho_pre - rho_AUX| = ', abs(rho_pre - rho)
           write (*,*) '           |delta_rho_pre - delta_rho_AUX| = ', abs(delta_rho_pre - delta_rho)
           write (*,*) 'Level = ', Level
           call tem_abort()
         end if
-        
+
         if (abs(delta_rho_pre - delta_rho) >= 1e-8) then
           write (*,*) 'ERROR! >>> |delta_rho_pre - delta_rho| = ', abs(delta_rho_pre - delta_rho)
           write (*,*) '           |rho_pre - rho| = ', abs(rho_pre - rho)
@@ -1611,7 +1623,7 @@ contains
 
       ! switch to non parametrized Cumulant when omega 3, 4, 5 are not within
       ! the limits 0 < omega < 2
-      if (      omega(3) <= 0._rk .or. omega(3) >= 2._rk & 
+      if (      omega(3) <= 0._rk .or. omega(3) >= 2._rk &
         &  .or. omega(4) <= 0._rk .or. omega(4) >= 2._rk &
         &  .or. omega(5) <= 0._rk .or. omega(5) >= 2._rk ) then
         omega(2:10) = 1._rk
@@ -1818,13 +1830,13 @@ contains
 ?? if (DEBUG) then
       ! check only for fluid cell
       if ( iElem <= nElems_fluid ) then
-        delta_rho_post = f(-1, 0, 0) + f( 0,-1, 0) + f( 0, 0,-1) + f( 1, 0, 0) & 
-          & + f( 0, 1, 0) + f( 0, 0, 1) + f( 0,-1,-1) + f( 0,-1, 1) + f( 0, 1,-1) & 
-          & + f( 0, 1, 1) + f(-1, 0,-1) + f( 1, 0,-1) + f(-1, 0, 1) + f( 1, 0, 1) & 
-          & + f(-1,-1, 0) + f(-1, 1, 0) + f( 1,-1, 0) + f( 1, 1, 0) + f(-1,-1,-1) & 
-          & + f(-1,-1, 1) + f(-1, 1,-1) + f(-1, 1, 1) + f( 1,-1,-1) + f( 1,-1, 1) & 
+        delta_rho_post = f(-1, 0, 0) + f( 0,-1, 0) + f( 0, 0,-1) + f( 1, 0, 0) &
+          & + f( 0, 1, 0) + f( 0, 0, 1) + f( 0,-1,-1) + f( 0,-1, 1) + f( 0, 1,-1) &
+          & + f( 0, 1, 1) + f(-1, 0,-1) + f( 1, 0,-1) + f(-1, 0, 1) + f( 1, 0, 1) &
+          & + f(-1,-1, 0) + f(-1, 1, 0) + f( 1,-1, 0) + f( 1, 1, 0) + f(-1,-1,-1) &
+          & + f(-1,-1, 1) + f(-1, 1,-1) + f(-1, 1, 1) + f( 1,-1,-1) + f( 1,-1, 1) &
           & + f( 1, 1,-1) + f( 1, 1, 1) + f( 0, 0, 0)
-        
+
         if (abs(delta_rho_pre - delta_rho_post) >= 1e-8) then
           write (*,*) 'ERROR! >>> |delta_rho_pre - delta_rho_post| = ', abs(delta_rho_pre - delta_rho_post)
           write (*,*) 'Level = ', Level
@@ -1891,7 +1903,7 @@ contains
 
     end do nodeloop
 
-  end subroutine cumulant_d3q27_extended_generic
+  end subroutine cumulant_d3q27_extended
 ! ****************************************************************************** !
 
 ! ****************************************************************************** !

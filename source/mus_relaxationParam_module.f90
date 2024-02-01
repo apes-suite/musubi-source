@@ -1,6 +1,7 @@
 ! Copyright (c) 2019-2020 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
 ! Copyright (c) 2021 Kannan Masilamani <kannan.masilamani@dlr.de>
 ! Copyright (c) 2020-2021 Harald Klimach <harald.klimach@dlr.de>
+! Copyright (c) 2024 Jana Gericke <jana.gericke@dlr.de>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -91,19 +92,19 @@ module mus_relaxationParam_module
 contains
 
 
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
   !> This routine initialize relaxation parameter
   subroutine mus_init_relaxParam( omLvl, minLevel, maxLevel, nElems )
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     !> relaxation paramter
     type(mus_relaxationParam_type), allocatable, intent(out) :: omLvl(:)
     !> minlevel and maxLevel
     integer, intent(in) :: minLevel, maxLevel
     !> number of local elements per level
     integer, intent(in) :: nElems(minLevel:maxLevel)
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     integer :: iLevel
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     allocate(omLvl(minLevel:maxLevel))
     do iLevel = minLevel, maxLevel
       allocate( omLvl(iLevel)%val( nElems(iLevel) ) )
@@ -111,10 +112,10 @@ contains
     end do
 
   end subroutine mus_init_relaxParam
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
 
 
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
   !> Update kinematic viscosity from STfun and calculate turbulent viscosity
   !! from velocity gradient or nonEqPDF
   !! Viscosity obtained from this routine are normalized to the level
@@ -123,7 +124,7 @@ contains
     &                             nGhostFromCoarser, nGhostFromFiner, nHalo,  &
     &                             varSys, iLevel, convFac, dxL, dtL,          &
     &                             derVarPos, turb, nNwtn, Grad                )
-    ! ------------------------------------------------------------------------ !
+    ! -------------------------------------------------------------------------!
     !> Kinematic viscosity
     type(mus_viscosity_type), intent(inout) :: viscKine
     !> bary of treeID in total list
@@ -168,9 +169,9 @@ contains
     type(mus_nNwtn_type), intent(in) :: nNwtn
     !> Object that contains pointers to calculate gradients
     type(mus_Grad_type), intent(in) :: Grad
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     integer :: nScalars, nAuxScalars, nSolve, densPos, velPos(3)
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     nSolve = nFluids + nGhostFromCoarser + nGhostFromFiner + nHalo
     nScalars = varSys%nScalars
     nAuxScalars = varSys%nAuxScalars
@@ -241,13 +242,13 @@ contains
     end if
 
   end subroutine mus_update_viscKine
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
 
 
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
   !> Update kinematic relaxation parameter from viscosity and check omega
   subroutine mus_update_relaxParamKine(viscKine, turb, nSolve, iLevel)
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     !> Kinematic viscosity
     type(mus_viscosity_type), intent(inout) :: viscKine
     !> Number of elements to solve in compute kernel
@@ -256,10 +257,10 @@ contains
     type(mus_turbulence_type), intent(in) :: turb
     !> current level
     integer, intent(in) :: iLevel
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     integer :: iElem
     real(kind=rk) :: tot_visc
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
 
     if (turb%active) then
       do iElem = 1, nSolve
@@ -281,10 +282,10 @@ contains
     end if
 
   end subroutine mus_update_relaxParamKine
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
 
 
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
   !> This routine is used to initialize relaxation paramter and update
   !! bulk viscosity at every time step
   !! Bulk visocisty is defined as space-time function to apply
@@ -292,7 +293,7 @@ contains
   subroutine mus_update_relaxParamFromViscSTfun( omega, visc, viscSTfun,    &
     &                                            nElems, baryOfTotal, tNow, &
     &                                            viscRef                    )
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     !> relaxation parameter
     real(kind=rk), intent(inout) :: omega(:)
     !> Kinematic viscosity
@@ -310,11 +311,11 @@ contains
     real(kind=rk), intent(in) :: viscRef
     !> lattice time step size in current level
     ! real(kind=rk), intent(in) :: dtL
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     ! viscosity values from space-time function
     integer :: iChunk, nChunks, nChunkElems, elemoff
     integer :: minBuf, maxBuf
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     !\todo KM: 'Optimize this routine for constant viscosity'
     ! find chunksize and number of chunks required for initialzation
     nChunks = ceiling( real(nElems, rk) / real(io_buffer_size, rk) )
@@ -346,27 +347,27 @@ contains
     end do
 
   end subroutine mus_update_relaxParamFromViscSTfun
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
 
 
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
   !> This function compute relaxation paramter omega from viscosity
   elemental function mus_calcOmegaFromVisc(visc) result(omega)
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     !> scaled lattice viscosity i.e vL_c/dtL
     real(kind=rk), intent(in) :: visc
     !> lattice time step size in current level
     !!real(kind=rk), intent(in) :: dtL
     !> output: relaxation parameter omega
     real(kind=rk) :: omega
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     !omega = 1.0_rk / ( cs2inv * visc / dtL + 0.5_rk )
     omega = 1.0_rk / ( cs2inv * visc + 0.5_rk )
   end function mus_calcOmegaFromVisc
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
 
 
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
   !> This routine checks whether omega is within the stability limit.
   !! If not it will terminate the simulation with error message.
   !! Using limits given in
@@ -388,11 +389,11 @@ contains
     integer, intent(in) :: nSolve(minLevel:maxLevel)
     !> Contains proc, simControl, solveHead
     type(tem_general_type), intent(inout) :: general
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     integer :: iLevel, iError
     !> minimum omega
     real(kind=rk) :: om_min, om_max, glob_om_min, glob_om_max
-    ! -------------------------------------------------------------------- !
+    ! ------------------------------------------------------------------------ !
     do iLevel = minLevel, maxLevel
       ! minimum omega
       om_min = minval( omLvlKine(iLevel)%val( 1 : nSolve(iLevel) ) )
@@ -424,10 +425,10 @@ contains
             write(logUnit(1),*) 'Solution: Increase kinematic viscosity,'
             write(logUnit(1),*) 'especially near BC and level jumps.'
           end if
-        case ('mrt','trt','cumulant','cumulant_extended','hrr_bgk','rr_bgk',   &
-          &   'prr_bgk','r_bgk', 'mrt_generic', 'drt_bgk', 'rr_bgk_corrected', &
-          &   'cumulant_extended_generic', 'hrr_bgk_corrected',                &
-          &   'prr_bgk_corrected')
+        case ( 'mrt','trt','cumulant','cumulant_extended_fast','hrr_bgk',      &
+          &    'rr_bgk', 'prr_bgk','r_bgk', 'mrt_generic', 'drt_bgk',          &
+          &    'rr_bgk_corrected', 'cumulant_extended', 'hrr_bgk_corrected',   &
+          &    'prr_bgk_corrected'                                             )
           if (glob_om_max > 1.999_rk) then
             write(logUnit(1),'(A,F10.5)') 'WARNING: Kinematic omega > 1.999:', &
               &                           glob_om_max
@@ -455,6 +456,6 @@ contains
     end do
 
   end subroutine mus_check_omegaKine
-  ! ------------------------------------------------------------------------ !
+  ! -------------------------------------------------------------------------- !
 
 end module mus_relaxationParam_module
