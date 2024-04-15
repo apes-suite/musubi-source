@@ -104,6 +104,7 @@ module mus_scheme_header_module
     character(len=labelLen) :: layout
     !> scheme relaxation type Ex: BGK, MRT, bgk_pl, bgk_cy, bgk_cs...
     character(len=labelLen) :: relaxation
+    character(len=labelLen) :: order
   end type mus_scheme_header_type
 
 contains
@@ -173,6 +174,15 @@ contains
         &               val     = me%relaxation,                               &
         &               default = 'bgk',                                       &
         &               ErrCode = iError )
+      
+      
+      ! get order of equilibrium
+        call aot_get_val( L       = conf,                                        &
+        &               thandle = thandle,                                     &
+        &               key     = 'order',                                &
+        &               val     = me%order,                               &
+        &               default = 'second',                                       &
+        &               ErrCode = iError )  
 
     else
       write(logUnit(1),*) 'Scheme Identify table not defined.'

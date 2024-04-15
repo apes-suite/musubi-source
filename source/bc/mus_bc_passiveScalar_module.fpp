@@ -42,6 +42,7 @@ module mus_bc_passiveScalar_module
   use treelmesh_module,         only: treelmesh_type
   use tem_varSys_module,        only: tem_varSys_type
   use tem_construction_module,  only: tem_levelDesc_type
+  use tem_param_module,         only: div1_3, div4_3, csInv, cs, cs2, cs2inv
 
   ! include musubi modules
   use mus_bc_header_module,      only: boundary_type, glob_boundary_type
@@ -58,6 +59,7 @@ module mus_bc_passiveScalar_module
 
   public :: inlet_pasScal
   public :: outlet_pasScal
+  public :: pressure_antiBounceBack_pasScal
 
 contains
 
@@ -202,6 +204,155 @@ contains
     end do
 
   end subroutine outlet_pasScal
+! ****************************************************************************** !
+
+
+
+! ****************************************************************************** !
+  !> Outlet boundary conditions for passive scalar transport (Flekkoy).
+  !!
+  !!  currently no obstacles allowed lx-2 upstream fluid outlet nodes
+  !!
+  !! This subroutine's interface must match the abstract interface definition
+  !! [[boundaryRoutine]] in bc/[[mus_bc_header_module]].f90 in order to be
+  !! callable via [[boundary_type:fnct]] function pointer.
+  subroutine pressure_antiBounceBack_pasScal( me, state, bcBuffer, globBC, levelDesc, tree,   &
+    &                        nSize, iLevel, sim_time, neigh, layout,         &
+    &                        fieldProp, varPos, nScalars, varSys, derVarPos, &
+    &                        physics, iField, mixture                        )
+    ! -------------------------------------------------------------------- !
+    !> global boundary type
+    class(boundary_type) :: me
+    !> Current state vector of iLevel
+    real(kind=rk), intent(inout) :: state(:)
+    !> size of state array ( in terms of elements )
+    integer, intent(in) :: nSize
+    !> state values of boundary elements of all fields of iLevel
+    real(kind=rk), intent(in) :: bcBuffer(:)
+    !> iLevel descriptor
+    type(tem_levelDesc_type), intent(in) :: levelDesc
+    !> Treelm Mesh
+    type(treelmesh_type), intent(in) :: tree
+    !> fluid parameters and properties
+    type(mus_field_prop_type), intent(in) :: fieldProp
+    !> stencil layout information
+    type(mus_scheme_layout_type), intent(in) :: layout
+    !> the level On which this boundary was invoked
+    integer, intent(in) :: iLevel
+    !> connectivity array corresponding to state vector
+    integer, intent(in) :: neigh(:)
+    !> global time information
+    type(tem_time_type), intent(in)  :: sim_time
+    !> pointer to field variable in the state vector
+    integer, intent(in) :: varPos(:)
+    !> number of Scalars in the scheme var system
+    integer, intent(in) :: nScalars
+    !> scheme variable system
+    type(tem_varSys_type), intent(in) :: varSys
+    !> position of derived quantities in varsys
+    type(mus_derVarPos_type), intent(in) :: derVarPos
+    !> scheme global boundary type
+    type(glob_boundary_type), intent(in) :: globBC
+    !> scheme global boundary type
+    type(mus_physics_type), intent(in) :: physics
+    !> current field
+    integer, intent(in) :: iField
+    !> mixture info
+    type(mus_mixture_type), intent(in) :: mixture
+    ! -------------------------------------------------------------------- !
+    integer :: iElem, iDir, QQ, invDir, elemPos
+    real(kind=rk) :: rhoDef(globBC%nElems(iLevel)) ! Density on boundary element
+    real(kind=rk) :: inv_rho_phy
+    real(kind=rk) :: fTmp( nScalars * globBC%nElems(iLevel) )
+    integer :: posInBuffer, bcPress_pos
+    ! ---------------------------------------------------------------------------
+    
+    QQ = layout%fStencil%QQ
+    inv_rho_phy = 1.0_rk / physics%fac(iLevel)%press * cs2inv
+
+    ! position of boundary pressure in varSys
+    bcPress_pos = me%bc_states%pressure%varPos
+    ! get pressure variable from spacetime function
+    call varSys%method%val(bcPress_pos)%get_valOfIndex( &
+      & varSys  = varSys,                               &
+      & time    = sim_time,                             &
+      & iLevel  = iLevel,                               &
+      & idx     = me%bc_states%pressure                 &
+      &           %pntIndex%indexLvl(iLevel)            &
+      &           %val(1:globBC%nElems(iLevel)),        &
+      & nVals   = globBC%nElems(iLevel),                &
+      & res     = rhoDef                                )
+
+    ! convert physical pressure into LB density
+    rhoDef = rhoDef * inv_rho_phy
+
+    do iElem = 1, globBC%nElems( iLevel )
+      posInBuffer = globBC%elemLvl( iLevel )%posInBcElemBuf%val( iElem )
+      fTmp( (iElem-1)*nScalars+1: (iElem-1)*nScalars+QQ ) &
+        &       = bcBuffer( (posInBuffer-1)*nScalars+varPos(1) : &
+        &                   (posInBuffer-1)*nScalars+varPos(QQ)  )
+    end do
+    
+    ! write(*, *) "All populations at Elem 1."
+    ! iElem = 1
+    ! elemPos = globBC%elemLvl(iLevel)%elem%val( iElem )
+    ! do iDir = 1, QQ
+    !   write(*, *) "Dir ", iDir, ": ", fTmp( (iElem-1)*nScalars + iDir ), "state value: ", &
+    !   & state(?FETCH?( iDir, iField, elemPos, QQ, nScalars,nSize, neigh ))
+    !   if (globBC%elemLvl(iLevel)%bitmask%val(iDir, iElem)) then
+    !     write(*, *) "need to be updated."
+    !     invDir = layout%fStencil%cxDirInv(iDir)
+    !     write(*, *) "pop at opposite dir: ", - fTmp( (iElem-1)*nScalars + invDir )
+    !     write(*, *) "weight at oppo dir: ", 2._rk*layout%weight( invDir ) 
+    !     write(*, *) "rho at elem: ", rhoDef(iElem) 
+    !   else
+    !     write(*, *) "don't need to be updated."
+    !   end if
+    ! end do
+
+
+    do iElem = 1, globBC%nElems( iLevel )
+      elemPos = globBC%elemLvl(iLevel)%elem%val( iElem )
+      do iDir = 1, layout%fStencil%QQN
+        if( globBC%elemLvl(iLevel)%bitmask%val(iDir, iElem )) then
+          invDir = layout%fStencil%cxDirInv(iDir)
+
+          state(?FETCH?( iDir, iField, elemPos, QQ, nScalars,nSize, neigh )) = &
+          ! antibounceback term
+! & - state( ?FETCH?( iDir, iField, globBC%elemLvl(iLevel)%elem%val( iElem ), QQ, nScalars, neigh ) )    &
+          ! We need to get post-collision pdf in direction
+          ! alpha-, which is the inverse direction of bitmask
+          ! For PULL this means, get the outgoing one, as this is the one which will be bounced back
+          ! For PUSH this means, get the already bounced back pdf back, so take the incoming
+    &   - fTmp( (iElem-1)*nScalars + invDir ) &
+    &   + 2._rk*layout%weight( invDir ) * rhoDef(iElem)                ! Dirichlet pressure term
+
+! -----------   DEBUG output     -------------------------------------------
+! write(dbgUnit(6), *) '      fEqPlus: ', fEqPlus
+! write(dbgUnit(6), *) ' fEqPlusFluid: ', fEqPlusFluid
+! write(dbgUnit(6), *) '   fPlusFluid: ', fPlusFluid
+! write(dbgUnit(6), *) '  updated pdf:'
+! write( dbgUnit(6), *) 'iDir', iDir, 'invDir', invDir, state(                      &
+! & ?FETCH?( iDir, iField, globBC%elemLvl(iLevel)%elem%val( iElem ), QQ, nScalars, nSize,neigh ))
+! --------------------------------------------------------------------------
+
+        end if ! bitMask
+      end do ! iDir
+    end do ! iElem
+
+    ! iElem = 1
+    ! elemPos = globBC%elemLvl(iLevel)%elem%val( iElem )
+    ! do iDir = 1, QQ
+    !   write(*, *) "Dir ", iDir, ": ", fTmp( (iElem-1)*nScalars + iDir ), "state value: ", &
+    !   & state(?FETCH?( iDir, iField, elemPos, QQ, nScalars,nSize, neigh ))
+    !   if (globBC%elemLvl(iLevel)%bitmask%val(iDir, iElem)) then
+    !     write(*, *) "need to be updated."
+    !   else
+    !     write(*, *) "don't need to be updated."
+    !   end if
+    ! end do
+
+  end subroutine pressure_antiBounceBack_pasScal
 ! ****************************************************************************** !
 
 

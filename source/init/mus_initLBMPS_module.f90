@@ -34,7 +34,9 @@ module mus_initLBMPS_module
 
   ! include musubi modules
   use mus_bgk_module,         only: bgk_advrel_flekkoy,                        &
-    &                               bgk_advrel_flekkoy_noFluid
+    &                               bgk_advrel_flekkoy_noFluid,                &
+    &                               bgk_advRel_flekkoy_2nd,                    &
+    &                               trt_advRel_flekkoy_general
   use mus_scheme_type_module, only: kernel
 
   implicit none
@@ -47,10 +49,11 @@ contains
 
 ! ****************************************************************************** !
   !> Initialize the relaxation model for lbm passive scalar scheme kind
-  subroutine mus_init_advRel_lbm_ps( relaxation, layout, compute )
+  subroutine mus_init_advRel_lbm_ps( relaxation, layout, order, compute )
     ! ---------------------------------------------------------------------------
     character(len=labelLen), intent(in) :: relaxation
     character(len=labelLen), intent(in) :: layout
+    character(len=labelLen), intent(in) :: order
     procedure( kernel ), pointer, intent(out) :: compute
     ! ---------------------------------------------------------------------------
 
@@ -59,13 +62,18 @@ contains
 
     select case( trim(relaxation) )
     case( 'bgk' )
-      select case( trim(layout) )
-      case( 'flekkoy' )
+      select case( trim(order) )
+      case( 'first' )
         compute => bgk_advRel_flekkoy
+      case( 'second' )
+        compute => bgk_advRel_flekkoy_2nd
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
+        write(logUnit(1),*) 'Order '//trim(order)//' is not supported yet!'
         call tem_abort()
       end select
+    case( 'trt' )
+      write(*, *) 'using trt_advRel scheme.'
+      compute => trt_advRel_flekkoy_general
     case( 'bgk_noFluid' )
       select case( trim(layout) )
       case( 'flekkoy' )

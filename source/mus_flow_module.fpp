@@ -140,6 +140,7 @@ contains
       ! lattice boltzmann passive scalar
       call mus_init_advRel_lbm_ps( relaxation = scheme%header%relaxation, &
         &                          layout     = scheme%header%layout, &
+        &                          order      = scheme%header%order, &
         &                          compute    = scheme%compute )
     case ('nernst_planck')
       call mus_init_advRel_nernstPlanck(            &

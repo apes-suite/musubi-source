@@ -101,6 +101,8 @@ module mus_species_module
     real(kind=rk) :: ombulkLvl(globalMaxLevels)
     !> relaxation paramete for Nernst-Planck equation
     real(kind=rk) :: omega
+    !> relaxation paramete for trt scheme
+    real(kind=rk) :: lambda
     !> charge number of the species
     real(kind=rk) :: chargeNr
   end type mus_species_type
@@ -167,6 +169,14 @@ contains
       if (btest(iError, aoterr_WrongType))                                     &
         & write(logUnit(1),*)'Variable has wrong type!'
     end if
+
+    !get molecular weight
+    call aot_get_val( L       = conf,                                          &
+      &               thandle = spc_handle,                                    &
+      &               key     = 'lambda',                                   &
+      &               val     = me%lambda,                                  &
+      &               ErrCode = iError,                                        &
+      &               default = 0.25_rk )
 
     !get specific charge
     call aot_get_val( L = conf, thandle = spc_handle, key = 'charge_nr',       &
