@@ -173,7 +173,7 @@ module mus_scheme_derived_quantities_module
 contains
 
 ! ************************************************************************** !
-!> This function assigns the pointers for the respective derived function in 
+!> This function assigns the pointers for the respective derived function in
 !  terms of stencil and fluid type
 function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(getQuantities)
   ! --------------------------------------------------------------------------
@@ -202,7 +202,8 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
     getQuantities%momentum_from_vel_dens_ptr => get_momentum_from_vel_dens_incompressible
     getQuantities%kineticEnergy_from_vel_dens_ptr => get_kineticEnergy_from_vel_dens_incompressible
     getQuantities%rho0Inv_ptr => get_rho0Inv_incompressible
-  else 
+  else
+    !! TODO: add pointers to obtain derived quantities for other fluid types
     write(*,*) 'fluid type = "', trim(label_fluid), '"'
     call tem_abort("get_pdfEq_iDir not set for fluid type")
   end if
@@ -217,7 +218,7 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%pdfEq_ptr => get_pdfEq_incomp_d2q9
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d2q9_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d2q9_vectorized_incompressible
-    else 
+    else
       write(*,*) 'stencil label = "', trim(label_stencil), '"'
       write(*,*) 'fluid type = "', trim(label_fluid), '"'
       call tem_abort("get_pdfEq not set for fluid type")
@@ -231,7 +232,7 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%pdfEq_ptr => get_pdfEq_incomp_d3q19
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d3q19_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d3q19_vectorized_incompressible
-    else 
+    else
       write(*,*) 'stencil label = "', trim(label_stencil), '"'
       write(*,*) 'fluid type = "', trim(label_fluid), '"'
       call tem_abort("get_pdfEq not set for fluid type")
@@ -245,12 +246,13 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%pdfEq_ptr => get_pdfEq_incomp_d3q27
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d3q27_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d3q27_vectorized_incompressible
-    else 
+    else
       write(*,*) 'stencil label = "', trim(label_stencil), '"'
       write(*,*) 'fluid type = "', trim(label_fluid), '"'
       call tem_abort("get_pdfEq not set for fluid type")
     end if
   case default
+    !! TODO: Potentially add pointers to obtain pdfs for other stencils (like d3q6)
     if (trim(label_fluid) == 'fluid') then
       getQuantities%pdfEq_ptr => get_pdfEq_compressible
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_compressible
@@ -259,7 +261,7 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%pdfEq_ptr => get_pdfEq_incompressible
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_incompressible_vectorized
-    else 
+    else
       write(*,*) 'stencil label = "', trim(label_stencil), '"'
       write(*,*) 'fluid type = "', trim(label_fluid), '"'
       call tem_abort("get_pdfEq not set for fluid type")
