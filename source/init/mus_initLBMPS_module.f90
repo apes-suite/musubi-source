@@ -72,7 +72,7 @@ contains
         call tem_abort()
       end select
     case( 'trt' )
-      write(*, *) 'using trt_advRel scheme.'
+      write(logUnit(1), *) 'Using trt_advRel scheme.'
       compute => trt_advRel_flekkoy_general
     case( 'bgk_noFluid' )
       select case( trim(layout) )

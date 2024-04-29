@@ -206,6 +206,126 @@ contains
   end subroutine outlet_pasScal
 ! ****************************************************************************** !
 
+  
+! ****************************************************************************** !
+  !> Dirichlet stationary boundary conditions for passive scalar transport in
+  !!
+  !! Irina Ginzburg (2005), "Generic boundary conditions for lattice Boltzmann 
+  !! models and their application to advection and anisotropic dispersion 
+  !! equations.", Advances in Water Resources, Volume 28, Issue 11
+  !!
+  !! This subroutine's interface must match the abstract interface definition
+  !! [[boundaryRoutine]] in bc/[[mus_bc_header_module]].f90 in order to be
+  !! callable via [[boundary_type:fnct]] function pointer.
+  subroutine pressure_antiBounceBack_pasScal( me, state, bcBuffer, globBC, levelDesc, tree,   &
+    &                        nSize, iLevel, sim_time, neigh, layout,         &
+    &                        fieldProp, varPos, nScalars, varSys, derVarPos, &
+    &                        physics, iField, mixture                        )
+    ! -------------------------------------------------------------------- !
+    !> global boundary type
+    class(boundary_type) :: me
+    !> Current state vector of iLevel
+    real(kind=rk), intent(inout) :: state(:)
+    !> size of state array ( in terms of elements )
+    integer, intent(in) :: nSize
+    !> state values of boundary elements of all fields of iLevel
+    real(kind=rk), intent(in) :: bcBuffer(:)
+    !> iLevel descriptor
+    type(tem_levelDesc_type), intent(in) :: levelDesc
+    !> Treelm Mesh
+    type(treelmesh_type), intent(in) :: tree
+    !> fluid parameters and properties
+    type(mus_field_prop_type), intent(in) :: fieldProp
+    !> stencil layout information
+    type(mus_scheme_layout_type), intent(in) :: layout
+    !> the level On which this boundary was invoked
+    integer, intent(in) :: iLevel
+    !> connectivity array corresponding to state vector
+    integer, intent(in) :: neigh(:)
+    !> global time information
+    type(tem_time_type), intent(in)  :: sim_time
+    !> pointer to field variable in the state vector
+    integer, intent(in) :: varPos(:)
+    !> number of Scalars in the scheme var system
+    integer, intent(in) :: nScalars
+    !> scheme variable system
+    type(tem_varSys_type), intent(in) :: varSys
+    !> position of derived quantities in varsys
+    type(mus_derVarPos_type), intent(in) :: derVarPos
+    !> scheme global boundary type
+    type(glob_boundary_type), intent(in) :: globBC
+    !> scheme global boundary type
+    type(mus_physics_type), intent(in) :: physics
+    !> current field
+    integer, intent(in) :: iField
+    !> mixture info
+    type(mus_mixture_type), intent(in) :: mixture
+    ! -------------------------------------------------------------------- !
+    integer :: iElem, iDir, QQ, invDir, elemPos
+    real(kind=rk) :: rhoDef(globBC%nElems(iLevel)) ! Density on boundary element
+    real(kind=rk) :: inv_rho_phy
+    real(kind=rk) :: fTmp( nScalars * globBC%nElems(iLevel) )
+    integer :: posInBuffer, bcPress_pos
+    ! ---------------------------------------------------------------------------
+    
+    QQ = layout%fStencil%QQ
+    inv_rho_phy = 1.0_rk / physics%fac(iLevel)%press * cs2inv
+
+    ! position of boundary pressure in varSys
+    bcPress_pos = me%bc_states%pressure%varPos
+    ! get pressure variable from spacetime function
+    call varSys%method%val(bcPress_pos)%get_valOfIndex( &
+      & varSys  = varSys,                               &
+      & time    = sim_time,                             &
+      & iLevel  = iLevel,                               &
+      & idx     = me%bc_states%pressure                 &
+      &           %pntIndex%indexLvl(iLevel)            &
+      &           %val(1:globBC%nElems(iLevel)),        &
+      & nVals   = globBC%nElems(iLevel),                &
+      & res     = rhoDef                                )
+
+    ! convert physical pressure into LB density
+    rhoDef = rhoDef * inv_rho_phy
+
+    do iElem = 1, globBC%nElems( iLevel )
+      posInBuffer = globBC%elemLvl( iLevel )%posInBcElemBuf%val( iElem )
+      fTmp( (iElem-1)*nScalars+1: (iElem-1)*nScalars+QQ ) &
+        &       = bcBuffer( (posInBuffer-1)*nScalars+varPos(1) : &
+        &                   (posInBuffer-1)*nScalars+varPos(QQ)  )
+    end do
+
+    do iElem = 1, globBC%nElems( iLevel )
+      elemPos = globBC%elemLvl(iLevel)%elem%val( iElem )
+      do iDir = 1, layout%fStencil%QQN
+        if( globBC%elemLvl(iLevel)%bitmask%val(iDir, iElem )) then
+          invDir = layout%fStencil%cxDirInv(iDir)
+
+          state(?FETCH?( iDir, iField, elemPos, QQ, nScalars,nSize, neigh )) = &
+          ! antibounceback term
+! & - state( ?FETCH?( iDir, iField, globBC%elemLvl(iLevel)%elem%val( iElem ), QQ, nScalars, neigh ) )    &
+          ! We need to get post-collision pdf in direction
+          ! alpha-, which is the inverse direction of bitmask
+          ! For PULL this means, get the outgoing one, as this is the one which will be bounced back
+          ! For PUSH this means, get the already bounced back pdf back, so take the incoming
+    &   - fTmp( (iElem-1)*nScalars + invDir ) &
+    &   + 2._rk*layout%weight( invDir ) * rhoDef(iElem)                ! Dirichlet pressure term
+
+! -----------   DEBUG output     -------------------------------------------
+! write(dbgUnit(6), *) '      fEqPlus: ', fEqPlus
+! write(dbgUnit(6), *) ' fEqPlusFluid: ', fEqPlusFluid
+! write(dbgUnit(6), *) '   fPlusFluid: ', fPlusFluid
+! write(dbgUnit(6), *) '  updated pdf:'
+! write( dbgUnit(6), *) 'iDir', iDir, 'invDir', invDir, state(                      &
+! & ?FETCH?( iDir, iField, globBC%elemLvl(iLevel)%elem%val( iElem ), QQ, nScalars, nSize,neigh ))
+! --------------------------------------------------------------------------
+
+        end if ! bitMask
+      end do ! iDir
+    end do ! iElem
+
+  end subroutine pressure_antiBounceBack_pasScal
+! ****************************************************************************** !
+
 
 
 ! ****************************************************************************** !

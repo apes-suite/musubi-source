@@ -169,6 +169,14 @@ contains
       if (btest(iError, aoterr_WrongType))                                     &
         & write(logUnit(1),*)'Variable has wrong type!'
     end if
+    
+    !get trt relaxation parameter
+    call aot_get_val( L       = conf,                                          &
+      &               thandle = spc_handle,                                    &
+      &               key     = 'lambda',                                      &
+      &               val     = me%lambda,                                     &
+      &               ErrCode = iError,                                        &
+      &               default = 0.25_rk )
 
     !get molecular weight
     call aot_get_val( L       = conf,                                          &

@@ -367,7 +367,6 @@ contains
           &                           solverData   = solverData,     &
           &                           fldLabel     = field(1)%label, &
           &                           derVarname   = derVarname      )
-        
         select case (trim(schemeHeader%order))
         case ('first')
           derVarPos(1)%equilFromMacro => deriveEquilPS_FromMacro
@@ -376,7 +375,6 @@ contains
         case default
           derVarPos(1)%equilFromMacro => deriveEquilPS2_FromMacro
         end select
-
         derVarPos(1)%auxFieldFromState => deriveAuxPS_fromState
         derVarPos(1)%equilFromAux => deriveEquilPS_fromAux
       case ('poisson', 'poisson_boltzmann_linear', &

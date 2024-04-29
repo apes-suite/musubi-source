@@ -172,7 +172,12 @@ contains
 ! ****************************************************************************** !
 
 ! **************************************************************************** !
-!> Advection relaxation routine for the flekkoy diffusion model.
+!> Advection relaxation routine for the 2nd order diffusion model.
+
+!! A comparison to the previous flekkoy model can be found in 
+!! Chopard, B., Falcone, J. & Latt, J. "The lattice Boltzmann advection
+!! -diffusion model revisited." Eur. Phys. J. Spec. Top. 171, 245–249 (2009). 
+!! https://doi.org/10.1140/epjst/e2009-01035-5
 !!
 !! This subroutine interface must match the abstract interface definition
 !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
@@ -593,6 +598,10 @@ subroutine bgk_advRel_flekkoy_2nd( fieldProp, inState, outState, auxField, &
 
 ! **************************************************************************** !
 !> Advection relaxation routine for the TRT diffusion model.
+!!
+!!   Irina Ginzburg (2005), "Equilibrium-type and link-type lattice Boltzmann
+!!   models for generic advection and anisotropic-dispersion equation",
+!!   Advances in Water Resources, Volume 28, Issue 11
 !!
 !! This subroutine interface must match the abstract interface definition
 !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
