@@ -95,11 +95,11 @@ program mus_bgk_d3q19_compare_test
 
   call init_varSys( scheme%varSys, sysName, QQ, solverData, scheme%header, &
     &               scheme%derVarPos )
-  
+
   ! Initialize quantities pointers
-  layout%quantities = mus_assign_derived_functions_ptr( &
-    & label_stencil = scheme%header%layout,  &
-    & label_fluid = scheme%header%kind       )
+  layout%quantities = mus_assign_derived_functions_ptr(       &
+    &                   label_stencil = scheme%header%layout, &
+    &                   scheme_kind = scheme%header%kind      )
 
   call tem_horizontalSpacer(fUnit = logUnit(1))
   write( logUnit(1), *) 'Input:  inState initilized by Eq from random den and vel'

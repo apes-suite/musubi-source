@@ -103,9 +103,9 @@ program mus_bgk_d3q19_incomp_compare_test
   outOP = -1.0_rk
 
   ! Initialize quantities pointers
-  layout%quantities = mus_assign_derived_functions_ptr( &
-    & label_stencil = scheme%header%layout,  &
-    & label_fluid = scheme%header%kind       )
+  layout%quantities = mus_assign_derived_functions_ptr(        &
+    &                   label_stencil = scheme%header%layout,  &
+    &                   scheme_kind   = scheme%header%kind     )
 
   ! initialize auxField
   ! density
