@@ -104,6 +104,8 @@ module mus_scheme_header_module
     character(len=labelLen) :: layout
     !> scheme relaxation type Ex: BGK, MRT, bgk_pl, bgk_cy, bgk_cs...
     character(len=labelLen) :: relaxation
+    !> equilibrium order Ex: first, second
+    character(len=labelLen) :: order
   end type mus_scheme_header_type
 
 contains
@@ -173,6 +175,14 @@ contains
         &               val     = me%relaxation,                               &
         &               default = 'bgk',                                       &
         &               ErrCode = iError )
+      
+      ! get order of equilibrium
+      call aot_get_val( L       = conf,                                        &
+        &               thandle = thandle,                                     &
+        &               key     = 'order',                                     &
+        &               val     = me%order,                                    &
+        &               default = 'second',                                    &
+        &               ErrCode = iError ) 
 
     else
       write(logUnit(1),*) 'Scheme Identify table not defined.'
@@ -184,6 +194,7 @@ contains
     write(logUnit(1),*) 'kind: '// trim( me%kind )
     write(logUnit(1),*) 'Layout: '// trim( me%layout )
     write(logUnit(1),*) 'relaxation: '// trim( me%relaxation )
+    write(logUnit(1),*) 'order: '// trim( me%order )
     call tem_horizontalSpacer(fUnit = logUnit(1))
 
     ! Both multispeciees and poisson equation must have diffusive scaling

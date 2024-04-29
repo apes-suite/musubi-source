@@ -1407,6 +1407,20 @@ contains
             &                 'diffusion model'
           me( myBCID )%nNeighs = 0
 
+        case('pressure_antiBounceBack_pasScal')
+          write(logUnit(1),*) '    Pressure anti bounce back for passive scalar ' &
+              &                 // trim(me( myBCID )%label)
+            me( myBCID )%requireNeighBufPost = .true.
+            me( myBCID )%nNeighs = 1
+            call tem_load_bc_state( bc         = me(myBCID)%BC_states &
+              &                                            %pressure, &
+              &                     state_name = 'pressure',          &
+              &                     nComp      = 1,                   &
+              &                     conf       = conf,                &
+              &                     bc_handle  = sub_handle,          &
+              &                     varDict    = me(myBCID)%varDict,  &
+              &                     varSys     = varSys               )
+
         case( 'test' )
           write(logUnit(1),*) '   WARNING!! '
           write(logUnit(1),*) '   Test boundary conditions for testing ' // &

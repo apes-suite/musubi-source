@@ -115,7 +115,8 @@ module mus_bc_general_module
   use mus_bc_fluid_experimental_module, only: moments_inflow, moments_outflow, &
     &                                         spc_moments_outflow,             &
     &                                         spc_bb_wall, spc_bb_vel_test
-  use mus_bc_passiveScalar_module,      only: outlet_pasScal, inlet_pasScal
+  use mus_bc_passiveScalar_module,      only: outlet_pasScal, inlet_pasScal,   &
+    &                                         pressure_antiBounceBack_pasScal
   use mus_bc_species_module,            only: spc_outlet_zero_prsgrd,          &
     &                                         spc_moleFrac, spc_moleFlux,      &
     &                                         spc_moleFrac_wtdf,               &
@@ -700,6 +701,8 @@ contains
         bc( iBnd )%fnct => inlet_pasScal
       case('flekkoy_outlet')
         bc( iBnd )%fnct => outlet_pasScal
+      case('pressure_antiBounceBack_pasScal')
+        bc( iBnd )%fnct => pressure_antiBounceBack_pasScal
       ! multispecies boundary conditions
       case('spc_slip_wall')
         isWall = .true.
