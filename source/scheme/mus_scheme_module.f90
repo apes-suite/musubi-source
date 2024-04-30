@@ -368,7 +368,7 @@ contains
     ! Initialize quantities type in the layout class
     me%layout%quantities = mus_assign_derived_functions_ptr( &
       & label_stencil = me%layout%fStencil%label, &
-      & label_fluid = me%header%kind              )
+      & scheme_kind = me%header%kind              )
 
     call tem_horizontalSpacer(fUnit = logUnit(1))
 

@@ -136,9 +136,9 @@ program mus_nNwtn_CY_compare_test
   solverData%physics   => param%physics
 
   ! Initialize quantities pointers
-  solverData%scheme%layout%quantities = mus_assign_derived_functions_ptr( &
-    & label_stencil = scheme%header%layout,  &
-    & label_fluid = scheme%header%kind       )
+  solverData%scheme%layout%quantities = mus_assign_derived_functions_ptr(       &
+    &                                     label_stencil = scheme%header%layout, &
+    &                                     scheme_kind = scheme%header%kind      )
 
   call init_varSys( scheme%varSys, sysName, QQ, solverData, scheme%header, &
     &               scheme%derVarPos )
