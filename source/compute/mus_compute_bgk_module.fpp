@@ -61,7 +61,7 @@ module mus_bgk_module
 
   private
 
-  public :: bgk_advRel_generic
+  public :: mus_advRel_kCFD_rBGK_vStdNoOpt_l
   public :: bgk_advRel_flekkoy
   public :: bgk_advRel_flekkoy_noFluid
 
@@ -256,9 +256,10 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_advRel_generic( fieldProp, inState, outState, auxField, &
-    &                            neigh, nElems, nSolve, level, layout,   &
-    &                            params, varSys, derVarPos               )
+  subroutine mus_advRel_kCFD_rBGK_vStdNoOpt_l( fieldProp, inState, outState,   &
+    &                                          auxField, neigh, nElems, nSolve,&
+    &                                          level, layout, params, varSys,  &
+    &                                          derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -337,7 +338,7 @@ contains
 
     end do nodeloop
 
-  end subroutine bgk_advRel_generic
+  end subroutine mus_advRel_kCFD_rBGK_vStdNoOpt_l
 ! ****************************************************************************** !
 
 end module mus_bgk_module

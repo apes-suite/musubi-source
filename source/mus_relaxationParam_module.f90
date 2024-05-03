@@ -416,7 +416,7 @@ contains
         end if
 
         select case (trim(schemeRelax))
-        case ('bgk', 'bgk_improved', 'bgk_generic', 'mrt_bgk')
+        case ('bgk')
           if (glob_om_max > 1.976_rk) then
             write(logUnit(1),'(A,F10.5)') 'WARNING: Kinematic omega > 1.976:', &
               &                           glob_om_max
@@ -425,7 +425,7 @@ contains
             write(logUnit(1),*) 'especially near BC and level jumps.'
           end if
         case ('mrt','trt','cumulant','cumulant_extended','hrr_bgk','rr_bgk',   &
-          &   'prr_bgk','r_bgk', 'mrt_generic', 'drt_bgk', 'rr_bgk_corrected', &
+          &   'prr_bgk','r_bgk', 'drt_bgk', 'rr_bgk_corrected', &
           &   'cumulant_extended_generic', 'hrr_bgk_corrected',                &
           &   'prr_bgk_corrected')
           if (glob_om_max > 1.999_rk) then

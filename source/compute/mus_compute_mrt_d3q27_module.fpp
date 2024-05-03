@@ -65,9 +65,9 @@ module mus_mrt_d3q27_module
 
   private
 
-  public :: weighted_mrt_advRel_d3q27_generic
-  public :: weighted_mrt_advRel_d3q27
-  public :: weighted_mrt_advRel_d3q27_incomp
+  public :: mus_advRel_kCFD_rMRT_vStdNoOpt_lD3Q27
+  public :: mus_advRel_kFluid_rMRT_vStd_lD3Q27
+  public :: mus_advRel_kFluidIncomp_rMRT_vStd_lD3Q27
 
   !=============================================================================
   ! D3Q27 flow model
@@ -85,9 +85,11 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine weighted_mrt_advRel_d3q27_generic( fieldProp, inState, outState,  &
-    &                                  auxField, neigh, nElems, nSolve, level, &
-    &                                  layout,params, varSys, derVarPos        )
+  subroutine mus_advRel_kCFD_rMRT_vStdNoOpt_lD3Q27( fieldProp, inState,        &
+    &                                               outState, auxField, neigh, &
+    &                                               nElems, nSolve, level,     &
+    &                                               layout, params, varSys,    &
+    &                                               derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -180,7 +182,7 @@ contains
 
     enddo nodeloop
 
-  end subroutine weighted_mrt_advRel_d3q27_generic
+  end subroutine mus_advRel_kCFD_rMRT_vStdNoOpt_lD3Q27
 ! **************************************************************************** !
 
 ! **************************************************************************** !
@@ -189,9 +191,10 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine weighted_mrt_advRel_d3q27( fieldProp, inState, outState, auxField, &
-    &                          neigh, nElems, nSolve, level, layout,   &
-    &                          params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluid_rMRT_vStd_lD3Q27( fieldProp, inState, outState, &
+    &                                            auxField, neigh, nElems,      &
+    &                                            nSolve, level, layout, params,&
+    &                                            varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -359,7 +362,7 @@ contains
 
     enddo nodeloop
 
-  end subroutine weighted_mrt_advRel_d3q27
+  end subroutine mus_advRel_kFluid_rMRT_vStd_lD3Q27
 ! **************************************************************************** !
 
 ! **************************************************************************** !
@@ -368,9 +371,11 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine weighted_mrt_advRel_d3q27_incomp( fieldProp, inState, outState, &
-    &                          auxField, neigh, nElems, nSolve, level,       &
-    &                          layout,  params, varSys, derVarPos            )
+  subroutine mus_advRel_kFluidIncomp_rMRT_vStd_lD3Q27( fieldProp, inState,     &
+    &                                                  outState, auxField,     &
+    &                                                  neigh, nElems, nSolve,  &
+    &                                                  level, layout, params,  &
+    &                                                  varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -538,7 +543,7 @@ contains
 
     enddo nodeloop
 
-  end subroutine weighted_mrt_advRel_d3q27_incomp
+  end subroutine mus_advRel_kFluidIncomp_rMRT_vStd_lD3Q27
 ! **************************************************************************** !
 
 end module mus_mrt_d3q27_module

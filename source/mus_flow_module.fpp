@@ -118,10 +118,14 @@ contains
     select case( trim(scheme%header%kind) )
     case ('fluid')
       call mus_init_advRel_fluid( relaxation = scheme%header%relaxation, &
+        &                         variant    = scheme%header%relaxHeader &
+        &                                                   %variant,    &
         &                         layout     = scheme%header%layout,     &
         &                         compute    = scheme%compute            )
     case ('fluid_incompressible')
       call mus_init_advRel_fluidIncomp( relaxation = scheme%header%relaxation, &
+        &                               variant    = scheme%header%relaxHeader &
+        &                                                         %variant,    &
         &                               layout     = scheme%header%layout,     &
         &                               compute    = scheme%compute            )
     case ('multispecies_gas')

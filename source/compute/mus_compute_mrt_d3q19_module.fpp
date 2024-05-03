@@ -133,13 +133,13 @@ module mus_mrt_d3q19_module
 
   private
 
-  public :: mrt_advRel_d3q19
-  public :: mrt_advRel_d3q19_generic
+  public :: mus_advRel_kFluid_rMRT_vStd_lD3Q19
+  public :: mus_advRel_kFluid_rMRT_vStdNoOpt_lD3Q19
 
-  public :: mrt_advRel_d3q19_incomp
-  public :: mrt_advRel_d3q19_incomp_generic
+  public :: mus_advRel_kFluidIncomp_rMRT_vStd_lD3Q19
+  public :: mus_advRel_kFluidIncomp_rMRT_vStdNoOpt_lD3Q19
 
-  public :: mrt_advRel_generic
+  public :: mus_advRel_kCFD_rMRT_vStdNoOpt_l
 
   !=============================================================================
   ! D3Q19 flow model
@@ -177,9 +177,10 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mrt_advRel_d3q19( fieldProp, inState, outState, auxField, &
-    &                          neigh, nElems, nSolve, level, layout,   &
-    &                          params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluid_rMRT_vStd_lD3Q19( fieldProp, inState, outState, &
+    &                                            auxField, neigh, nElems,      &
+    &                                            nSolve, level, layout, params,&
+    &                                            varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -451,7 +452,7 @@ c6 = f01N - f0N1
     enddo nodeloop
 !$omp end do
 
-  end subroutine mrt_advRel_d3q19
+  end subroutine mus_advRel_kFluid_rMRT_vStd_lD3Q19
 ! ****************************************************************************** !
 
 
@@ -462,9 +463,11 @@ c6 = f01N - f0N1
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mrt_advRel_d3q19_incomp( fieldProp, inState, outState, auxField, &
-    &                                 neigh, nElems, nSolve, level, layout,   &
-    &                                 params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluidIncomp_rMRT_vStd_lD3Q19( fieldProp, inState,    &
+    &                                                  outState, auxField,    &
+    &                                                  neigh, nElems, nSolve, &
+    &                                                  level, layout, params, &
+    &                                                  varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -733,7 +736,7 @@ c6 = f01N - f0N1
 
     enddo nodeloop
 
-  end subroutine mrt_advRel_d3q19_incomp
+  end subroutine mus_advRel_kFluidIncomp_rMRT_vStd_lD3Q19
 ! ****************************************************************************** !
 
 
@@ -745,10 +748,12 @@ c6 = f01N - f0N1
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mrt_advRel_d3q19_incomp_generic( fieldProp, inState, outState,    &
-    &                                         auxField, neigh, nElems, nSolve, &
-    &                                         level, layout, params, varSys,   &
-    &                                         derVarPos                        )
+  subroutine mus_advRel_kFluidIncomp_rMRT_vStdNoOpt_lD3Q19( fieldProp, inState,&
+    &                                                       outState, auxField,&
+    &                                                       neigh, nElems,     &
+    &                                                       nSolve, level,     &
+    &                                                       layout, params,    &
+    &                                                       varSys, derVarPos  )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -858,7 +863,7 @@ c6 = f01N - f0N1
 
     enddo nodeloop
 
-  end subroutine mrt_advRel_d3q19_incomp_generic
+  end subroutine mus_advRel_kFluidIncomp_rMRT_vStdNoOpt_lD3Q19
 ! ****************************************************************************** !
 
 ! ****************************************************************************** !
@@ -869,9 +874,11 @@ c6 = f01N - f0N1
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mrt_advRel_d3q19_generic( fieldProp, inState, outState, auxField, &
-    &                                  neigh, nElems, nSolve, level, layout,   &
-    &                                  params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluid_rMRT_vStdNoOpt_lD3Q19( fieldProp, inState,      &
+    &                                                 outState, auxField,      &
+    &                                                 neigh, nElems, nSolve,   &
+    &                                                 level, layout, params,   &
+    &                                                 varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -979,7 +986,7 @@ c6 = f01N - f0N1
 
     enddo nodeloop
 
-  end subroutine mrt_advRel_d3q19_generic
+  end subroutine mus_advRel_kFluid_rMRT_vStdNoOpt_lD3Q19
 ! ****************************************************************************** !
 
 
@@ -989,9 +996,10 @@ c6 = f01N - f0N1
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mrt_advRel_generic( fieldProp, inState, outState, auxField, &
-    &                            neigh, nElems, nSolve, level, layout,   &
-    &                            params, varSys, derVarPos )
+  subroutine mus_advRel_kCFD_rMRT_vStdNoOpt_l( fieldProp, inState, outState, &
+    &                                          auxField, neigh, nElems,      &
+    &                                          nSolve, level, layout, params,&
+    &                                          varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -1094,7 +1102,7 @@ c6 = f01N - f0N1
 
     enddo nodeloop
 
-  end subroutine mrt_advRel_generic
+  end subroutine mus_advRel_kCFD_rMRT_vStdNoOpt_l
 ! **************************************************************************** !
 
 end module mus_mrt_d3q19_module

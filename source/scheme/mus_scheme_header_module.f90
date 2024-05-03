@@ -86,33 +86,33 @@ module mus_scheme_header_module
   !!> |      | **poisson_boltzmann_linear**    |
   !!> |      | **poisson_boltzmann_nonlinear** |
   !!> |------|---------------------------------|
-  !!> | layout | **D2Q9**           |
-  !!> |        | **D3Q19** (default)|
-  !!> |        | **D3Q27**          |
-  !!> |        | _D1Q3_             |
-  !!> |        | _D2Q5_             |
-  !!> |        | _D3Q6_             |
-  !!> |        | _D3Q7_             |
-  !!> |        | _D3Q13_            |
-  !!> |        | _D3Q15_            |
+  !!> | layout | **d2q9**           |
+  !!> |        | **d3q19** (default)|
+  !!> |        | **d3q27**          |
+  !!> |        | _d1q3_             |
+  !!> |        | _d2q5_             |
+  !!> |        | _d3q6_             |
+  !!> |        | _d3q7_             |
+  !!> |        | _d3q13_            |
+  !!> |        | _d3q15_            |
   !!> |        | _flekkoy_          |
   !!> |--------|--------------------|
-  !!> | relaxation | **BGK**  (default)       |
-  !!> |            | **MRT**                  |
-  !!> |            | **TRT**                  |
+  !!> | relaxation | **bgk**  (default)       |
+  !!> |            | **mrt**                  |
+  !!> |            | **trt**                  |
   !!> |            | **bgk_withthermodynfac** |
   !!> |            | **mrt_withthermodynfac** |
-  !!> |            | _mrt_bgk_                |
-  !!> |            | _mrt_generic_            |
-  !!> |            | _bgk_generic_            |
-  !!> |            | _bgk_improved_           |
-  !!> |            | _bgk_block_              |
   !!> |            | _cumulant_               |
   !!> |            | _cascaded_               |
   !!> |            | _vec_fma_                |
   !!> |            | _test_                   |
   !!> |            | _bgk_noFluid_            |
   !!> |------------|--------------------------|
+  !!> | variant for bgk relaxation | **standard**  (default)       |
+  !!> |                            | **improved**                  |
+  !!> |                            | **block**                     |
+  !!> |                            | **mrt**                       |
+  !!> |------------------------------------------------------------|
   type mus_scheme_header_type
     !> scheme kind, Ex: fluid, fluid_incompressible, multispecies_gas, 
     !! multispecies_liquid, poisson, poisson_boltzmann_linear, 
@@ -202,7 +202,7 @@ contains
           &               val     = me%relaxation,                             &
           &               default = 'bgk',                                     &
           &               ErrCode = iError )
-        me%relaxation_header%variant = 'standard'
+        me%relaxHeader%variant = 'standard'
       else ! load relaxation options from a table
         ! get relaxation
         call aot_get_val( L       = conf,                                      &
@@ -211,7 +211,7 @@ contains
           &               val     = me%relaxation,                             &
           &               default = 'bgk',                                     &
           &               ErrCode = iError )
-        call load_relaxation_header( me      = me%relaxation_header,           &
+        call load_relaxation_header( me      = me%relaxHeader,                 &
           &                          conf    = conf,                           &
           &                          thandle = relax_handle )
       end if

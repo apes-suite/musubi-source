@@ -66,9 +66,9 @@ module mus_d3q27_module
 
   private
 
-  public :: bgk_improved_advRel_d3q27
-  public :: bgk_advRel_d3q27
-  public :: trt_advRel_d3q27
+  public :: mus_advRel_kFluid_rBGK_vImproved_lD3Q27
+  public :: mus_advRel_kCFD_rBGK_vStd_lD3Q27
+  public :: mus_advRel_kFluid_rTRT_vStd_lD3Q27
   public :: bgk_Regularized_d3q27
   public :: bgk_RecursiveRegularized_d3q27
   public :: bgk_HybridRecursiveRegularized_d3q27
@@ -92,10 +92,11 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_improved_advRel_d3q27( fieldProp, inState, outState,    &
-    &                                   auxField, neigh, nElems, nSolve, &
-    &                                   level, layout, params, varSys,   &
-    &                                   derVarPos                        )
+  subroutine mus_advRel_kFluid_rBGK_vImproved_lD3Q27( fieldProp, inState,      &
+    &                                                 outState, auxField,      &
+    &                                                 neigh, nElems, nSolve,   &
+    &                                                 level, layout, params,   &
+    &                                                 varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -319,7 +320,7 @@ outState( ?SAVE?( qNNN,1,iElem,QQ,QQ,nElems,neigh )) = cmpl_o*f(-1,-1,-1) + XNYN
     end do nodeloop
 !$omp end do nowait
 
-  end subroutine bgk_improved_advRel_d3q27
+  end subroutine mus_advRel_kFluid_rBGK_vImproved_lD3Q27
 ! ****************************************************************************** !
 
 
@@ -330,9 +331,10 @@ outState( ?SAVE?( qNNN,1,iElem,QQ,QQ,nElems,neigh )) = cmpl_o*f(-1,-1,-1) + XNYN
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_advRel_d3q27( fieldProp, inState, outState, auxField, &
-    &                          neigh, nElems, nSolve, level, layout,   &
-    &                          params, varSys, derVarPos               )
+  subroutine mus_advRel_kCFD_rBGK_vStd_lD3Q27( fieldProp, inState, outState,  &
+    &                                          auxField, neigh, nElems,       &
+    &                                          nSolve, level, layout, params, &
+    &                                          varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -532,7 +534,7 @@ outState( ?SAVE?( qNNN,1,iElem,QQ,QQ,nElems,neigh )) = cmpl_o*f(-1,-1,-1) + XNYN
     enddo nodeloop
 !$omp end do nowait
 
-  end subroutine bgk_advRel_d3q27
+  end subroutine mus_advRel_kCFD_rBGK_vStd_lD3Q27
 ! ****************************************************************************** !
 
 ! ****************************************************************************** !
@@ -543,9 +545,10 @@ outState( ?SAVE?( qNNN,1,iElem,QQ,QQ,nElems,neigh )) = cmpl_o*f(-1,-1,-1) + XNYN
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   ! via [[mus_scheme_type:compute]] function pointer.
-  subroutine trt_advRel_d3q27( fieldProp, inState, outState, auxField, &
-    &                          neigh, nElems, nSolve, level, layout,   &
-    &                          params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluid_rTRT_vStd_lD3Q27( fieldProp, inState, outState, &
+    &                                            auxField, neigh, nElems,      &
+    &                                            nSolve, level, layout,        &
+    &                                            params, varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -738,7 +741,7 @@ outState( ?SAVE?( qNNN,1,iElem,QQ,QQ,nElems,neigh )) = f(-1,-1,-1) - p_part + n_
 
     end do nodeloop
 
-  end subroutine trt_advRel_d3q27
+  end subroutine mus_advRel_kFluid_rTRT_vStd_lD3Q27
 ! ****************************************************************************** !
 
 
