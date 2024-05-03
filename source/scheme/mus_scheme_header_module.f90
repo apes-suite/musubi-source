@@ -31,10 +31,10 @@
 module mus_scheme_header_module
 
   ! include treelm modules
-  use env_module,         only: LabelLen
-  use tem_tools_module,   only: tem_horizontalSpacer
-  use tem_aux_module,     only: tem_abort
-  use tem_logging_module, only: logUnit
+  use env_module,                    only: LabelLen, rk
+  use tem_tools_module,              only: tem_horizontalSpacer
+  use tem_aux_module,                only: tem_abort
+  use tem_logging_module,            only: logUnit
 
   ! include aotus modules
   use aotus_module,     only: flu_State, aot_get_val, aoterr_NonExistent
@@ -48,6 +48,24 @@ module mus_scheme_header_module
 
   public :: mus_scheme_header_type, mus_scheme_header_out
   public :: mus_load_scheme_header
+  public :: mus_relaxation_header_type
+
+
+  !> Datatype containing additional options for the relaxation like variant and 
+  !! other variant specific parameters
+  type mus_relaxation_header_type
+    !> Varaint name of the relaxation. Set to "default" to select default
+    !! relaxation 
+    character(len=labelLen) :: variant
+    !> Addtional information to load for regularited bgk like
+    !! "regularized", "recursive_regularited" and "hybrid_recursive_regularized"
+    !! variant.
+    real(kind=rk) :: regularization_omega
+
+    !> todo move omega_Cum, omega_Lim, DRT_tauN, lambda from mus_fluid_type 
+    !! to here
+  end type mus_relaxation_header_type
+
 
   !> Datatype containing information to identify the scheme
   !!
@@ -104,6 +122,8 @@ module mus_scheme_header_module
     character(len=labelLen) :: layout
     !> scheme relaxation type Ex: BGK, MRT, bgk_pl, bgk_cy, bgk_cs...
     character(len=labelLen) :: relaxation
+    !> Variant and additional options for a relaxation
+    type(mus_relaxation_header_type) :: relaxHeader
   end type mus_scheme_header_type
 
 contains
@@ -134,6 +154,7 @@ contains
     character(len=*), intent(in) :: scaling
     ! ---------------------------------------------------------------------------
     integer :: thandle !< handle for scheme identify table
+    integer :: relax_handle
     integer :: iError
     ! ---------------------------------------------------------------------------
 
@@ -166,13 +187,35 @@ contains
         &               default = 'd3q19',                                     &
         &               ErrCode = iError )
 
-      ! get relaxation
-      call aot_get_val( L       = conf,                                        &
-        &               thandle = thandle,                                     &
-        &               key     = 'relaxation',                                &
-        &               val     = me%relaxation,                               &
-        &               default = 'bgk',                                       &
-        &               ErrCode = iError )
+      ! Load relaxation as table to load additional information for relaxation.
+      ! if not a table then variant is set to default.
+      call aot_table_open( L       = conf,         &
+        &                  parent  = thandle,      &
+        &                  thandle = relax_handle, &
+        &                  key     = 'relaxation'  )
+
+      if ( relax_handle ==  0 ) then
+        ! get relaxation
+        call aot_get_val( L       = conf,                                      &
+          &               thandle = thandle,                                   &
+          &               key     = 'relaxation',                              &
+          &               val     = me%relaxation,                             &
+          &               default = 'bgk',                                     &
+          &               ErrCode = iError )
+        me%relaxation_header%variant = 'standard'
+      else ! load relaxation options from a table
+        ! get relaxation
+        call aot_get_val( L       = conf,                                      &
+          &               thandle = relax_handle,                              &
+          &               key     = 'name',                                    &
+          &               val     = me%relaxation,                             &
+          &               default = 'bgk',                                     &
+          &               ErrCode = iError )
+        call load_relaxation_header( me      = me%relaxation_header,           &
+          &                          conf    = conf,                           &
+          &                          thandle = relax_handle )
+      end if
+      call aot_table_close( L=conf, thandle=relax_handle )
 
     else
       write(logUnit(1),*) 'Scheme Identify table not defined.'
@@ -181,9 +224,11 @@ contains
 
     call aot_table_close( L=conf, thandle=thandle )
 
-    write(logUnit(1),*) 'kind: '// trim( me%kind )
-    write(logUnit(1),*) 'Layout: '// trim( me%layout )
-    write(logUnit(1),*) 'relaxation: '// trim( me%relaxation )
+    write(logUnit(1), '(A)') 'kind: '// trim( me%kind )
+    write(logUnit(1), '(A)') 'Layout: '// trim( me%layout )
+    write(logUnit(1), '(A)') 'relaxation: '// trim( me%relaxation )
+    write(logUnit(1), '(A)') '  variant: ' //                                  &
+      &                      trim( me%relaxHeader%variant )
     call tem_horizontalSpacer(fUnit = logUnit(1))
 
     ! Both multispeciees and poisson equation must have diffusive scaling
@@ -210,6 +255,45 @@ contains
 
   end subroutine mus_load_scheme_header
 ! ****************************************************************************** !
+
+! *****************************************************************************!
+  !> Load relaxation options from a table
+  subroutine load_relaxation_header(me, conf, thandle)
+    ! --------------------------------------------------------------------------
+    type(mus_relaxation_header_type), intent(out) :: me
+    type( flu_State ) :: conf !< flu state
+    !> relaxation handle
+    integer, intent(in) :: thandle
+    ! --------------------------------------------------------------------------
+    integer :: iError
+    ! --------------------------------------------------------------------------
+    call aot_get_val( L       = conf,                                          &
+      &               thandle = thandle,                                       &
+      &               key     = 'variant',                                     &
+      &               val     = me%variant,                                    &
+      &               default = 'standard',                                    &
+      &               ErrCode = iError )
+
+
+    select case (trim(me%variant))
+    case ('regularized', 'recursive_regularied', 'hybrid_recursive_regularized')
+      call aot_get_val( L       = conf,                                        &
+        &               thandle = thandle,                                     &
+        &               key     = 'regularization_omega',                      &
+        &               val     = me%regularization_omega,                     &
+        &               ErrCode = iError )
+      if (btest(iError, aoterr_NonExistent)) then
+        write(logUnit(1),*) 'Error: regularization_omega is not specified for'
+        write(logUnit(1),*) 'regularized variant' 
+        call tem_abort()
+      end if
+      write(logUnit(1),'(A, F10.7)') '  regularization_omega: ',               &
+        &                            me%regularization_omega
+
+    end select
+
+  end subroutine load_relaxation_header
+! *****************************************************************************!
 
 ! ****************************************************************************** !
   !> Dumps scheme header
