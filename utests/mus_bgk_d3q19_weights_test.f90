@@ -24,7 +24,7 @@ program mus_bgk_d3q19_weights_test
     &                                 mus_define_d3q19,          &
     &                                 mus_set_weights_d3q19
   use mus_field_prop_module,    only: mus_field_prop_type
-  use mus_d3q19_module,         only: bgk_advRel_d3q19
+  use mus_d3q19_module,         only: mus_advRel_kFluid_rBGK_vStd_lD3Q19
 
   use mus_utestEnv_module,      only: init_fluid, init_varSys
 
@@ -59,6 +59,7 @@ program mus_bgk_d3q19_weights_test
   scheme%header%kind = 'fluid'
   scheme%header%relaxation = 'bgk'
   scheme%header%layout = 'd3q19'
+  scheme%header%relaxHeader%variant = 'standard'
 
   CALL SYSTEM_CLOCK( COUNT = clock )
   call init_random_seed( clock )
@@ -104,7 +105,8 @@ program mus_bgk_d3q19_weights_test
   ! call compute kernel
   write( logUnit(1), *) 'Calling compute kernel routine.'
 !$omp single
-  call bgk_advRel_d3q19( fieldProp = scheme%field(:)%fieldProp, &
+  call mus_advRel_kFluid_rBGK_vStd_lD3Q19(                      &
+    &                    fieldProp = scheme%field(:)%fieldProp, &
     &                    inState   = inState,                   &
     &                    outState  = outState,                  &
     &                    auxField  = auxField,                  &

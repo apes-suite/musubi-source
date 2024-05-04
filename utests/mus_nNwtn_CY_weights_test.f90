@@ -28,7 +28,7 @@ program mus_nNwtn_CY_weights_test
     &                                 mus_define_d3q19,          &
     &                                 mus_set_weights_d3q19
   use mus_field_prop_module,    only: mus_field_prop_type
-  use mus_d3q19_module,         only: bgk_advRel_d3q19
+  use mus_d3q19_module,         only: mus_advRel_kFluid_rBGK_vStd_lD3Q19
   use mus_physics_module,       only: mus_physics_type,          &
     &                                 mus_set_convFac,           &
     &                                 set_values_by_levels,      &
@@ -72,6 +72,7 @@ program mus_nNwtn_CY_weights_test
   scheme%header%kind = 'fluid'
   scheme%header%relaxation = 'bgk'
   scheme%header%layout = 'd3q19'
+  scheme%header%relaxHeader%variant = 'standard'
 
   ! generate random omega
   CALL SYSTEM_CLOCK( COUNT = clock )
@@ -166,18 +167,19 @@ program mus_nNwtn_CY_weights_test
 
   ! call compute kernel
   write( logUnit(1), *) 'Calling compute kernel routine.'
-  call bgk_advRel_d3q19( fieldProp = scheme%field(:)%fieldProp, &
-    &                    inState   = inState,                   &
-    &                    outState  = outState,                  &
-    &                    auxField  = auxField,                  &
-    &                    neigh     = neigh,                     &
-    &                    nElems    = 1,                         &
-    &                    nSolve    = 1,                         &
-    &                    level     = level,                     &
-    &                    layout    = scheme%layout,             &
-    &                    params    = param,                     &
-    &                    derVarPos = scheme%derVarPos,          &
-    &                    varSys    = scheme%varSys              )
+  call mus_advRel_kFluid_rBGK_vStd_lD3Q19(      &
+    &    fieldProp = scheme%field(:)%fieldProp, &
+    &    inState   = inState,                   &
+    &    outState  = outState,                  &
+    &    auxField  = auxField,                  &
+    &    neigh     = neigh,                     &
+    &    nElems    = 1,                         &
+    &    nSolve    = 1,                         &
+    &    level     = level,                     &
+    &    layout    = scheme%layout,             &
+    &    params    = param,                     &
+    &    derVarPos = scheme%derVarPos,          &
+    &    varSys    = scheme%varSys              )
 
   write( logUnit(1), *) 'Calculating errors.'
   diff = outState - inState
