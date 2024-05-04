@@ -140,12 +140,12 @@ debug = {
 
 -- scheme model for single fluid simulation
 identify = {
-    kind       = 'fluid',     -- simulation type of this scheme
-                            -- ( fluid, fluid_incomp, passive_scalar, ...)
-    relaxation = 'bgk',     -- relaxation type (bgk, mrt, ...)
-    -- Scheme layout
-    -- This describes the stencil to use in the simulation.
-   layout = 'd3q19'
+  kind = 'fluid',     -- simulation type of this scheme
+                      -- ( fluid, fluid_incomp, passive_scalar, ...)
+  relaxation = 'bgk', -- relaxation type (bgk, mrt, ...)
+  -- Scheme layout
+  -- This describes the stencil to use in the simulation.
+  layout = 'd3q19'
 }
 
   -- field which defines fluid or species

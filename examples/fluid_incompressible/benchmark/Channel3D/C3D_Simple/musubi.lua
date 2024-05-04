@@ -147,7 +147,10 @@ physics = {
 identify = {
   label = '3D',
   layout = 'd3q19',   -- Stencil
-  relaxation = 'bgk_generic', -- Collision
+  relaxation = {
+    name = 'bgk', -- Collision
+    variant = 'standard_no_opt', -- a variant of collision
+  },
   kind = 'fluid_incompressible' -- Physics
 }
 --! [Scheme identifier]
