@@ -109,8 +109,8 @@ contains
       case ('d3q27')
         compute => cumulant_d3q27
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('cumulant_extended')
@@ -118,8 +118,8 @@ contains
       case ('d3q27')
         compute => cumulant_d3q27_extended_fast
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('cumulant_extended_generic')
@@ -127,8 +127,8 @@ contains
       case ('d3q27')
         compute => cumulant_d3q27_extended_generic
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('cascaded')
@@ -136,8 +136,8 @@ contains
       case ('d3q27')
         compute => cascaded_d3q27
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('vec_fma', 'test')
@@ -152,8 +152,8 @@ contains
       case ('d2q9')
         compute => bgk_HybridRecursiveRegularized_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('hrr_bgk_corrected', 'prr_bgk_corrected', 'rr_bgk_corrected')
@@ -165,8 +165,8 @@ contains
       case ('d2q9')
         compute => bgk_HybridRecursiveRegularizedCorr_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('drt_bgk')
@@ -178,8 +178,8 @@ contains
       case ('d2q9')
         compute => bgk_DualRelaxationTime_RR_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('rr_bgk')
@@ -191,8 +191,8 @@ contains
       case ('d2q9')
         compute => bgk_RecursiveRegularized_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('prr_bgk')
@@ -204,8 +204,8 @@ contains
       case ('d2q9')
         compute => bgk_ProjectedRecursiveRegularized_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('r_bgk')
@@ -217,11 +217,13 @@ contains
       case ('d2q9')
         compute => bgk_Regularized_d2q9
       case default
-        call tem_abort('Stencil '//trim(layout)//' is not supported yet!')
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "'//trim(relaxation)//'"')
       end select
 
     case default
-      call tem_abort('Relaxation '//trim(relaxation)//' is not supported!')
+      call tem_abort('Unsupported relaxation "'//trim(relaxation)//'" for '//  &
+        &            'kind "fluid"')
     end select
 
   end subroutine mus_init_advRel_fluid
@@ -245,8 +247,8 @@ contains
       case ('d2q9')
         compute => mus_advRel_kFluid_rBGK_vStd_lD2Q9
       case default
-        call tem_abort('Unsupported variant "'//trim(variant)//'" for'// &
-          &             ' "bgk" relaxation!')
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "bgk" for variant "'//trim(variant)//'"')
       end select
 
     case ('standard_no_opt')
@@ -259,7 +261,8 @@ contains
       case ('d2q9')
         compute => mus_advRel_kFluid_rBGK_vImproved_lD2Q9
       case default
-        call tem_abort('Stencil '//trim(layout)//' is not supported yet!')
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "bgk" for variant "'//trim(variant)//'"')
       end select
 
     case ('block')
@@ -267,12 +270,13 @@ contains
       case ('d3q19')
         compute => mus_advRel_kFluid_rBGK_vBlock_lD3Q19
       case default
-        call tem_abort('Stencil '//trim(layout)//' is not supported yet!')
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "bgk" for variant "'//trim(variant)//'"')
       end select
 
     case default
-      call tem_abort('Unsupported variant "'//trim(variant)//'" for'// &
-        &             ' "bgk" relaxation!')
+      call tem_abort('Unsupported variant "'//trim(variant)//'" for '//        &
+        &            'relaxation "bgk"')
     end select
 
   end subroutine mus_init_advRel_fluid_bgk
@@ -296,8 +300,8 @@ contains
       case ('d2q9')
         compute => mus_advRel_kFluid_rMRT_vStd_lD2Q9
       case default
-        call tem_abort('Unsupported variant "'//trim(variant)//'" for'// &
-          &            ' "mrt" relaxation!')
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "mrt" for variant "'//trim(variant)//'"')
       end select
 
     case ('standard_no_opt')
@@ -315,8 +319,8 @@ contains
       compute => mus_advRel_kCFD_rMRT_vStdNoOpt_l
 
     case default
-      call tem_abort('Unsupported variant "'//trim(variant)//'" for'// &
-        &            ' "mrt" relaxation!')
+      call tem_abort('Unsupported variant "'//trim(variant)//'" for '//        &
+        &            'relaxation "mrt"')
     end select
 
   end subroutine mus_init_advRel_fluid_mrt
@@ -338,11 +342,12 @@ contains
       case ('d3q27')
         compute => mus_advRel_kFluid_rTRT_vStd_lD3Q27
       case default
-        call tem_abort('Stencil '//trim(layout)//' is not supported yet!')
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
+          &            'relaxation "trt" for variant "'//trim(variant)//'"')
       end select
     case default
-      call tem_abort('Unsupported variant "'//trim(variant)//'" for'// &
-        &            ' "trt" relaxation!')
+      call tem_abort('Unsupported variant "'//trim(variant)//'" for '//        &
+        &            'relaxation "trt"')
     end select
 
   end subroutine mus_init_advRel_fluid_trt
