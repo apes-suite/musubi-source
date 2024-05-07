@@ -180,36 +180,36 @@ program mus_nNwtn_CY_compare_test
   outOP = -1.0_rk
   ! call Optimized compute kernel
   write( logUnit(1), '(A)') 'Calling compute kernel routine.'
-  call mus_advRel_kFluid_rBGK_vStd_lD3Q19(                      &
-    &                    fieldProp = scheme%field(:)%fieldProp, &
-    &                    inState   = inState,                   &
-    &                    outState  = outOP,                     &
-    &                    auxField  = auxField,                  &
-    &                    neigh     = neigh,                     &
-    &                    nElems    = 1,                         &
-    &                    nSolve    = 1,                         &
-    &                    level     = level,                     &
-    &                    layout    = scheme%layout,             &
-    &                    params    = param,                     &
-    &                    derVarPos = scheme%derVarPos,          &
-    &                    varSys    = scheme%varSys              )
+  call mus_advRel_kFluid_rBGK_vStd_lD3Q19(      &
+    &    fieldProp = scheme%field(:)%fieldProp, &
+    &    inState   = inState,                   &
+    &    outState  = outOP,                     &
+    &    auxField  = auxField,                  &
+    &    neigh     = neigh,                     &
+    &    nElems    = 1,                         &
+    &    nSolve    = 1,                         &
+    &    level     = level,                     &
+    &    layout    = scheme%layout,             &
+    &    params    = param,                     &
+    &    derVarPos = scheme%derVarPos,          &
+    &    varSys    = scheme%varSys              )
 
   ! call Explicit compute kernel
   outEx = -1.0_rk
   write( logUnit(1), '(A)') 'Calling compute kernel routine.'
-  call mus_advRel_kCFD_rBGK_vStdNoOpt_l(                           &
-    &                       fieldProp = scheme%field(:)%fieldProp, &
-    &                       inState   = inState,                   &
-    &                       outState  = outEx,                     &
-    &                       auxField  = auxField,                  &
-    &                       neigh     = neigh,                     &
-    &                       nElems    = 1,                         &
-    &                       nSolve    = 1,                         &
-    &                       level     = level,                     &
-    &                       layout    = scheme%layout,             &
-    &                       params    = param,                     &
-    &                       derVarPos = scheme%derVarPos,          &
-    &                       varSys    = scheme%varSys              )
+  call mus_advRel_kCFD_rBGK_vStdNoOpt_l(        &
+    &    fieldProp = scheme%field(:)%fieldProp, &
+    &    inState   = inState,                   &
+    &    outState  = outEx,                     &
+    &    auxField  = auxField,                  &
+    &    neigh     = neigh,                     &
+    &    nElems    = 1,                         &
+    &    nSolve    = 1,                         &
+    &    level     = level,                     &
+    &    layout    = scheme%layout,             &
+    &    params    = param,                     &
+    &    derVarPos = scheme%derVarPos,          &
+    &    varSys    = scheme%varSys              )
 
   write( logUnit(1), '(A)') 'Calculating errors.'
   diff = outOp - outEx

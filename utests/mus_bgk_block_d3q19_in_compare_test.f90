@@ -118,19 +118,19 @@ program mus_bgk_d3q19_incomp_compare_test
 
   ! call optimized compute kernel
   write( logUnit(1), *) 'Calling Optimized compute kernel routine.'
-  call mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19(                       &
-    &                           fieldProp = scheme%field(:)%fieldProp, &
-    &                           inState   = inState,                   &
-    &                           outState  = outOP,                     &
-    &                           auxField  = auxField,                  &
-    &                           neigh     = neigh,                     &
-    &                           nElems    = 1,                         &
-    &                           nSolve    = 1,                         &
-    &                           level     = level,                     &
-    &                           layout    = layout,                    &
-    &                           params    = params,                    &
-    &                           derVarPos = scheme%derVarPos,          &
-    &                           varSys    = scheme%varSys              )
+  call mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19( &
+    &    fieldProp = scheme%field(:)%fieldProp,  &
+    &    inState   = inState,                    &
+    &    outState  = outOP,                      &
+    &    auxField  = auxField,                   &
+    &    neigh     = neigh,                      &
+    &    nElems    = 1,                          &
+    &    nSolve    = 1,                          &
+    &    level     = level,                      &
+    &    layout    = layout,                     &
+    &    params    = params,                     &
+    &    derVarPos = scheme%derVarPos,           &
+    &    varSys    = scheme%varSys               )
 
   outEx = -1.0_rk
   ! call explicit compute kernel

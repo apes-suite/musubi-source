@@ -1,4 +1,7 @@
-! Copyright (c) 2013, 2015-2016, 2019-2020 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
+! Copyright (c) 2013 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
+! Copyright (c) 2015-2016 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
+! Copyright (c) 2019-2020 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
+! Copyright (c) 2024 Kannan Masilamani <kannan.masilamani@dlr.de>
 ! Copyright (c) 2013-2015 Jiaxing Qi <jiaxing.qi@uni-siegen.de>
 ! Copyright (c) 2016 Tobias Schneider <tobias1.schneider@student.uni-siegen.de>
 !
@@ -22,7 +25,7 @@
 ! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-! ****************************************************************************** !
+! **************************************************************************** !
 !> This module contains routines which initiliaze advection relaxation and
 !! flow field for lbm incompressible model.
 module mus_initFluidIncomp_module
@@ -53,9 +56,9 @@ module mus_initFluidIncomp_module
 
 contains
 
-! **************************************************************************** !
+  ! ************************************************************************** !
   !> Initialize the relaxation model for lbm incompressible model
-  subroutine mus_init_advRel_fluidIncomp( relaxation, variant, layout, compute )
+  subroutine mus_init_advRel_fluidIncomp(relaxation, variant, layout, compute)
     ! --------------------------------------------------------------------------
     character(len=labelLen), intent(inout) :: relaxation
     character(len=labelLen), intent(in) :: variant
@@ -79,31 +82,31 @@ contains
         case ('d3q19')
           compute => mus_advRel_kFluidIncomp_rTRT_vStd_lD3Q19
         case default
-          call tem_abort('Unsupported layout "'//trim(layout)//'" for '//      &
-            &            'relaxation "'//trim(relaxation)//'"')
+          call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+            &            // 'relaxation "'//trim(relaxation)//'"')
         end select
       case default
-        call tem_abort('Unsupported variant "'//trim(variant)//'" for '//      &
-          &            'relaxation "trt"')
+        call tem_abort('Unsupported variant "'//trim(variant)//'" for ' &
+          &            // 'relaxation "trt"')
       end select
 
     case default
-      call tem_abort('Unsupported relaxation "'//trim(relaxation)//'" for '//  &
-        &            'kind "fluid_incompressible"')
+      call tem_abort('Unsupported relaxation "'//trim(relaxation)//'" for ' &
+        &            // 'kind "fluid_incompressible"')
     end select
 
   end subroutine mus_init_advRel_fluidIncomp
-! **************************************************************************** !
+  ! ************************************************************************** !
 
   ! ************************************************************************** !
   !> This routine assigns compute routine for bgk relaxation
-  subroutine mus_init_advRel_fluidIncomp_bgk( variant, layout, compute )
+  subroutine mus_init_advRel_fluidIncomp_bgk(variant, layout, compute)
     ! --------------------------------------------------------------------------
     character(len=labelLen), intent(in) :: variant
     character(len=labelLen), intent(in) :: layout
     procedure( kernel ), pointer, intent(out) :: compute
     ! --------------------------------------------------------------------------
-    select case(trim(variant))
+    select case (trim(variant))
     case ('standard')
       select case (trim(layout))
       case ('d3q27')
@@ -113,16 +116,16 @@ contains
       case ('d2q9')
         compute => mus_advRel_kFluidIncomp_rBGK_vStd_lD2Q9
       case default
-        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
-          &            ' relaxation "bgk" for variant "'//trim(variant)//'"')
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '         &
+          &            //' relaxation "bgk" for variant "'//trim(variant)//'"')
       end select
 
     case ('standard_no_opt')
       compute => mus_advRel_kCFD_rBGK_vStdNoOpt_l
 
     case default
-      call tem_abort('Unsupported variant "'//trim(variant)//'" for '//        &
-        &            'relaxation "bgk"')
+      call tem_abort('Unsupported variant "'//trim(variant)//'" for ' &
+        &            //'relaxation "bgk"')
     end select
 
   end subroutine mus_init_advRel_fluidIncomp_bgk
@@ -130,7 +133,7 @@ contains
 
   ! ************************************************************************** !
   !> This routine assigns compute routine for mrt relaxation
-  subroutine mus_init_advRel_fluidIncomp_mrt( variant, layout, compute )
+  subroutine mus_init_advRel_fluidIncomp_mrt(variant, layout, compute)
     ! --------------------------------------------------------------------------
     character(len=labelLen), intent(in) :: variant
     character(len=labelLen), intent(in) :: layout
@@ -146,8 +149,8 @@ contains
       case ('d2q9')
         compute => mus_advRel_kFluidIncomp_rMRT_vStd_lD2Q9
       case default
-        call tem_abort('Unsupported layout "'//trim(layout)//'" for '//        &
-          &            'relaxation "mrt" for variant "'//trim(variant)//'"')
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '        &
+          &            //'relaxation "mrt" for variant "'//trim(variant)//'"')
       end select
 
     case ('standard_no_opt')
@@ -164,8 +167,8 @@ contains
       compute => mus_advRel_kCFD_rMRT_vStdNoOpt_l
 
     case default
-      call tem_abort('Unsupported variant "'//trim(variant)//'" for '//        &
-        &            'relaxation "mrt"')
+      call tem_abort('Unsupported variant "'//trim(variant)//'" for ' &
+        &            //'relaxation "mrt"')
     end select
 
   end subroutine mus_init_advRel_fluidIncomp_mrt

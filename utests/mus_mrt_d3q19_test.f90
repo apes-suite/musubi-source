@@ -113,36 +113,36 @@ program mus_mrt_d3q19_test
   ! call optimized compute kernel
   outOP = -1.0_rk
   write( logUnit(1), *) 'Calling Optimized compute kernel routine.'
-  call mus_advRel_kFluid_rMRT_vStd_lD3Q19(                      &
-    &                    fieldProp = scheme%field(:)%fieldProp, &
-    &                    inState   = inState,                   &
-    &                    outState  = outOP,                     &
-    &                    auxField  = auxField,                  &
-    &                    neigh     = neigh,                     &
-    &                    nElems    = 1,                         &
-    &                    nSolve    = 1,                         &
-    &                    level     = level,                     &
-    &                    layout    = layout,                    &
-    &                    params    = params,                    &
-    &                    derVarPos = scheme%derVarPos,          &
-    &                    varSys    = scheme%varSys              )
+  call mus_advRel_kFluid_rMRT_vStd_lD3Q19(      &
+    &    fieldProp = scheme%field(:)%fieldProp, &
+    &    inState   = inState,                   &
+    &    outState  = outOP,                     &
+    &    auxField  = auxField,                  &
+    &    neigh     = neigh,                     &
+    &    nElems    = 1,                         &
+    &    nSolve    = 1,                         &
+    &    level     = level,                     &
+    &    layout    = layout,                    &
+    &    params    = params,                    &
+    &    derVarPos = scheme%derVarPos,          &
+    &    varSys    = scheme%varSys              )
 
   ! call explicit compute kernel
   outEx = -1.0_rk
   write( logUnit(1), *) 'Calling Explicit compute kernel routine.'
-  call mus_advRel_kFluid_rMRT_vStdNoOpt_lD3Q19(                 &
-    &                    fieldProp = scheme%field(:)%fieldProp, &
-    &                    inState   = inState,                   &
-    &                    outState  = outEx,                     &
-    &                    auxField  = auxField,                  &
-    &                    neigh     = neigh,                     &
-    &                    nElems    = 1,                         &
-    &                    nSolve    = 1,                         &
-    &                    level     = level,                     &
-    &                    layout    = layout,                    &
-    &                    params    = params,                    &
-    &                    derVarPos = scheme%derVarPos,          &
-    &                    varSys    = scheme%varSys              )
+  call mus_advRel_kFluid_rMRT_vStdNoOpt_lD3Q19( &
+    &    fieldProp = scheme%field(:)%fieldProp, &
+    &    inState   = inState,                   &
+    &    outState  = outEx,                     &
+    &    auxField  = auxField,                  &
+    &    neigh     = neigh,                     &
+    &    nElems    = 1,                         &
+    &    nSolve    = 1,                         &
+    &    level     = level,                     &
+    &    layout    = layout,                    &
+    &    params    = params,                    &
+    &    derVarPos = scheme%derVarPos,          &
+    &    varSys    = scheme%varSys              )
 
   write( logUnit(1), *) 'Calculating errors between results from two kernels.'
   diff = abs(outEx - outOp)

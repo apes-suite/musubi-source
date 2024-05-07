@@ -105,19 +105,19 @@ program mus_bgk_d3q19_weights_test
   ! call compute kernel
   write( logUnit(1), *) 'Calling compute kernel routine.'
 !$omp single
-  call mus_advRel_kFluid_rBGK_vStd_lD3Q19(                      &
-    &                    fieldProp = scheme%field(:)%fieldProp, &
-    &                    inState   = inState,                   &
-    &                    outState  = outState,                  &
-    &                    auxField  = auxField,                  &
-    &                    neigh     = neigh,                     &
-    &                    nElems    = 1,                         &
-    &                    nSolve    = 1,                         &
-    &                    level     = level,                     &
-    &                    layout    = layout,                    &
-    &                    params    = params,                    &
-    &                    derVarPos = scheme%derVarPos,          &
-    &                    varSys    = scheme%varSys              )
+  call mus_advRel_kFluid_rBGK_vStd_lD3Q19(      &
+    &    fieldProp = scheme%field(:)%fieldProp, &
+    &    inState   = inState,                   &
+    &    outState  = outState,                  &
+    &    auxField  = auxField,                  &
+    &    neigh     = neigh,                     &
+    &    nElems    = 1,                         &
+    &    nSolve    = 1,                         &
+    &    level     = level,                     &
+    &    layout    = layout,                    &
+    &    params    = params,                    &
+    &    derVarPos = scheme%derVarPos,          &
+    &    varSys    = scheme%varSys              )
 !$omp end single
 
   write( logUnit(1), *) 'Calculating errors.'
