@@ -111,7 +111,7 @@ contains
         ! set all relaxation paramter to same omega value for bgk variant
         mrtPtr => mrt_bgk
       case default
-          call tem_abort('Error: Unknown variant for mrt relaxation')
+        call tem_abort('Error: Unknown variant for mrt relaxation')
       end select
     case default
       ! set all relaxation paramter to same omega value as default
