@@ -88,22 +88,30 @@ contains
     ! --------------------------------------------------------------------------
     mrtPtr => null()
     select case (trim(schemeHeader%relaxation))
-    case ( 'mrt', 'mrt_generic' )
-      select case (trim(schemeHeader%layout))
-      case ('d2q9')
-        if (trim(schemeHeader%kind) == 'fluid_incompressible') then 
-          mrtPtr => mrt_d2q9_incomp
-        else
-          mrtPtr => mrt_d2q9
-        end if
-      case ('d3q15')
-        mrtPtr => mrt_d3q15
-      case ('d3q19')
-        mrtPtr => mrt_d3q19
-      case ('d3q27')
-        mrtPtr => mrt_d3q27
+    case ( 'mrt' )
+      select case (trim(schemeHeader%relaxHeader%variant))
+      case ('standard', 'standard_no_opt')
+        select case (trim(schemeHeader%layout))
+        case ('d2q9')
+          if (trim(schemeHeader%kind) == 'fluid_incompressible') then 
+            mrtPtr => mrt_d2q9_incomp
+          else
+            mrtPtr => mrt_d2q9
+          end if
+        case ('d3q15')
+          mrtPtr => mrt_d3q15
+        case ('d3q19')
+          mrtPtr => mrt_d3q19
+        case ('d3q27')
+          mrtPtr => mrt_d3q27
+        case default
+          call tem_abort('Error: Unknown layout for mrt relaxation')
+        end select
+      case ('bgk')
+        ! set all relaxation paramter to same omega value for bgk variant
+        mrtPtr => mrt_bgk
       case default
-        call tem_abort('Error: Unknown layout for mrt relaxation')
+        call tem_abort('Error: Unknown variant for mrt relaxation')
       end select
     case default
       ! set all relaxation paramter to same omega value as default

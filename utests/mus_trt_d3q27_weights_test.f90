@@ -15,7 +15,7 @@ program mus_trt_d3q27_weights_test
     &                                 mus_define_d3q27,          &
     &                                 mus_set_weights_d3q27
   use mus_field_prop_module,    only: mus_field_prop_type
-  use mus_d3q27_module,         only: trt_advRel_d3q27 !, bgk_d3q27
+  use mus_d3q27_module,         only: mus_advRel_kFluid_rTRT_vStd_lD3Q27 !, bgk_d3q27
 
   use mus_utestEnv_module,      only: init_fluid, init_varSys
 
@@ -51,6 +51,7 @@ program mus_trt_d3q27_weights_test
   scheme%header%kind = 'fluid'
   scheme%header%relaxation = 'trt'
   scheme%header%layout = 'd3q27'
+  scheme%header%relaxHeader%variant = 'standard'
 
   CALL SYSTEM_CLOCK( COUNT = clock )
   call init_random_seed( clock )
@@ -93,18 +94,18 @@ program mus_trt_d3q27_weights_test
 
   ! call compute kernel
   write( logUnit(1), *) 'Calling compute kernel routine.'
-  call trt_advRel_d3q27( fieldProp = fieldProp,        &
-    &                    inState   = inState,          &
-    &                    outState  = outState,         &
-    &                    auxField  = auxField,         &
-    &                    neigh     = neigh,            &
-    &                    nElems    = 1,                &
-    &                    nSolve    = 1,                &
-    &                    level     = level,            &
-    &                    layout    = layout,           &
-    &                    params    = params,           &
-    &                    derVarPos = scheme%derVarPos, &
-    &                    varSys    = scheme%varSys     )
+  call mus_advRel_kFluid_rTRT_vStd_lD3Q27( fieldProp = fieldProp,        &
+    &                                      inState   = inState,          &
+    &                                      outState  = outState,         &
+    &                                      auxField  = auxField,         &
+    &                                      neigh     = neigh,            &
+    &                                      nElems    = 1,                &
+    &                                      nSolve    = 1,                &
+    &                                      level     = level,            &
+    &                                      layout    = layout,           &
+    &                                      params    = params,           &
+    &                                      derVarPos = scheme%derVarPos, &
+    &                                      varSys    = scheme%varSys     )
 
   write( logUnit(1), *) 'Calculating errors.'
   diff = outState - inState

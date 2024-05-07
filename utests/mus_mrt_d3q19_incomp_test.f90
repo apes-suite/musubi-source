@@ -17,8 +17,8 @@ program mus_mrt_d3q19_test
     &                                      mus_define_d3q19
   use mus_varSys_module,             only: mus_varSys_solverData_type
   use mus_field_prop_module,         only: mus_field_prop_type
-  use mus_mrt_d3q19_module,                only: mrt_advRel_d3q19_incomp, &
-    &                                      mrt_advRel_d3q19_incomp_generic
+  use mus_mrt_d3q19_module,                only: mus_advRel_kFluidIncomp_rMRT_vStd_lD3Q19, &
+    &                                      mus_advRel_kFluidIncomp_rMRT_vStdNoOpt_lD3Q19
   use mus_derivedQuantities_module2, only: getEquilibriumIncomp
 
   use mus_utestEnv_module,           only: init_fluid, init_varSys
@@ -54,6 +54,7 @@ program mus_mrt_d3q19_test
   scheme%header%kind = 'fluid'
   scheme%header%relaxation = 'mrt'
   scheme%header%layout = 'd3q19'
+  scheme%header%relaxHeader%variant = 'standard'
 
   ! generate random omega
   CALL SYSTEM_CLOCK( COUNT = clock )
@@ -114,34 +115,36 @@ program mus_mrt_d3q19_test
   ! call optimized compute kernel
   outOP = -1.0_rk
   write( logUnit(1), *) 'Calling Optimized compute kernel routine.'
-  call mrt_advRel_d3q19_incomp( fieldProp = scheme%field(:)%fieldProp, &
-    &                           inState   = inState,                   &
-    &                           outState  = outOP,                     &
-    &                           auxField  = auxField,                  &
-    &                           neigh     = neigh,                     &
-    &                           nElems    = 1,                         &
-    &                           nSolve    = 1,                         &
-    &                           level     = level,                     &
-    &                           layout    = layout,                    &
-    &                           params    = params,                    &
-    &                           derVarPos = scheme%derVarPos,          &
-    &                           varSys    = scheme%varSys              )
+  call mus_advRel_kFluidIncomp_rMRT_vStd_lD3Q19( &
+    &    fieldProp = scheme%field(:)%fieldProp,  &
+    &    inState   = inState,                    &
+    &    outState  = outOP,                      &
+    &    auxField  = auxField,                   &
+    &    neigh     = neigh,                      &
+    &    nElems    = 1,                          &
+    &    nSolve    = 1,                          &
+    &    level     = level,                      &
+    &    layout    = layout,                     &
+    &    params    = params,                     &
+    &    derVarPos = scheme%derVarPos,           &
+    &    varSys    = scheme%varSys               )
 
   ! call explicit compute kernel
   outEx = -1.0_rk
   write( logUnit(1), *) 'Calling Explicit compute kernel routine.'
-  call mrt_advRel_d3q19_incomp_generic( fieldProp = scheme%field(:)%fieldProp, &
-    &                                    inState   = inState,                  &
-    &                                    outState  = outEx,                    &
-    &                                    auxField  = auxField,                 &
-    &                                    neigh     = neigh,                    &
-    &                                    nElems    = 1,                        &
-    &                                    nSolve    = 1,                        &
-    &                                    level     = level,                    &
-    &                                    layout    = layout,                   &
-    &                                    params    = params,                   &
-    &                                    derVarPos = scheme%derVarPos,         &
-    &                                    varSys    = scheme%varSys             )
+  call mus_advRel_kFluidIncomp_rMRT_vStdNoOpt_lD3Q19( &
+    &    fieldProp = scheme%field(:)%fieldProp,       &
+    &    inState   = inState,                         &
+    &    outState  = outEx,                           &
+    &    auxField  = auxField,                        &
+    &    neigh     = neigh,                           &
+    &    nElems    = 1,                               &
+    &    nSolve    = 1,                               &
+    &    level     = level,                           &
+    &    layout    = layout,                          &
+    &    params    = params,                          &
+    &    derVarPos = scheme%derVarPos,                &
+    &    varSys    = scheme%varSys                    )
 
   write( logUnit(1), *) 'Calculating errors between results from two kernels.'
   diff = abs(outEx - outOp)

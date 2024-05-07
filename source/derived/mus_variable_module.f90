@@ -110,7 +110,7 @@ module mus_variable_module
     &                                   deriveAux_fromState,              &
     &                                   deriveEquil_fromAux,              &
     &                                   derive_absorbLayer,               &
-    &                                   derive_force,                     &
+    &                                   derive_force_MRT,                 &
     &                                   derive_force1stOrd,               &
     &                                   derive_HRRCorrection_d2q9,        &
     &                                   derive_HRRCorrection_d3q19,       &
@@ -1020,12 +1020,13 @@ contains
       case ('fluid', 'fluid_incompressible')
         select case (trim(varname))
         case ('force')
-          ! get_element and applySrc are same of fluid and fluid_incompressible
-          get_element => derive_force
           ! select pointer according to order
           if (me%method(iSrc)%order == 2) then
             select case (trim(schemeHeader%relaxation))
-            case ('mrt', 'mrt_bgk','mrt_generic')
+            case ('mrt')
+              ! get_element and applySrc are same of fluid and 
+              ! fluid_incompressible
+              get_element => derive_force_MRT
               select case (trim(schemeHeader%layout))
               case ('d2q9')
                 me%method(iSrc)%applySrc => applySrc_force_MRT_d2q9
@@ -1059,7 +1060,7 @@ contains
           select case (trim(schemeHeader%kind))
           case ('fluid')
             select case (trim(schemeHeader%relaxation))
-            case ('mrt', 'mrt_bgk','mrt_generic')
+            case ('mrt')
               select case (trim(schemeHeader%layout))
               case ('d2q9')
                 me%method(iSrc)%applySrc => applySrc_turbChanForce_MRT_d2q9
@@ -1100,7 +1101,7 @@ contains
             me%method(iSrc)%updateSourceVar => mus_updateSrcVar_dynSponFld
 
             select case (trim(schemeHeader%relaxation))
-            case ('mrt', 'mrt_bgk','mrt_generic')
+            case ('mrt')
               ! KM: \todo 25012021 Implement optimized routine for d3q19
               me%method(iSrc)%applySrc => applySrc_absorbLayerDyn_MRT
             case default
@@ -1109,7 +1110,7 @@ contains
           else
             me%method(iSrc)%addSrcToAuxField => mus_addSponFldToAuxField_fluid
             select case (trim(schemeHeader%relaxation))
-            case ('mrt', 'mrt_bgk','mrt_generic')
+            case ('mrt')
               ! KM: \todo 25012021 Implement optimized routine for d3q19
               me%method(iSrc)%applySrc => applySrc_absorbLayer_MRT
             case default

@@ -71,11 +71,11 @@ module mus_d3q19_module
 
   private
 
-  public :: bgk_advRel_d3q19
-  public :: bgk_advRel_d3q19_incomp
-  public :: trt_advRel_d3q19
-  public :: trt_advRel_d3q19_incomp
-  public :: bgk_advRel_d3q19_block
+  public :: mus_advRel_kFluid_rBGK_vStd_lD3Q19
+  public :: mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19
+  public :: mus_advRel_kFluid_rTRT_vStd_lD3Q19
+  public :: mus_advRel_kFluidIncomp_rTRT_vStd_lD3Q19
+  public :: mus_advRel_kFluid_rBGK_vBlock_lD3Q19
   public :: bgk_Regularized_d3q19
   public :: bgk_RecursiveRegularized_d3q19 
   public :: bgk_HybridRecursiveRegularized_d3q19 
@@ -107,9 +107,10 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_advRel_d3q19( fieldProp, inState, outState, auxField, &
-    &                          neigh, nElems, nSolve, level, layout,   &
-    &                          params, varSys, derVarPos )
+  subroutine mus_advRel_kFluid_rBGK_vStd_lD3Q19( fieldProp, inState, outState, &
+    &                                            auxField, neigh, nElems,      &
+    &                                            nSolve, level, layout, params,&
+    &                                            varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -646,7 +647,7 @@ contains
 !$omp end do nowait
 ?? END IF
 
-  end subroutine bgk_advRel_d3q19
+  end subroutine mus_advRel_kFluid_rBGK_vStd_lD3Q19
 ! **************************************************************************** !
 
 
@@ -657,9 +658,11 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_advRel_d3q19_incomp( fieldProp, inState, outState, auxField, &
-    &                                 neigh, nElems, nSolve, level, layout,   &
-    &                                 params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19( fieldProp, inState,    &
+    &                                                  outState, auxField,    &
+    &                                                  neigh, nElems, nSolve, &
+    &                                                  level, layout, params, &
+    &                                                  varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -1145,7 +1148,7 @@ contains
 !$omp end do nowait
 ?? END IF
 
-  end subroutine bgk_advRel_d3q19_incomp
+  end subroutine mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19
 ! **************************************************************************** !
 
 
@@ -1169,9 +1172,10 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine trt_advRel_d3q19( fieldProp, inState, outState, auxField, &
-    &                          neigh, nElems, nSolve, level, layout,   &
-    &                          params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluid_rTRT_vStd_lD3Q19( fieldProp, inState, outState, &
+    &                                            auxField, neigh, nElems,      &
+    &                                            nSolve, level, layout, params,&
+    &                                            varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -1694,7 +1698,7 @@ contains
 
 ?? ENDIF
 
-  end subroutine trt_advRel_d3q19
+  end subroutine mus_advRel_kFluid_rTRT_vStd_lD3Q19
 ! **************************************************************************** !
 
 
@@ -1707,9 +1711,11 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine trt_advRel_d3q19_incomp( fieldProp, inState, outState, auxField, &
-    &                                 neigh, nElems, nSolve, level, layout,   &
-    &                                 params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluidIncomp_rTRT_vStd_lD3Q19( fieldProp, inState,    &
+    &                                                  outState, auxField,    &
+    &                                                  neigh, nElems, nSolve, &
+    &                                                  level, layout, params, &
+    &                                                  varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -1882,7 +1888,7 @@ contains
         & = f00N - sym + asym
     enddo nodeloop
 
-  end subroutine trt_advRel_d3q19_incomp
+  end subroutine mus_advRel_kFluidIncomp_rTRT_vStd_lD3Q19
 ! **************************************************************************** !
 
 ?? IF (SOA) THEN
@@ -1902,9 +1908,11 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_advRel_d3q19_block( fieldProp, inState, outState, auxField, &
-    &                                neigh, nElems, nSolve, level, layout,   &
-    &                                params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluid_rBGK_vBlock_lD3Q19( fieldProp, inState,         &
+    &                                              outState, auxField, neigh,  &
+    &                                              nElems, nSolve, level,      &
+    &                                              layout, params, varSys,     &
+    &                                              derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -2107,7 +2115,7 @@ contains
     end do
 !$omp end do nowait
 
-  end subroutine bgk_advRel_d3q19_block
+  end subroutine mus_advRel_kFluid_rBGK_vBlock_lD3Q19
 ! **************************************************************************** !
 
 

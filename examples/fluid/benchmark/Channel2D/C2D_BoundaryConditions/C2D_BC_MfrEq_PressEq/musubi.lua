@@ -169,7 +169,10 @@ physics = {
 identify = {
   label = '2D',
   layout = 'd2q9',    -- Stencil
-  relaxation = 'mrt_generic', -- Collision 
+  relaxation = {
+    name = 'mrt', -- Collision
+    variant = 'standard_no_opt', -- a variant of collision
+  },
   kind = 'fluid'      -- Physics
 }
 --! [Scheme identifier]

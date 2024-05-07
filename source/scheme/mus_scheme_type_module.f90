@@ -180,7 +180,23 @@ module mus_scheme_type_module
   end type mus_scheme_type
 
   !> What does the kernel interface look like?
-  !! Every kernel's argument list must correspond to this one
+  !! Every kernel's argument list must correspond to this one.
+  !!
+  !! Adhere to the below naming convection for the kernel names
+  !!
+  !! mus_advRel_k<kind>_r<relaxation>_v<variant>_l<layout>
+  !!
+  !! Examples:
+  !!   mus_advRel_kFluid_rBGK_vStd_lD3Q19
+  !!   mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19
+  !!   mus_advRel_kFluid_rBGK_vHRR_lD3Q19
+  !!
+  !! For non-specific implementation leave names out. 
+  !! So we do not use generic keyword in the kernel names anymore.
+  !! Examples:
+  !!   mus_advRel_kFluid_rBGK_vStd_l
+  !!   mus_advRel_kMsLiquid_rBGK_vStd_l
+  !!
   abstract interface
     !> The common subroutine interface for compute kernels. All kernels have to
     !! implement this interface in order to be callable via

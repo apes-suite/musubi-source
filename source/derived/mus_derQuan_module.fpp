@@ -165,7 +165,7 @@ module mus_derQuan_module
 
   ! source variable
   public :: derive_absorbLayer
-  public :: derive_force
+  public :: derive_force_MRT
   public :: derive_force1stOrd
   public :: derive_HRRCorrection_d2q9
   public :: derive_HRRCorrection_d3q19
@@ -1703,8 +1703,8 @@ contains
    !> Derive external force variable defined as a source term.
    !! It evaluates spacetime function defined in lua file for force variable
    !! and convert it to state value which is to be added to the state
-  recursive subroutine derive_force(fun, varsys, elempos, time, tree, nElems, &
-    &                               nDofs, res                                )
+  recursive subroutine derive_force_MRT(fun, varsys, elempos, time, tree,     &
+    &                                   nElems, nDofs, res                    )
     ! -------------------------------------------------------------------- !
     !> Description of the method to obtain the variables, here some preset
     !! values might be stored, like the space time function to use or the
@@ -1839,7 +1839,7 @@ contains
 
     end do !iElem
 
-  end subroutine derive_force
+  end subroutine derive_force_MRT
 ! ****************************************************************************** !
 
 

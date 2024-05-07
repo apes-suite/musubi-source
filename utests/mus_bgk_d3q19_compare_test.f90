@@ -16,8 +16,8 @@ program mus_bgk_d3q19_compare_test
     &                                      mus_define_d3q19
   use mus_varSys_module,             only: mus_varSys_solverData_type
   use mus_field_prop_module,         only: mus_field_prop_type
-  use mus_d3q19_module,              only: bgk_advRel_d3q19
-  use mus_bgk_module,                only: bgk_advRel_generic
+  use mus_d3q19_module,              only: mus_advRel_kFluid_rBGK_vStd_lD3Q19
+  use mus_bgk_module,                only: mus_advRel_kCFD_rBGK_vStdNoOpt_l
   use mus_derivedQuantities_module2, only: getEquilibrium
 
   use mus_utestEnv_module, only: init_fluid, init_varSys
@@ -54,6 +54,7 @@ program mus_bgk_d3q19_compare_test
   scheme%header%kind = 'fluid'
   scheme%header%relaxation = 'bgk'
   scheme%header%layout = 'd3q19'
+  scheme%header%relaxHeader%variant = 'standard'
 
   ! generate random omega
   CALL SYSTEM_CLOCK( COUNT = clock )
@@ -119,34 +120,36 @@ program mus_bgk_d3q19_compare_test
   ! call optimized compute kernel
   outOP = -1.0_rk
   write( logUnit(1), *) 'Calling Optimized compute kernel routine.'
-  call bgk_advRel_d3q19( fieldProp = scheme%field(:)%fieldProp, &
-    &                    inState   = inState,                   &
-    &                    outState  = outOP,                     &
-    &                    auxField  = auxField,                  &
-    &                    neigh     = neigh,                     &
-    &                    nElems    = 1,                         &
-    &                    nSolve    = 1,                         &
-    &                    level     = level,                     &
-    &                    layout    = layout,                    &
-    &                    params    = params,                    &
-    &                    derVarPos = scheme%derVarPos,          &
-    &                    varSys    = scheme%varSys              )
+  call mus_advRel_kFluid_rBGK_vStd_lD3Q19(      &
+    &    fieldProp = scheme%field(:)%fieldProp, &
+    &    inState   = inState,                   &
+    &    outState  = outOP,                     &
+    &    auxField  = auxField,                  &
+    &    neigh     = neigh,                     &
+    &    nElems    = 1,                         &
+    &    nSolve    = 1,                         &
+    &    level     = level,                     &
+    &    layout    = layout,                    &
+    &    params    = params,                    &
+    &    derVarPos = scheme%derVarPos,          &
+    &    varSys    = scheme%varSys              )
 
   ! call explicit compute kernel
   outEx = -1.0_rk
   write( logUnit(1), *) 'Calling Explicit compute kernel routine.'
-  call bgk_advRel_generic( fieldProp = scheme%field(:)%fieldProp, &
-    &                       inState   = inState,                  &
-    &                       outState  = outEx,                    &
-    &                       auxField  = auxField,                 &
-    &                       neigh     = neigh,                    &
-    &                       nElems    = 1,                        &
-    &                       nSolve    = 1,                        &
-    &                       level     = level,                    &
-    &                       layout    = layout,                   &
-    &                       params    = params,                   &
-    &                       derVarPos = scheme%derVarPos,         &
-    &                       varSys    = scheme%varSys             )
+  call mus_advRel_kCFD_rBGK_vStdNoOpt_l(        &
+    &    fieldProp = scheme%field(:)%fieldProp, &
+    &    inState   = inState,                   &
+    &    outState  = outEx,                     &
+    &    auxField  = auxField,                  &
+    &    neigh     = neigh,                     &
+    &    nElems    = 1,                         &
+    &    nSolve    = 1,                         &
+    &    level     = level,                     &
+    &    layout    = layout,                    &
+    &    params    = params,                    &
+    &    derVarPos = scheme%derVarPos,          &
+    &    varSys    = scheme%varSys              )
 
   write( logUnit(1), *) 'Calculating errors between results from two kernels.'
   diff = abs(outEx - outOp)

@@ -166,7 +166,10 @@ physics = {
 identify = {
   label = '2D',
   layout = 'd2q9',    -- Stencil
-  relaxation = 'bgk_improved', -- Collision
+  relaxation = {
+    name = 'bgk', -- Collision
+    variant = 'improved', -- a variant of collision
+  },
   kind = 'fluid'      -- Physics
 }
 --! [Scheme identifier]

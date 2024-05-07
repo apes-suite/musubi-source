@@ -1,4 +1,6 @@
-! Copyright (c) 2013, 2017, 2019-2020 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
+! Copyright (c) 2013, 2017 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
+! Copyright (c) 2019-2020 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
+! Copyright (c) 2024 Kannan Masilamani <kannan.masilamani@dlr.de>
 ! Copyright (c) 2014-2016 Jiaxing Qi <jiaxing.qi@uni-siegen.de>
 ! Copyright (c) 2014 Kartik Jain <kartik.jain@uni-siegen.de>
 ! Copyright (c) 2016 Tobias Schneider <tobias1.schneider@student.uni-siegen.de>
@@ -33,41 +35,42 @@ module mus_initFluid_module
   use tem_aux_module,     only: tem_abort
   use tem_logging_module, only: logUnit
 
-  use mus_bgk_module,       only: bgk_advRel_generic
+  use mus_bgk_module,       only: mus_advRel_kCFD_rBGK_vStdNoOpt_l
   use mus_compute_cumulant_module,  only: cumulant_d3q27, cascaded_d3q27,  &
     &                                     cumulant_d3q27_extended_generic, &
     &                                     cumulant_d3q27_extended_fast
-  use mus_d3q27_module,     only: bgk_advRel_d3q27, &
-    &                             trt_advRel_d3q27, &
-    &                             bgk_improved_advRel_d3q27, &
-    &                             bgk_Regularized_d3q27, &
-    &                             bgk_RecursiveRegularized_d3q27, &
+  use mus_d3q27_module,     only: mus_advRel_kCFD_rBGK_vStd_lD3Q27,        &
+    &                             mus_advRel_kFluid_rTRT_vStd_lD3Q27,      &
+    &                             mus_advRel_kFluid_rBGK_vImproved_lD3Q27, &
+    &                             bgk_Regularized_d3q27,                   &
+    &                             bgk_RecursiveRegularized_d3q27,          &
     &                             bgk_ProjectedRecursiveRegularized_d3q27, &
-    &                             bgk_HybridRecursiveRegularized_d3q27, &
-    &                             bgk_DualRelaxationTime_RR_d3q27, &
+    &                             bgk_HybridRecursiveRegularized_d3q27,    &
+    &                             bgk_DualRelaxationTime_RR_d3q27,         &
     &                             bgk_HybridRecursiveRegularizedCorr_d3q27
-  use mus_d3q19_module,     only: bgk_advRel_d3q19,       &
-    &                             bgk_advRel_d3q19_block, &
-    &                             trt_advRel_d3q19,  &
-    &                             bgk_Regularized_d3q19, &
-    &                             bgk_RecursiveRegularized_d3q19, &
+  use mus_d3q19_module,     only: mus_advRel_kFluid_rBGK_vStd_lD3Q19,      &
+    &                             mus_advRel_kFluid_rBGK_vBlock_lD3Q19,    &
+    &                             mus_advRel_kFluid_rTRT_vStd_lD3Q19,      &
+    &                             bgk_Regularized_d3q19,                   &
+    &                             bgk_RecursiveRegularized_d3q19,          &
     &                             bgk_ProjectedRecursiveRegularized_d3q19, &
-    &                             bgk_HybridRecursiveRegularized_d3q19, &
-    &                             bgk_DualRelaxationTime_RR_d3q19, &
+    &                             bgk_HybridRecursiveRegularized_d3q19,    &
+    &                             bgk_DualRelaxationTime_RR_d3q19,         &
     &                             bgk_HybridRecursiveRegularizedCorr_d3q19
-  use mus_d2q9_module,      only: mrt_advRel_d2q9, bgk_advRel_d2q9, &
-    &                             bgk_improved_advRel_d2q9, &
-    &                             bgk_Regularized_d2q9, &
-    &                             bgk_RecursiveRegularized_d2q9, &
-    &                             bgk_ProjectedRecursiveRegularized_d2q9, &
-    &                             bgk_HybridRecursiveRegularized_d2q9, &
-    &                             bgk_DualRelaxationTime_RR_d2q9, &
+  use mus_d2q9_module,      only: mus_advRel_kFluid_rMRT_vStd_lD2Q9,       &
+    &                             mus_advRel_kFluid_rBGK_vStd_lD2Q9,       &
+    &                             mus_advRel_kFluid_rBGK_vImproved_lD2Q9,  &
+    &                             bgk_Regularized_d2q9,                    &
+    &                             bgk_RecursiveRegularized_d2q9,           &
+    &                             bgk_ProjectedRecursiveRegularized_d2q9,  &
+    &                             bgk_HybridRecursiveRegularized_d2q9,     &
+    &                             bgk_DualRelaxationTime_RR_d2q9,          &
     &                             bgk_HybridRecursiveRegularizedCorr_d2q9
-  use mus_mrt_d3q19_module,       only: mrt_advRel_d3q19,         &
-    &                             mrt_advRel_d3q19_generic, &
-    &                             mrt_advRel_generic
-  use mus_mrt_d3q27_module, only: weighted_mrt_advRel_d3q27, &
-    &                             weighted_mrt_advRel_d3q27_generic
+  use mus_mrt_d3q19_module, only: mus_advRel_kFluid_rMRT_vStd_lD3Q19,      &
+    &                             mus_advRel_kFluid_rMRT_vStdNoOpt_lD3Q19, &
+    &                             mus_advRel_kCFD_rMRT_vStdNoOpt_l
+  use mus_mrt_d3q27_module, only: mus_advRel_kFluid_rMRT_vStd_lD3Q27, &
+    &                             mus_advRel_kCFD_rMRT_vStdNoOpt_lD3Q27
   use mus_test_module,      only: vec_fma
   use mus_scheme_type_module, only: kernel
 
@@ -82,9 +85,10 @@ contains
   ! ************************************************************************** !
   !> Assigning compute kernel routine by scheme relaxation type for fluid kind.
   !!
-  subroutine mus_init_advRel_fluid( relaxation, layout, compute )
+  subroutine mus_init_advRel_fluid(relaxation, variant, layout, compute)
     ! --------------------------------------------------------------------------
-    character(len=labelLen), intent(inout) :: relaxation
+    character(len=labelLen), intent(in) :: relaxation
+    character(len=labelLen), intent(in) :: variant
     character(len=labelLen), intent(in) :: layout
     procedure( kernel ), pointer, intent(out) :: compute
     ! --------------------------------------------------------------------------
@@ -93,84 +97,22 @@ contains
       &                 // trim(relaxation) // ' for layout ' // trim(layout)
 
     select case (trim(relaxation))
-    case ('bgk_generic')
-      compute => bgk_advRel_generic
-
-    case ('bgk_improved')
-      select case (trim(layout))
-      case ('d3q27')
-        compute => bgk_improved_advRel_d3q27
-      case ('d2q9')
-        compute => bgk_improved_advRel_d2q9
-      case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
-      end select
-
-    case ('bgk_block')
-      if ( trim(layout) == 'd3q19' ) then
-        compute => bgk_advRel_d3q19_block
-      else
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
-      end if
-
-    case ('mrt_bgk')
-      compute => mrt_advRel_generic
-
     case ('bgk')
-      select case (trim(layout))
-      case ('d3q27')
-        compute => bgk_advRel_d3q27
-      case ('d3q19')
-        compute => bgk_advRel_d3q19
-      case ('d2q9')
-        compute => bgk_advRel_d2q9
-      case default
-        compute => bgk_advRel_generic
-      end select
-
-    case ('mrt_generic')
-      select case (trim(layout))
-      case ('d3q27')
-        compute => weighted_mrt_advRel_d3q27_generic
-      case ('d3q19')
-        compute => mrt_advRel_d3q19_generic
-      case default
-        compute => mrt_advRel_generic
-      end select
+      call mus_init_advRel_fluid_bgk(variant, layout, compute)
 
     case ('mrt')
-      select case (trim(layout))
-      case ('d3q27')
-        compute => weighted_mrt_advRel_d3q27
-      case ('d3q19')
-        compute => mrt_advRel_d3q19
-      case ('d2q9')
-        compute => mrt_advRel_d2q9
-      case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
-      end select
+      call mus_init_advRel_fluid_mrt(variant, layout, compute)
 
     case ('trt')
-      select case (trim(layout))
-      case ('d3q19')
-        compute => trt_advRel_d3q19
-      case ('d3q27')
-        compute => trt_advRel_d3q27
-      case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
-      end select
+      call mus_init_advRel_fluid_trt(variant, layout, compute)
 
     case ('cumulant')
       select case (trim(layout))
       case ('d3q27')
         compute => cumulant_d3q27
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('cumulant_extended')
@@ -178,26 +120,26 @@ contains
       case ('d3q27')
         compute => cumulant_d3q27_extended_fast
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
-    
+
     case ('cumulant_extended_generic')
       select case (trim(layout))
       case ('d3q27')
         compute => cumulant_d3q27_extended_generic
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
-      
+
     case ('cascaded')
       select case (trim(layout))
       case ('d3q27')
         compute => cascaded_d3q27
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('vec_fma', 'test')
@@ -212,8 +154,8 @@ contains
       case ('d2q9')
         compute => bgk_HybridRecursiveRegularized_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('hrr_bgk_corrected', 'prr_bgk_corrected', 'rr_bgk_corrected')
@@ -225,8 +167,8 @@ contains
       case ('d2q9')
         compute => bgk_HybridRecursiveRegularizedCorr_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('drt_bgk')
@@ -238,8 +180,8 @@ contains
       case ('d2q9')
         compute => bgk_DualRelaxationTime_RR_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('rr_bgk')
@@ -251,8 +193,8 @@ contains
       case ('d2q9')
         compute => bgk_RecursiveRegularized_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('prr_bgk')
@@ -264,8 +206,8 @@ contains
       case ('d2q9')
         compute => bgk_ProjectedRecursiveRegularized_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
 
     case ('r_bgk')
@@ -277,17 +219,159 @@ contains
       case ('d2q9')
         compute => bgk_Regularized_d2q9
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for ' &
+          &            //'relaxation "'//trim(relaxation)//'"')
       end select
 
     case default
-      write(logUnit(1),*) 'Relaxation '//trim(relaxation)//' is not supported!'
-      call tem_abort()
+      call tem_abort('Unsupported relaxation "'//trim(relaxation)//'" for ' &
+        &            //'kind "fluid"')
     end select
 
   end subroutine mus_init_advRel_fluid
-  ! **************************************************************************** !
+  ! ************************************************************************** !
+
+  ! ************************************************************************** !
+  !> This routine assigns compute routine for bgk relaxation.
+  !!
+  !! Supported variants are: 
+  !!   * standard        - Optimized routines for specifc layouts.
+  !!   * standard_no_opt - Semi or no optimized routines for any layouts.
+  !!   * improved        - improved BGK with Galilean correction term for
+  !!                       specific layouts.
+  !!   * block           - routines for vector machine. Implemented only for
+  !!                       D3Q19
+  subroutine mus_init_advRel_fluid_bgk(variant, layout, compute)
+    ! --------------------------------------------------------------------------
+    character(len=labelLen), intent(in) :: variant
+    character(len=labelLen), intent(in) :: layout
+    procedure( kernel ), pointer, intent(out) :: compute
+    ! --------------------------------------------------------------------------
+    select case (trim(variant))
+    case ('standard')
+      select case (trim(layout))
+      case ('d3q27')
+        compute => mus_advRel_kCFD_rBGK_vStd_lD3Q27
+      case ('d3q19')
+        compute => mus_advRel_kFluid_rBGK_vStd_lD3Q19
+      case ('d2q9')
+        compute => mus_advRel_kFluid_rBGK_vStd_lD2Q9
+      case default
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '        &
+          &            //'relaxation "bgk" for variant "'//trim(variant)//'"')
+      end select
+
+    case ('standard_no_opt')
+      compute => mus_advRel_kCFD_rBGK_vStdNoOpt_l
+
+    case ('improved')
+      select case (trim(layout))
+      case ('d3q27')
+        compute => mus_advRel_kFluid_rBGK_vImproved_lD3Q27
+      case ('d2q9')
+        compute => mus_advRel_kFluid_rBGK_vImproved_lD2Q9
+      case default
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '        &
+          &            //'relaxation "bgk" for variant "'//trim(variant)//'"')
+      end select
+
+    case ('block')
+      select case (trim(layout))
+      case ('d3q19')
+        compute => mus_advRel_kFluid_rBGK_vBlock_lD3Q19
+      case default
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '        &
+          &            //'relaxation "bgk" for variant "'//trim(variant)//'"')
+      end select
+
+    case default
+      call tem_abort('Unsupported variant "'//trim(variant)//'" for '        &
+        &            //'relaxation "bgk"')
+    end select
+
+  end subroutine mus_init_advRel_fluid_bgk
+  ! ************************************************************************** !
+
+  ! ************************************************************************** !
+  !> This routine assigns compute routine for mrt relaxation
+  !!
+  !! Supported variants are: 
+  !!   * standard        - Optimized routines for specifc layouts.
+  !!   * standard_no_opt - no optimized routines for any layouts.
+  !!   * bgk             - Uses no optimized routine but
+  !!                       in mus_mrtRelaxation_module all relaxation parameters
+  !!                       are set to same omega to recover bgk.
+  subroutine mus_init_advRel_fluid_mrt(variant, layout, compute)
+    ! --------------------------------------------------------------------------
+    character(len=labelLen), intent(in) :: variant
+    character(len=labelLen), intent(in) :: layout
+    procedure( kernel ), pointer, intent(out) :: compute
+    ! --------------------------------------------------------------------------
+    select case (trim(variant))
+    case ('standard')
+      select case (trim(layout))
+      case ('d3q27')
+        compute => mus_advRel_kFluid_rMRT_vStd_lD3Q27
+      case ('d3q19')
+        compute => mus_advRel_kFluid_rMRT_vStd_lD3Q19
+      case ('d2q9')
+        compute => mus_advRel_kFluid_rMRT_vStd_lD2Q9
+      case default
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '        &
+          &            //'relaxation "mrt" for variant "'//trim(variant)//'"')
+      end select
+
+    case ('standard_no_opt')
+      select case (trim(layout))
+      case ('d3q27')
+        compute => mus_advRel_kCFD_rMRT_vStdNoOpt_lD3Q27
+      case ('d3q19')
+        compute => mus_advRel_kFluid_rMRT_vStdNoOpt_lD3Q19
+      case default
+        compute => mus_advRel_kCFD_rMRT_vStdNoOpt_l
+      end select
+
+
+    case ('bgk')
+      compute => mus_advRel_kCFD_rMRT_vStdNoOpt_l
+
+    case default
+      call tem_abort('Unsupported variant "'//trim(variant)//'" for ' &
+        &            //'relaxation "mrt"')
+    end select
+
+  end subroutine mus_init_advRel_fluid_mrt
+  ! ************************************************************************** !
+
+  ! ************************************************************************** !
+  !> This routine assigns compute routine for trt relaxation
+  !!
+  !! Supported variants are: 
+  !!   * standard        - Optimized routines for specifc layouts.
+  subroutine mus_init_advRel_fluid_trt(variant, layout, compute)
+    ! --------------------------------------------------------------------------
+    character(len=labelLen), intent(in) :: variant
+    character(len=labelLen), intent(in) :: layout
+    procedure( kernel ), pointer, intent(out) :: compute
+    ! --------------------------------------------------------------------------
+    select case (trim(variant))
+    case ('standard')
+      select case (trim(layout))
+      case ('d3q19')
+        compute => mus_advRel_kFluid_rTRT_vStd_lD3Q19
+      case ('d3q27')
+        compute => mus_advRel_kFluid_rTRT_vStd_lD3Q27
+      case default
+        call tem_abort('Unsupported layout "'//trim(layout)//'" for '        &
+          &            //'relaxation "trt" for variant "'//trim(variant)//'"')
+      end select
+    case default
+      call tem_abort('Unsupported variant "'//trim(variant)//'" for '        &
+        &            //'relaxation "trt"')
+    end select
+
+  end subroutine mus_init_advRel_fluid_trt
+  ! ************************************************************************** !
 
 end module mus_initFluid_module
-! ****************************************************************************** !
+! **************************************************************************** !

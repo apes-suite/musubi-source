@@ -70,11 +70,11 @@ module mus_d2q9_module
 
   private
 
-  public :: bgk_improved_advRel_d2q9
-  public :: bgk_advRel_d2q9
-  public :: mrt_advRel_d2q9
-  public :: mrt_advRel_d2q9_incomp
-  public :: bgk_advRel_d2q9_incomp
+  public :: mus_advRel_kFluid_rBGK_vImproved_lD2Q9
+  public :: mus_advRel_kFluid_rBGK_vStd_lD2Q9
+  public :: mus_advRel_kFluid_rMRT_vStd_lD2Q9
+  public :: mus_advRel_kFluidIncomp_rMRT_vStd_lD2Q9
+  public :: mus_advRel_kFluidIncomp_rBGK_vStd_lD2Q9
   public :: bgk_Regularized_d2q9
   public :: bgk_RecursiveRegularized_d2q9
   public :: bgk_HybridRecursiveRegularized_d2q9
@@ -103,9 +103,11 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type;compute]] function pointer.
-  subroutine bgk_improved_advRel_d2q9( fieldProp, inState, outState, auxField, &
-    &                                  neigh, nElems, nSolve, level, layout,   &
-    &                                  params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluid_rBGK_vImproved_lD2Q9( fieldProp, inState,       &
+    &                                                outState, auxField, neigh,&
+    &                                                nElems, nSolve, level,    &
+    &                                                layout, params, varSys,   &
+    &                                                derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -231,7 +233,7 @@ contains
     end do nodeloop
 !$omp end do nowait
 
-  end subroutine bgk_improved_advRel_d2q9
+  end subroutine mus_advRel_kFluid_rBGK_vImproved_lD2Q9
 ! **************************************************************************** !
 
 ! **************************************************************************** !
@@ -242,9 +244,10 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_advRel_d2q9( fieldProp, inState, outState, auxField, &
-    &                         neigh, nElems, nSolve, level, layout,   &
-    &                         params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluid_rBGK_vStd_lD2Q9( fieldProp, inState, outState, &
+    &                                           auxField, neigh, nElems,      &
+    &                                           nSolve, level, layout, params,&
+    &                                           varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -390,7 +393,7 @@ contains
     end do nodeloop
 !$omp end do nowait
 
-  end subroutine bgk_advRel_d2q9
+  end subroutine mus_advRel_kFluid_rBGK_vStd_lD2Q9
 ! **************************************************************************** !
 
 ! **************************************************************************** !
@@ -400,9 +403,10 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mrt_advRel_d2q9( fieldProp, inState, outState, auxField, &
-    &                         neigh, nElems, nSolve, level, layout,   &
-    &                         params, varSys, derVarPos )
+  subroutine mus_advRel_kFluid_rMRT_vStd_lD2Q9( fieldProp, inState, outState, &
+    &                                           auxField, neigh, nElems,      &
+    &                                           nSolve, level, layout, params,&
+    &                                           varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -546,7 +550,7 @@ contains
     enddo nodeloop
 !$omp end do nowait
 
-  end subroutine mrt_advRel_d2q9
+  end subroutine mus_advRel_kFluid_rMRT_vStd_lD2Q9
 ! **************************************************************************** !
 
 ! **************************************************************************** !
@@ -556,9 +560,11 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mrt_advRel_d2q9_incomp( fieldProp, inState, outState, auxField, &
-    &                                neigh, nElems, nSolve, level, layout,   &
-    &                                params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluidIncomp_rMRT_vStd_lD2Q9( fieldProp, inState,      &
+    &                                                 outState, auxField,      &
+    &                                                 neigh, nElems, nSolve,   &
+    &                                                 level, layout, params,   &
+    &                                                 varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -701,7 +707,7 @@ contains
     enddo nodeloop
 !$omp end do nowait
 
-  end subroutine mrt_advRel_d2q9_incomp
+  end subroutine mus_advRel_kFluidIncomp_rMRT_vStd_lD2Q9
 ! **************************************************************************** !
 
 ! **************************************************************************** !
@@ -712,9 +718,11 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_advRel_d2q9_incomp( fieldProp, inState, outState, auxField, &
-    &                                neigh, nElems, nSolve, level, layout,   &
-    &                                params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluidIncomp_rBGK_vStd_lD2Q9( fieldProp, inState,      &
+    &                                                 outState, auxField,      &
+    &                                                 neigh, nElems, nSolve,   &
+    &                                                 level, layout, params,   &
+    &                                                 varSys, derVarPos )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -827,7 +835,7 @@ contains
     end do nodeloop
 !$omp end do nowait
 
-  end subroutine bgk_advRel_d2q9_incomp
+  end subroutine mus_advRel_kFluidIncomp_rBGK_vStd_lD2Q9
 ! **************************************************************************** !
 
 ! ****************************************************************************** !
