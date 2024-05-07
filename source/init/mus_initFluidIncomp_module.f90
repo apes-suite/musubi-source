@@ -100,6 +100,10 @@ contains
 
   ! ************************************************************************** !
   !> This routine assigns compute routine for bgk relaxation
+  !!
+  !! Supported variants are: 
+  !!   * standard        - Optimized routines for specifc layouts.
+  !!   * standard_no_opt - no optimized routines for any layouts.
   subroutine mus_init_advRel_fluidIncomp_bgk(variant, layout, compute)
     ! --------------------------------------------------------------------------
     character(len=labelLen), intent(in) :: variant
@@ -133,6 +137,13 @@ contains
 
   ! ************************************************************************** !
   !> This routine assigns compute routine for mrt relaxation
+  !!
+  !! Supported variants are: 
+  !!   * standard        - Optimized routines for specifc layouts.
+  !!   * standard_no_opt - no optimized routines for any layouts.
+  !!   * bgk             - Uses no optimized routine but
+  !!                       in mus_mrtRelaxation_module all relaxation parameters
+  !!                       are set to same omega to recover bgk.
   subroutine mus_init_advRel_fluidIncomp_mrt(variant, layout, compute)
     ! --------------------------------------------------------------------------
     character(len=labelLen), intent(in) :: variant

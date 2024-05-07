@@ -232,7 +232,15 @@ contains
   ! ************************************************************************** !
 
   ! ************************************************************************** !
-  !> This routine assigns compute routine for bgk relaxation
+  !> This routine assigns compute routine for bgk relaxation.
+  !!
+  !! Supported variants are: 
+  !!   * standard        - Optimized routines for specifc layouts.
+  !!   * standard_no_opt - Semi or no optimized routines for any layouts.
+  !!   * improved        - improved BGK with Galilean correction term for
+  !!                       specific layouts.
+  !!   * block           - routines for vector machine. Implemented only for
+  !!                       D3Q19
   subroutine mus_init_advRel_fluid_bgk(variant, layout, compute)
     ! --------------------------------------------------------------------------
     character(len=labelLen), intent(in) :: variant
@@ -286,6 +294,13 @@ contains
 
   ! ************************************************************************** !
   !> This routine assigns compute routine for mrt relaxation
+  !!
+  !! Supported variants are: 
+  !!   * standard        - Optimized routines for specifc layouts.
+  !!   * standard_no_opt - no optimized routines for any layouts.
+  !!   * bgk             - Uses no optimized routine but
+  !!                       in mus_mrtRelaxation_module all relaxation parameters
+  !!                       are set to same omega to recover bgk.
   subroutine mus_init_advRel_fluid_mrt(variant, layout, compute)
     ! --------------------------------------------------------------------------
     character(len=labelLen), intent(in) :: variant
@@ -330,6 +345,9 @@ contains
 
   ! ************************************************************************** !
   !> This routine assigns compute routine for trt relaxation
+  !!
+  !! Supported variants are: 
+  !!   * standard        - Optimized routines for specifc layouts.
   subroutine mus_init_advRel_fluid_trt(variant, layout, compute)
     ! --------------------------------------------------------------------------
     character(len=labelLen), intent(in) :: variant

@@ -424,10 +424,10 @@ contains
             write(logUnit(1),*) 'Solution: Increase kinematic viscosity,'
             write(logUnit(1),*) 'especially near BC and level jumps.'
           end if
-        case ('mrt','trt','cumulant','cumulant_extended','hrr_bgk','rr_bgk',   &
-          &   'prr_bgk','r_bgk', 'drt_bgk', 'rr_bgk_corrected', &
-          &   'cumulant_extended_generic', 'hrr_bgk_corrected',                &
-          &   'prr_bgk_corrected')
+        case ( 'mrt','trt','cumulant','cumulant_extended','hrr_bgk','rr_bgk', &
+          &    'prr_bgk','r_bgk', 'drt_bgk', 'rr_bgk_corrected',              &
+          &    'cumulant_extended_generic', 'hrr_bgk_corrected',              &
+          &    'prr_bgk_corrected'                                            )
           if (glob_om_max > 1.999_rk) then
             write(logUnit(1),'(A,F10.5)') 'WARNING: Kinematic omega > 1.999:', &
               &                           glob_om_max
