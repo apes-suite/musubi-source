@@ -1,0 +1,40 @@
+#!/bin/bash
+musdir=$(git rev-parse --show-toplevel)
+owd=$(pwd)
+
+if [ "$(basename $musdir)" = "mus" ]; then
+    musbranch=$(git branch --show-current)
+    musmsg=$(git show --pretty=format:%s -s HEAD)
+    echo $musbranch in $musdir
+    echo "@: $musmsg"
+    musubidir=$musdir/..
+    musubibranch=$(cd $musubidir && git branch --show-current)
+    if [ "$musbranch" = "main" ]; then
+        echo "Not attempting to work on main branch!"
+    else
+        if output=$(git status --porcelain) && [ -z "$output" ]; then
+            cd $musubidir
+            if git checkout -b $musbranch 2>/dev/null; then
+                git submodule set-branch -b $musbranch mus
+            else
+                git checkout $musbranch
+            fi
+            git diff --quiet || git add mus .gitmodules
+            git diff --cached --quiet || git commit -m "$musmsg"
+        else
+            echo ""
+            echo ""
+            echo "mus directory is not clean"
+            echo "Please make sure that all your changes are committed!"
+            echo ""
+            git status
+            echo ""
+            echo "If you don't want the outstanding changes to be part"
+            echo "of your request, stash them, do the request and pop"
+            echo "them from thes stash again."
+        fi
+    fi
+else
+    echo "request only works for the mus directory!"
+fi
+cd $owd
