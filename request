@@ -1,14 +1,34 @@
 #!/bin/bash
+#
+# request
+# =======
+#
+# Small script to ease the development with the nested musubi-source
+# directory inside the musubi super repository.
+#
+# Pre-Requisite: have github cli installed (https://cli.github.com/)
+#
+# Work as usual on the code in the mus subdirectory and have a branch
+# for your changes.
+# When it is ready to be put into a pull request, run request.
+# It takes care of the superrepository and creates the corresponding
+# pull requests.
+#
+# If you make changes that need to be pushed, you can run request on
+# your branch again.
 musdir=$(git rev-parse --show-toplevel)
 owd=$(pwd)
 
 if [ "$(basename $musdir)" = "mus" ]; then
+
     musbranch=$(git branch --show-current)
     musmsg=$(git show --pretty=format:%s -s HEAD)
     echo $musbranch in $musdir
     echo "@: $musmsg"
+    echo ""
     musubidir=$musdir/..
     musubibranch=$(cd $musubidir && git branch --show-current)
+
     if [ "$musbranch" = "main" ]; then
         echo "Not attempting to work on main branch!"
     else
@@ -21,8 +41,33 @@ if [ "$(basename $musdir)" = "mus" ]; then
             fi
             git diff --quiet || git add mus .gitmodules
             git diff --cached --quiet || git commit -m "$musmsg"
+
+            if gh --version &>/dev/null; then
+                # Create the pull request in the submodule (mus) if it does not exist yet.
+                cd $musdir
+                PRnum=$(gh pr status --json number,headRefName --jq '.currentBranch.number')
+                if  [ -z "$PRnum" ]; then
+                    gh pr create --fill -a @me
+                else
+                    git push $@
+                fi
+
+                # Create the pull request in the supermodule (musubi) if it does not exist yet.
+                cd $musubidir
+                PRnum=$(gh pr status --json number,headRefName --jq '.currentBranch.number')
+                if  [ -z "$PRnum" ]; then
+                    gh pr create -d -t "$musmsg" -b "See [PR in musubi-source](https://github.com/apes-suite/musubi-source/pull/$PRnum)."
+                else
+                    git push $@
+                fi
+            else
+                echo ""
+                echo "Need to install github cli (https://cli.github.com/) to create"
+                echo "Pull request!"
+                echo ""
+            fi
+
         else
-            echo ""
             echo ""
             echo "mus directory is not clean"
             echo "Please make sure that all your changes are committed!"
