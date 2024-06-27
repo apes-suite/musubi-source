@@ -12,6 +12,7 @@
 ! Copyright (c) 2019 Seyfettin Bilgi <seyfettin.bilgi@student.uni-siegen.de>
 ! Copyright (c) 2019-2020 Peter Vitt <peter.vitt2@uni-siegen.de>
 ! Copyright (c) 2021-2022 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2023 jana.gericke@dlr.de <jana.gericke@dlr.de>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -669,8 +670,8 @@ module mus_bc_header_module
       type(mus_mixture_type), intent(in) :: mixture
     end subroutine boundaryRoutine
 
-    !>  This abstract interface defines the interface for bndForce calculation. 
-    !! [[boundary_type:calcBndForce]] in order to find the routine in case the 
+    !>  This abstract interface defines the interface for bndForce calculation.
+    !! [[boundary_type:calcBndForce]] in order to find the routine in case the
     !! interface needs to be changed.
     subroutine mus_proc_calcBndForce( me, bndForce, bndMoment, posInBndID, &
       &                               globBC, currState, levelDesc, nSize, &
@@ -900,6 +901,22 @@ contains
             if(.not. me( myBCID )%curved) me( myBCID )%useComputeNeigh = .true.
           end select
           ! load wall model type
+          call mus_load_turb_wallFunc(me     = me(myBCID)%turbwallFunc, &
+            &                         conf   = conf,                    &
+            &                         parent = sub_handle               )
+
+        case( 'turbulent_wall_curved_highorder' )
+          write(logUnit(1),*) '    Wall function ' //                   &
+            &                 trim( bc_header%BC_kind(iBC) ) //         &
+            &                 ' treatment for '//trim( me(myBCID)%label )
+          ! Use 3 neighbors to get point 3.5dx away from wall
+          me(myBCID)%nNeighs = 3
+          !! 2023-08-11: ToDo_JG: Is it needed?
+          !me( myBCID )%requireNeighBufPre_nNext = .true.
+          ! For now, it is only for curved.
+          ! 2023-08-11: ToDo_JG: Remove, if it's implemented for straight, too.
+          me( myBCID )%curved = .true.
+          ! Load wall model type
           call mus_load_turb_wallFunc(me     = me(myBCID)%turbwallFunc, &
             &                         conf   = conf,                    &
             &                         parent = sub_handle               )

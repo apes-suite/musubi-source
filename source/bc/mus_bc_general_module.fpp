@@ -13,6 +13,7 @@
 ! Copyright (c) 2019 Seyfettin Bilgi <seyfettin.bilgi@student.uni-siegen.de>
 ! Copyright (c) 2019-2020 Peter Vitt <peter.vitt2@uni-siegen.de>
 ! Copyright (c) 2021-2022 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2023 jana.gericke@dlr.de <jana.gericke@dlr.de>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -104,7 +105,8 @@ module mus_bc_general_module
     &                                  turbulent_wall_eq,                      &
     &                                  turbulent_wall_eq_curved,               &
     &                                  turbulent_wall_noneq_expol,             &
-    &                                  turbulent_wall_noneq_expol_curved
+    &                                  turbulent_wall_noneq_expol_curved,      &
+    &                                  turbulent_wall_curved_highorder
   use mus_bc_fluid_experimental_module, only: pressure_expol_slow
 ?? IF( .not. SOA) then
   use mus_bc_fluid_module,              only: pressure_momentsbased,           &
@@ -531,7 +533,8 @@ contains
             &     maxLevel  = maxLevel                                 )
         end select
 
-      case('turbulent_wall', 'turbulent_wall_noneq_expol', 'turbulent_wall_eq')
+      case('turbulent_wall', 'turbulent_wall_noneq_expol',        &
+        &  'turbulent_wall_eq', 'turbulent_wall_curved_highorder' )
         isWall = .true.
         ! Here we have to allocate and set the q-values if it is not
         ! provided by seeder and set the qVal from musubi.lua
@@ -546,7 +549,7 @@ contains
 
         ! allocate turbulent viscosity on boundary elements,
         ! and friction velocity and normal distance to boundary on first neigbor
-        ! of boundary elements. 
+        ! of boundary elements.
         ! Initialize friction velocity from stream-wise
         ! velocity component computed on first neighbor and normal distance to
         ! to boundary.
@@ -583,8 +586,15 @@ contains
           end do
         end if
 
-
         select case (trim(bc(iBnd)%BC_kind))
+        case ('turbulent_wall_curved_highorder')
+          select case(trim(schemeHeader%kind))
+          case('fluid', 'fluid_incompressible')
+            bc( iBnd )%fnct => turbulent_wall_curved_highorder
+          case default
+            call tem_abort( 'Unknown scheme kind for          &
+              &              turbulent_wall_curved_highorder' )
+          end select
         case ('turbulent_wall_noneq_expol')
           select case(trim(schemeHeader%kind))
           case('fluid', 'fluid_incompressible')
@@ -817,7 +827,7 @@ contains
             call tem_abort('velocity_noneq_expol is not supported for trt!')
           end if
           bc( iBnd )%fnct => pressure_nonEqExpol
-          
+
         end select
 
       ! cases which use the nernst_planck
@@ -1475,9 +1485,9 @@ contains
     ! -------------------------------------------------------------------- !
     !> Field bc which contains turbwallFunc type and neighbor info
     type(boundary_type), intent(inout) :: bc
-    !> global bc of current boundary with elemPos and normal info 
+    !> global bc of current boundary with elemPos and normal info
     type(glob_boundary_type), intent(inout) :: globBC
-    !> auxField array 
+    !> auxField array
     real(kind=rk), intent(in) :: auxField(:)
     !> Kinematic viscosity
     type(mus_viscosity_type) :: viscKine
@@ -1487,7 +1497,7 @@ contains
     type( tem_varSys_type ), intent(in) :: varSys
     !> stencil info
     type(tem_stencilHeader_type), intent(in) :: stencil
-    !> current level 
+    !> current level
     integer, intent(in) :: iLevel
     ! -------------------------------------------------------------------- !
     integer :: iElem, neighPos, elemOff, elemPos, normalInd_inv, vel_pos(3)
@@ -1742,7 +1752,7 @@ field(iField)%bc(iBnd)%neigh(iLevel)%computeNeighBuf( (iElem-1)*QQ+iDir ) =    &
 
     ! write(dbgUnit(10), "(A)") ' Fill bcBuffer. '
 
-    ! Loop over fields 
+    ! Loop over fields
     do iField = 1, nFields
       !NEC$ ivdep
       !dir$ ivdep
