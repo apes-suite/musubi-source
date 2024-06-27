@@ -354,7 +354,7 @@ contains
     !! halo elements for state vars
     logical, intent(in) :: excludeHalo
     ! --------------------------------------------------------------------------
-    integer :: iNeigh, neighPos
+    integer :: neighPos, iDir
     integer :: iSrc
     real(kind=rk) :: bary(3), dist(3), dist_len
     ! --------------------------------------------------------------------------
@@ -376,13 +376,13 @@ contains
     if ( dist_len .fne. 0.0_rk ) then
 
       ! get existing neighbor elements in actual tree
-      do iNeigh = 1, stencil%QQN
+      do iDir = 1, stencil%QQN
 
         ! Find neighor using neigh array because for boundary, neigh array
         ! points to current element so no need to check for existence of the
         ! neighbor element
         neighPos =                                                         &
-          & ?NghElemIDX?(neigh, iNeigh, stencil, statePos, nScalars, nElems)
+          & ?NghElemIDX?(neigh, iDir, stencil, statePos, nScalars, nElems)
 
         ! skip this neighbor and goto next neighbor
         if (excludeHalo .and. neighPos > nSolve) cycle
@@ -393,7 +393,7 @@ contains
           nSrcElems = nSrcElems + 1
           srcElemPos(nSrcElems)  = neighPos
         end if
-      end do !iNeigh
+      end do !iDir
 
       ! calculate weight
       do iSrc = 1, nSrcElems
