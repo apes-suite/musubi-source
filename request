@@ -83,8 +83,7 @@ if [ "$(basename $musdir)" = "mus" ]; then
             else
                 git checkout $musbranch
             fi
-            git diff --quiet || git add mus .gitmodules
-            git diff --cached --quiet || git commit -m "$musmsg"
+            git diff --quiet || git commit -a -m "$musmsg"
 
             if gh --version &>/dev/null; then
                 # Create the pull request in the submodule (mus) if it does not exist yet.
