@@ -8,9 +8,25 @@ Treelm is incorporated as a subrepository.
 Compilation is done via waf and achieved by:
 
     export FC=mpif90
-    ./waf configure build
+    bin/waf configure build
 
 Note that MPI is required to compile Musubi.
+
+Organization in Git Submodules
+------------------------------
+
+This repository provides the sources of Musubi, but to compile these sources
+we need some dependencies and the build infrastructure.
+These are gathered in a git supermodule besides the sources of this repository.
+To ease the work with this setup, we provide a little script called "request".
+The idea is to work on this source repository for the most part just, as if
+there is no super repository.
+Then when there is some pull request to be create and to share the changes,
+you simply run `./request`, which takes care of dealing with the super
+repository and creates pull requests in both projects accordingly.
+
+Subsequently the request script can be used to update those pull requests as
+needed. Have a look into the request script itself for details.
 
 License
 -------

@@ -6,6 +6,9 @@
 # Small script to ease the development with the nested musubi-source
 # directory inside the musubi super repository.
 #
+# The idea is to work undisturbed on the musubi sources, and to not
+# have to mind to the git submodule layout at all.
+#
 # Pre-Requisite: have github cli installed (https://cli.github.com/)
 #
 # Work as usual on the code in the mus subdirectory and have a branch
@@ -16,6 +19,47 @@
 #
 # If you make changes that need to be pushed, you can run request on
 # your branch again.
+#
+# request always uses the current branch you are working on in the
+# mus subdirectory and the pull request is filled in by the commit
+# message. There are no arguments it takes for its work.
+#
+# Please note that this is just a rough script, without bells and
+# whistles, it is designed specifically for the one usage scenario,
+# and probably easily confused.
+#
+# If you do provide arguments, those will be passed on to the git
+# push command that is used in invocations of updating the PRs.
+# It usually shouldn't be needed, but it allows you to force change
+# the commits on the branch.
+#
+# *************************************************************************** #
+#
+# Copyright (c) 2024 Harald Klimach <harald.klimach@dlr.de>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHORS “AS IS” AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL UNIVERSITY OF SIEGEN OR CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# **************************************************************************** #
+
 musdir=$(git rev-parse --show-toplevel)
 owd=$(pwd)
 
