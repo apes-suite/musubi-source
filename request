@@ -95,12 +95,13 @@ if [ "$(basename $musdir)" = "mus" ]; then
                 else
                     git push $@
                 fi
+                musPR=$(gh pr status --json number,headRefName --jq '.currentBranch.number')
 
                 # Create the pull request in the supermodule (musubi) if it does not exist yet.
                 cd $musubidir
                 PRnum=$(gh pr status --json number,headRefName --jq '.currentBranch.number')
                 if  [ -z "$PRnum" ]; then
-                    gh pr create -d -t "$musmsg" -b "See [PR in musubi-source](https://github.com/apes-suite/musubi-source/pull/$PRnum)."
+                    gh pr create -d -t "$musmsg" -b "See [PR in musubi-source](https://github.com/apes-suite/musubi-source/pull/$musPR)."
                 else
                     git push $@
                 fi
