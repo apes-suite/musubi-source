@@ -3,14 +3,15 @@ Musubi
 
 Musubi is a MPI parallel Lattice-Boltzmann solver.
 It utilizes treelm to represent meshes and allows for local refinements.
-Treelm is incorporated as a subrepository.
 
-Compilation is done via waf and achieved by:
+This repository only contains the sources of musubi, which can not be
+built on its own.
+Supporting libraries like [treelm](https://github.com/apes-suite/tem-source)
+and the [build infrastructure](https://github.com/apes-suite/apes-bin) are
+gathered in the [Musubi repository](https://github.com/apes-suite/musubi).
 
-    export FC=mpif90
-    bin/waf configure build
+Please that container repository for instruction on how to build Musubi.
 
-Note that MPI is required to compile Musubi.
 
 Organization in Git Submodules
 ------------------------------
