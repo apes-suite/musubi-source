@@ -261,21 +261,21 @@ contains
             ! so goto next dir
             if (sum( abs(layout%fStencil%cxDir( :, iDir ))) == 1) cycle
 
-            ! also do nothing if a link is same as normal direction of 
+            ! also do nothing if a link is same as normal direction of
             ! boundary
             if (globBC(iBC)%elemLvl(iLevel)%normalInd%val(iElem) == iDir) cycle
 
             ! for rest of the directions compute the symDir of iDir
-            ! with respect to the boundary normal and also find from 
+            ! with respect to the boundary normal and also find from
             ! which neighbor the symdir must be taken.
             ! symDir are outgoing directions pointing towards the boundary
-            normal = globBC(iBC)%elemLvl(iLevel)%normal%val(:,iElem) 
+            normal = globBC(iBC)%elemLvl(iLevel)%normal%val(:,iElem)
             symDir = layout%fStencil%cxDir(:, iDir) - 2*normal
             call tem_determine_discreteVector(symDir, layout%prevailDir)
             symDirInd = tem_stencil_findIndexOfDir( symDir,               &
               &                                     layout%fStencil%cxDir )
 
-            ! neighbor direction  
+            ! neighbor direction
             neighDir = normal - layout%fStencil%cxDir(:, iDir)
             call tem_determine_discreteVector( neighDir,         &
               &                                layout%prevailDir )
@@ -301,7 +301,7 @@ contains
             end if
 
           end if !bitmask
-        end do neighLoop 
+        end do neighLoop
 !KM!        write(dbgUnit(1),*)
       end do elemLoop
 !KM!      write(dbgUnit(1),*)
@@ -317,20 +317,20 @@ contains
 
 ! **************************************************************************** !
   ! This routine provides the source element position in level descriptor
-  ! for interpolation. Here, Ghost elements are considered as ghost. 
+  ! for interpolation. Here, Ghost elements are considered as ghost.
   ! This routine is used in setup_indices for state and derive variable where
   ! point value is computed using elements in the same level.
   subroutine mus_intp_getSrcElemPosInLevelDesc(srcElemPos, weights, nSrcElems, &
     & point, statePos, neigh, baryOfTotal, nElems, nSolve, stencil, nScalars,  &
     & excludeHalo)
     ! --------------------------------------------------------------------------
-    !> position of source element in the levelwise state array 
+    !> position of source element in the levelwise state array
     integer, intent(out) :: srcElemPos(:)
     !> weights for interpolation
     real(kind=rk), intent(out) :: weights(:)
-    !> number of source elements found 
+    !> number of source elements found
     integer, intent(out) :: nSrcElems
-    !> target point 
+    !> target point
     real(kind=rk), intent(in) :: point(3)
     !> position of element which contains target point on the levelwise state
     !! array
@@ -364,14 +364,14 @@ contains
     ! if restPosition is part of Stencil
     if (stencil%QQ /= stencil%QQN) then
       nSrcElems = 1
-      ! use position in levelwise for interpolation 
+      ! use position in levelwise for interpolation
       srcElemPos(nSrcElems)  = statePos
     end if
 
     bary = baryOfTotal(statePos, :)
     dist = abs(bary - point(:))
     dist_len = sqrt(dot_product(dist, dist))
-    ! if point is exact bary center of current element then 
+    ! if point is exact bary center of current element then
     ! no need to do interpolation
     if ( dist_len .fne. 0.0_rk ) then
 
@@ -401,11 +401,11 @@ contains
         dist = abs(bary - point(:))
         weights(iSrc) = 1.0_rk/sqrt(dot_product( dist, dist ))
       end do
-    else  
+    else
       ! if point is exact bary center of current element then
       ! no need to do interpolation
       weights(nSrcElems) = 1.0_rk
-    end if  
+    end if
 
     ! normalize weights
     weights = weights/sum(weights)
@@ -426,9 +426,9 @@ contains
     integer, intent(out) :: srcElemPos(:)
     !> weights for interpolation
     real(kind=rk), intent(out) :: weights(:)
-    !> number of source elements found 
+    !> number of source elements found
     integer, intent(out) :: nSrcElems
-    !> target point 
+    !> target point
     real(kind=rk), intent(in) :: point(3)
     !> stencil definition
     type(tem_stencilHeader_type), intent(in) :: stencil
@@ -462,7 +462,7 @@ contains
     ! or the negative of the found ID, if it is a virtual node.
     elemPos = abs(tem_PosofId( tem_IdOfCoord(coord), tree%treeID ))
 
-    ! Extrapolate if point is outside fluid domain. 
+    ! Extrapolate if point is outside fluid domain.
     ! Use closest neighbor as elemPos and uses its neighbors for interpolation
     ! Using algorithm from tem_cano_checkNeigh
     if (elemPos == 0) then
@@ -503,14 +503,14 @@ contains
     ! if restPosition is part of Stencil
     if (stencil%QQ /= stencil%QQN) then
       nSrcElems = 1
-      ! use position in levelwise for interpolation 
+      ! use position in levelwise for interpolation
       srcElemPos(nSrcElems)  = elemPos
     end if
 
     bary = tem_BaryOfID(tree, tree%treeID(elemPos) )
     dist = abs(bary - point(:))
     dist_len = sqrt(dot_product(dist, dist))
-    ! if point is exact bary center of current element then 
+    ! if point is exact bary center of current element then
     ! no need to do interpolation
     if ( dist_len .fne. 0.0_rk ) then
 

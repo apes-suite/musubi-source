@@ -23,7 +23,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
-!> This module contains data types, function and routines for gradient 
+!> This module contains data types, function and routines for gradient
 !! computation.
 !!
 !! author: Gregorio Gerardo Spinelli
@@ -84,12 +84,12 @@ module mus_gradData_module
   end type mus_gradData_type
 
   abstract interface
-    !> function pointers to obtain full gradient of U along all 
+    !> function pointers to obtain full gradient of U along all
     !! directions
     pure function getGradU( auxField, gradData, velPos, nAuxScalars, &
       &                     nDims, nSolve, elemOffset ) result(gradU)
       import :: rk, mus_gradData_type
-    
+
       !> auxField
       real(kind=rk), intent(in) :: auxField(:)
       !> Number of element to solve in this level
@@ -106,15 +106,15 @@ module mus_gradData_module
       integer, intent(in) :: nDims
       !> output: gradient of velocity
       real(kind=rk) :: gradU(nDims,nDims,nSolve)
-  
+
     end function getGradU
 
-    !> function pointers to obtain full gradient of U along main 
+    !> function pointers to obtain full gradient of U along main
     !! directions derived two times d^2U/dx^2
     pure function getGradXXU( auxField, gradData, velPos, nAuxScalars, &
       &                       nDims, nSolve, elemOffset ) result(gradXXU)
       import :: rk, mus_gradData_type
-    
+
       !> auxField
       real(kind=rk), intent(in) :: auxField(:)
       !> Number of element to solve in this level
@@ -132,14 +132,14 @@ module mus_gradData_module
       !> output: gradient of velocity:
       ! 1: Dxxu, 2: Dyyv, 3: Dzzw
       real(kind=rk) :: gradXXU(nDims,nSolve)
-  
+
     end function getGradXXU
 
     !> function pointers to obtain grad Rho * U^3 along main directions
     pure function getGradRhoU3( auxField, gradData, velPos, densPos, nAuxScalars, &
       &                         nDims, nSolve, elemOffset ) result(gradRhoU3)
       import :: rk, mus_gradData_type
-    
+
       !> auxField
       real(kind=rk), intent(in) :: auxField(:)
       !> Number of element to solve in this level
@@ -156,16 +156,16 @@ module mus_gradData_module
       integer, intent(in) :: nDims
       !> output: gradient of velocity
       real(kind=rk) :: gradRhoU3(nDims,nSolve)
-  
+
     end function getGradRhoU3
 
-    !> function pointers to obtain grad Rho * u_x * u_y * u_z 
+    !> function pointers to obtain grad Rho * u_x * u_y * u_z
     !! along main directions
     pure function getGradRhoUVZ( auxField, gradData, velPos, densPos, &
       &                          nDims, nAuxScalars, nSolve, elemOffset )    &
       &  result(gradRhoUVZ)
       import :: rk, mus_gradData_type
-    
+
       !> auxField
       real(kind=rk), intent(in) :: auxField(:)
       !> Number of element to solve in this level
@@ -182,16 +182,16 @@ module mus_gradData_module
       integer, intent(in) :: nDims
       !> output: gradient of velocity
       real(kind=rk) :: gradRhoUVZ(nDims,nSolve)
-  
+
     end function getGradRhoUVZ
   end interface
 
 contains
 
   ! ************************************************************************* !
-  !> This routine initialize gradData with direct neighbors in state and 
+  !> This routine initialize gradData with direct neighbors in state and
   !! finite difference coefficients.
-  subroutine mus_init_gradData(me, neigh, & !levelDesc, 
+  subroutine mus_init_gradData(me, neigh, & !levelDesc,
     &                          stencil, nSize, nSolve, &
     &                          nScalars)
     !---------------------------------------------------------------------------
@@ -302,13 +302,13 @@ contains
   ! ************************************************************************* !
 
 ! ************************************************************************** !
-!> This function returns function pointer of nonEquilibrium scaling 
+!> This function returns function pointer of nonEquilibrium scaling
 !! for interpolation according to scheme definition
 function mus_assign_GradCalculation_ptr(label) result(Grad)
   ! --------------------------------------------------------------------------
   !> Scheme header information
   character(len=labelLen), intent(in) :: label
-  !> GradRhoU3 function 
+  !> GradRhoU3 function
   type(mus_Grad_type) :: Grad
   ! --------------------------------------------------------------------------
   Grad%RhoU3_ptr => null()
@@ -683,7 +683,7 @@ end function mus_assign_GradCalculation_ptr
   ! ************************************************************************** !
 
   ! ************************************************************************** !
-  !> This function computes gradient of rho * velocity^3 from gradient, density 
+  !> This function computes gradient of rho * velocity^3 from gradient, density
   !! and veleocity data. Just derivatives u_x, v_y and w_z.
   !! Gradient is computed using central difference.
   !! if an element has an boundary then neighbor refers to current element
@@ -728,7 +728,7 @@ end function mus_assign_GradCalculation_ptr
 
 
   ! ************************************************************************** !
-  !> This function computes gradient of rho * velocity^3 from gradient, density 
+  !> This function computes gradient of rho * velocity^3 from gradient, density
   !! and veleocity data. Just derivatives u_x, v_y and w_z.
   !! Gradient is computed using central difference.
   !! if an element has an boundary then neighbor refers to current element
@@ -779,7 +779,7 @@ end function mus_assign_GradCalculation_ptr
 
 
   ! ************************************************************************** !
-  !> This function computes gradient of rho * velocity^3 from gradient, density 
+  !> This function computes gradient of rho * velocity^3 from gradient, density
   !! and veleocity data. Just derivatives u_x, v_y and w_z.
   !! Gradient is computed using central difference.
   !! if an element has an boundary then neighbor refers to current element

@@ -257,7 +257,7 @@ contains
     do iPnt = 1, nPnts
       srcRes = 0.0_rk
 
-      ! get position of source element position in global tree for 
+      ! get position of source element position in global tree for
       ! interpolation.
       ! Also calculate weights for interpolation using distance between the
       ! point and source element barycenter
@@ -460,30 +460,30 @@ contains
 
       !NEC$ ivdep
       do iElem = 1, nChunkElems
-        
+
         elemPos = low_bound + iElem
 
         !NEC$ shortloop
         do iDir = 1, QQ
           pdf(iDir,iElem) = state(?FETCH?(iDir, 1, elemPos, QQ, nScalars, nSize, neigh))
         end do
-  
+
         ! element offset
         elemoff = (elemPos-1)*varSys%nAuxScalars
-  
+
         ! density
         rho(iElem) = sum( pdf )
         ! store density
         auxField(elemOff+dens_pos) = rho(iElem)
 
       end do
-  
+
       ! compute velocity
       vel = quantities%vel_from_pdf_vectorized_ptr(pdf = pdf, dens = rho, &
         &                  cxDirRK = stencil%cxDirRK, nSolve = nChunkElems)
 
       !NEC$ ivdep
-      do iElem = 1, nChunkElems  
+      do iElem = 1, nChunkElems
         ! element offset
         elemPos = low_bound + iElem
         elemoff = (elemPos-1)*varSys%nAuxScalars
@@ -491,7 +491,7 @@ contains
         auxField(elemOff+vel_pos(1)) = vel(1,iElem)
         auxField(elemOff+vel_pos(2)) = vel(2,iElem)
         auxField(elemOff+vel_pos(3)) = vel(3,iElem)
-  
+
       end do
 
     end do
@@ -552,7 +552,7 @@ contains
 
       !NEC$ ivdep
       do iElem = 1, nChunkElems
-        
+
         elemPos = low_bound + iElem
 
         pdf(1, iElem) = state(?FETCH?(1, 1, elemPos, QQ, nScalars, nSize, neigh))
@@ -564,30 +564,30 @@ contains
         pdf(7, iElem) = state(?FETCH?(7, 1, elemPos, QQ, nScalars, nSize, neigh))
         pdf(8, iElem) = state(?FETCH?(8, 1, elemPos, QQ, nScalars, nSize, neigh))
         pdf(9, iElem) = state(?FETCH?(9, 1, elemPos, QQ, nScalars, nSize, neigh))
-  
+
         ! element offset
         elemoff = (elemPos-1)*varSys%nAuxScalars
         ! density
         rho(iElem) = sum(pdf(:, iElem))
         ! store density
         auxField(elemOff+dens_pos) = rho(iElem)
-      
+
       end do
 
       ! compute velocity
       vel = quantities%vel_from_pdf_vectorized_ptr(pdf = pdf, dens = rho, nSolve = nChunkElems)
 
       !NEC$ ivdep
-      do iElem = 1, nChunkElems  
+      do iElem = 1, nChunkElems
         ! element offset
         elemPos = low_bound + iElem
         elemoff = (elemPos-1)*varSys%nAuxScalars
         ! store velocity
         auxField(elemOff+vel_pos(1)) = vel(1, iElem)
         auxField(elemOff+vel_pos(2)) = vel(2, iElem)
-        auxField(elemOff+vel_pos(3)) = 0.0_rk  
+        auxField(elemOff+vel_pos(3)) = 0.0_rk
       end do
-      
+
     end do!iChunks
     !$omp end parallel do
 
@@ -642,12 +642,12 @@ contains
       ! calculate the end  number of iElem loop
       nChunkElems = min(vlen, nSolve - ((iChunks - 1) * vlen))
       low_bound = (iChunks - 1) * vlen
-    
+
       !NEC$ ivdep
       do iElem = 1, nChunkElems
-        
+
         elemPos = low_bound + iElem
-  
+
         pdf( 1,iElem) = state(?FETCH?( 1, 1, elemPos, QQ, nScalars, nSize, neigh))
         pdf( 2,iElem) = state(?FETCH?( 2, 1, elemPos, QQ, nScalars, nSize, neigh))
         pdf( 3,iElem) = state(?FETCH?( 3, 1, elemPos, QQ, nScalars, nSize, neigh))
@@ -667,33 +667,33 @@ contains
         pdf(17,iElem) = state(?FETCH?(17, 1, elemPos, QQ, nScalars, nSize, neigh))
         pdf(18,iElem) = state(?FETCH?(18, 1, elemPos, QQ, nScalars, nSize, neigh))
         pdf(19,iElem) = state(?FETCH?(19, 1, elemPos, QQ, nScalars, nSize, neigh))
-  
+
         ! element offset
         elemoff = (elemPos-1)*varSys%nAuxScalars
-  
+
         ! density
         rho(iElem) = sum(pdf(:,iElem))
         ! store density
         auxField(elemOff+dens_pos) = rho(iElem)
-      
+
       end do
 
       ! compute velocity
       vel = quantities%vel_from_pdf_vectorized_ptr(pdf = pdf, dens = rho, nSolve = nChunkElems)
 
       !NEC$ ivdep
-      do iElem = 1, nChunkElems  
+      do iElem = 1, nChunkElems
         ! element offset
         elemPos = low_bound + iElem
         elemoff = (elemPos-1)*varSys%nAuxScalars
-  
+
         ! store velocity
         auxField(elemOff+vel_pos(1)) = vel(1, iElem)
         auxField(elemOff+vel_pos(2)) = vel(2, iElem)
         auxField(elemOff+vel_pos(3)) = vel(3, iElem)
-  
+
       end do
-      
+
     end do!iChunks
     !$omp end parallel do
 
@@ -751,9 +751,9 @@ contains
 
       !NEC$ ivdep
       do iElem = 1, nChunkElems
-        
+
         elemPos = low_bound + iElem
-  
+
         pdf( 1,iElem) = state(?FETCH?(1,  1, elemPos, QQ, nScalars, nSize, neigh))
         pdf( 2,iElem) = state(?FETCH?(2,  1, elemPos, QQ, nScalars, nSize, neigh))
         pdf( 3,iElem) = state(?FETCH?(3,  1, elemPos, QQ, nScalars, nSize, neigh))
@@ -781,22 +781,22 @@ contains
         pdf(25,iElem) = state(?FETCH?(25, 1, elemPos, QQ, nScalars, nSize, neigh))
         pdf(26,iElem) = state(?FETCH?(26, 1, elemPos, QQ, nScalars, nSize, neigh))
         pdf(27,iElem) = state(?FETCH?(27, 1, elemPos, QQ, nScalars, nSize, neigh))
-  
+
         ! element offset
         elemoff = (elemPos-1)*varSys%nAuxScalars
-  
+
         ! density
         rho(iElem) = sum(pdf(:,iElem))
         ! store density
         auxField(elemOff+dens_pos) = rho(iElem)
-  
+
       end do
 
       ! compute velocity
       vel = quantities%vel_from_pdf_vectorized_ptr(pdf = pdf, dens = rho, nSolve = nChunkElems)
 
       !NEC$ ivdep
-      do iElem = 1, nChunkElems 
+      do iElem = 1, nChunkElems
         ! element offset
         elemPos = low_bound + iElem
         elemoff = (elemPos-1)*varSys%nAuxScalars
@@ -804,7 +804,7 @@ contains
         auxField(elemOff+vel_pos(1)) = vel(1, iElem)
         auxField(elemOff+vel_pos(2)) = vel(2, iElem)
         auxField(elemOff+vel_pos(3)) = vel(3, iElem)
-  
+
       end do
 
     end do
@@ -2084,7 +2084,7 @@ contains
     integer :: iElem, nElems, posInTotal, elemOff
     real(kind=rk) :: forceDynL(3)
     ! ------------------------------------------------------------------------ !
-    
+
     ! position of density and velocity field in auxField
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)

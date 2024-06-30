@@ -61,7 +61,7 @@ contains
   ! ************************************************************************** !
   !> Calculate eddy viscosity with smagorinsky model for compressible model
   !! using gradient of velocity
-  !! Reference paper: 
+  !! Reference paper:
   !! https://link.springer.com/content/pdf/10.1007/s10494-012-9405-0.pdf?pdf=button
   !! The formula is taken from https://caefn.com/openfoam/smagorinsky-sgs-model
   !! nu_t = C_k delta sqrt(k_sgs)

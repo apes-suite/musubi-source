@@ -70,8 +70,8 @@ module mus_derivedQuantities_module2
   public :: getShearRate
   public :: getNonEqFac_intp
   public :: geteqbydensvel
-  public :: getNonEqFac_intp_coarse_to_fine 
-  public :: getNonEqFac_intp_fine_to_coarse 
+  public :: getNonEqFac_intp_coarse_to_fine
+  public :: getNonEqFac_intp_fine_to_coarse
 
   interface getEquilibrium
     module procedure getEquilibrium_forElemfromState
@@ -704,7 +704,7 @@ contains
   !! \[ m_2 = \sum_{i=1}^{Q} c_{i2} c_{i2} f_i \]
   !! \[ m_3 = \sum_{i=1}^{Q} c_{i1} c_{i2} f_i \]
   !! This function is used by shear stress and strain rate.
-  !! 1=xx, 2=yy, 3=xy 
+  !! 1=xx, 2=yy, 3=xy
   !!
   pure function secondMom_2D( cxcx, f, QQ ) result ( m )
     ! --------------------------------------------------------------------------
@@ -773,7 +773,7 @@ contains
   !! \[ m_2 = \sum_{i=1}^{Q} c_{i2} c_{i2} f_i \]
   !! \[ m_3 = \sum_{i=1}^{Q} c_{i1} c_{i2} f_i \]
   !! This function is used by shear stress and strain rate.
-  !! 1=xx, 2=yy, 3=xy 
+  !! 1=xx, 2=yy, 3=xy
   !!
   pure function secondMom_minus_cs2_2D( cxcx, f, QQ ) result ( m )
     ! --------------------------------------------------------------------------

@@ -177,7 +177,7 @@ module mus_interpolate_average_module
   !> [Average interpolation](../page/features/intp_methods.html) of ghostFromFiner
   !! The interpolation procedure used in this routine is:\n
   !! 1. Calculate Equilibrium and nonEquilibrium
-  !! 2. Compute scaling factor 
+  !! 2. Compute scaling factor
   !! 3. calculate target: Eq + Scale * nonEquilibrium
   !!
   !! This subroutine's interface must match the abstract interface definition
@@ -314,11 +314,11 @@ module mus_interpolate_average_module
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))
 ?? endif
-        
+
         f_eq(:) = layout%quantities%pdfEq_ptr( rho = rho,               &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
-        
+
         t_f_eq(:) = t_f_eq(:) + f_eq(:)
         t_f_neq(:) = t_f_neq(:) + (f(:) - f_eq(:))
 
@@ -333,12 +333,12 @@ module mus_interpolate_average_module
       fOmegaKine = mus_calcOmegaFromVisc(2_rk*cVisc)
       cOmegaKine = mus_calcOmegaFromVisc(cVisc)
 
-      !evaluate scaling factor 
+      !evaluate scaling factor
       fac = getNonEqFac_intp_fine_to_coarse( cOmegaKine, fOmegaKine)
 
       ! interpolate all pdfs by average and scale accordingly
       do iDir = 1, QQ
-        t_f_eq(iDir) = t_f_eq(iDir) * inv_nSourceElems 
+        t_f_eq(iDir) = t_f_eq(iDir) * inv_nSourceElems
         t_f_neq(iDir) = t_f_neq(iDir) * inv_nSourceElems * fac
         f(iDir) = t_f_eq(iDir) + t_f_neq(iDir)
         ! Now write the resulting pdf in the current direction to the target
@@ -351,7 +351,7 @@ module mus_interpolate_average_module
       rho = sum(f)
       ! local x-, y-, z-velocity
       vel = layout%quantities%vel_from_pdf_ptr(pdf = f, dens = rho)
-      
+
       write(dbgUnit(5),*) "Target: rho = ", rho, "; u = ", vel(1), "; v = ", vel(2)
       write(dbgUnit(5),*) "        w = ", vel(3)
       write(dbgUnit(5),*) "Target: pdfs = ", f
@@ -367,7 +367,7 @@ module mus_interpolate_average_module
   !> [Average interpolation](../page/features/intp_methods.html) of ghostFromFiner
   !! The interpolation procedure used in this routine is:\n
   !! 1. Calculate Equilibrium and nonEquilibrium
-  !! 2. Compute scaling factor 
+  !! 2. Compute scaling factor
   !! 3. calculate target: Eq + Scale * nonEquilibrium
   !!
   !! This subroutine's interface must match the abstract interface definition
@@ -506,14 +506,14 @@ module mus_interpolate_average_module
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))
 ?? endif
-        
+
         f_eq(:) = layout%quantities%pdfEq_ptr( rho = rho,               &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
-        
+
         t_f_eq(:) = t_f_eq(:) + f_eq(:)
         t_f_neq(:) = t_f_neq(:) + (f(:) - f_eq(:))
-        
+
         tTurbVisc = tTurbVisc + fluid%turbulence%dataOnLvl(sourceLevel) &
           &                                      %visc(sourceElem)
 
@@ -524,7 +524,7 @@ module mus_interpolate_average_module
       ! scale interpolated turbulent viscosity to target element
       fluid%turbulence%dataOnLvl(targetLevel)%visc(targetElem) &
         & = fluid%turbulence%fac_f2c*tTurbVisc
-        
+
       ! get normalized kinematic viscosity on target (coarse) element
       cVisc = fluid%viscKine%dataOnLvl(targetLevel)%val(targetElem)
 
@@ -534,12 +534,12 @@ module mus_interpolate_average_module
       fOmegaKine = mus_calcOmegaFromVisc(2_rk*cVisc + tTurbVisc)
       cOmegaKine = mus_calcOmegaFromVisc(cVisc + fluid%turbulence%fac_f2c*tTurbVisc)
 
-      !evaluate scaling factor 
+      !evaluate scaling factor
       fac = getNonEqFac_intp_fine_to_coarse(cOmegaKine, fOmegaKine)
 
       ! interpolate all pdfs by average and scale accordingly
       do iDir = 1, QQ
-        t_f_eq(iDir) = t_f_eq(iDir) * inv_nSourceElems 
+        t_f_eq(iDir) = t_f_eq(iDir) * inv_nSourceElems
         t_f_neq(iDir) = t_f_neq(iDir) * inv_nSourceElems * fac
         f(iDir) = t_f_eq(iDir) + t_f_neq(iDir)
         ! Now write the resulting pdf in the current direction to the target
@@ -567,7 +567,7 @@ module mus_interpolate_average_module
 ! **************************************************************************** !
   !> Fill coarse target ghost from fine source fluid by average interpolation.
   !! 1. Calculate Equilibrium and nonEquilibrium
-  !! 2. Compute scaling factor 
+  !! 2. Compute scaling factor
   !! 3. calculate target: Eq + Scale * nonEquilibrium
   !!
   !! This subroutine's interface must match the abstract interface definition
@@ -647,7 +647,7 @@ module mus_interpolate_average_module
     write(dbgUnit(4),*) "iteration = ", time%iter
     flush(dbgUnit(4))
 ?? endif
-    
+
     vel = 0._rk
     fluid => fieldProp(1)%fluid
     nScalars = varSys%nScalars
@@ -663,7 +663,7 @@ module mus_interpolate_average_module
     write(dbgUnit(4),*) "Fill coarse ghost from fine fluid"
     flush(dbgUnit(4))
 ?? endif
-    
+
     ! Treat all coarse target elements
     do indElem = 1, nTargets
 
@@ -704,11 +704,11 @@ module mus_interpolate_average_module
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))
 ?? endif
-        
+
       f_eq(:) = layout%quantities%pdfEq_ptr( rho = rho,               &
         &                                    vel = vel,               &
         &                                    QQ = QQ                  )
-      
+
       t_f_eq(:) = t_f_eq(:) + f_eq(:)
       t_f_neq(:) = t_f_neq(:) + (f(:) - f_eq(:))
 
@@ -723,12 +723,12 @@ module mus_interpolate_average_module
       fOmegaKine = mus_calcOmegaFromVisc(2_rk*cVisc)
       cOmegaKine = mus_calcOmegaFromVisc(cVisc)
 
-      !evaluate scaling factor 
+      !evaluate scaling factor
       fac = getNonEqFac_intp_fine_to_coarse( cOmegaKine, fOmegaKine)
 
       ! interpolate all pdfs by average and scale accordingly
       do iDir = 1, QQ
-        t_f_eq(iDir) = t_f_eq(iDir) * inv_nSourceElems 
+        t_f_eq(iDir) = t_f_eq(iDir) * inv_nSourceElems
         t_f_neq(iDir) = t_f_neq(iDir) * inv_nSourceElems * fac
         f(iDir) = t_f_eq(iDir) + t_f_neq(iDir)
         ! Now write the resulting pdf in the current direction to the target
@@ -845,7 +845,7 @@ module mus_interpolate_average_module
 ! **************************************************************************** !
   !> [Linear interpolation](../page/features/intp_methods.html) of ghostFromFiner
   !! 1. Calculate Equilibrium and nonEquilibrium
-  !! 2. Compute scaling factor 
+  !! 2. Compute scaling factor
   !! 3. calculate target: Eq + Scale * nonEquilibrium
   !!
   !! This subroutine's interface must match the abstract interface definition
@@ -909,8 +909,8 @@ module mus_interpolate_average_module
     integer :: indElem        ! element counter for indirection list
     integer :: iSourceElem    ! current source element (for inner loop)
     integer :: nSourceElems   ! number of source elements for the current target
-    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
-    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ )
+    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ )
     real(kind=rk) :: weight(layout%fStencil%QQ)
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
@@ -921,7 +921,7 @@ module mus_interpolate_average_module
     real(kind=rk) :: fVisc, cOmegaKine, fOmegaKine, rho, vel(3), fac
     integer :: elemOff, dens_pos, vel_pos(3), nScalars
     ! --------------------------------------------------------------------------
- 
+
 ?? if( DEBUG ) then
     write(dbgUnit(4),*) "iteration = ", time%iter
     flush(dbgUnit(4))
@@ -933,7 +933,7 @@ module mus_interpolate_average_module
 
     sourceLevel = level
     targetLevel = level + 1
-    
+
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -985,13 +985,13 @@ module mus_interpolate_average_module
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))
 ?? endif
-        
+
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho,  &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
-        
+
         f_neq(:, iSourceElem) = f(:) - f_eq(:, iSourceElem)
-        
+
       end do ! iSourceElem
 
       ! interpolate all pdfs by weighted average
@@ -1009,7 +1009,7 @@ module mus_interpolate_average_module
       fOmegaKine = mus_calcOmegaFromVisc(fVisc)
       cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
-      !evaluate scaling factor 
+      !evaluate scaling factor
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
@@ -1018,8 +1018,8 @@ module mus_interpolate_average_module
         f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
-      enddo      
-      
+      enddo
+
 ?? if( DEBUG ) then
 
       ! local density
@@ -1041,7 +1041,7 @@ module mus_interpolate_average_module
 ! **************************************************************************** !
   !> [Linear interpolation](../page/features/intp_methods.html) of ghostFromFiner
   !! 1. Calculate Equilibrium and nonEquilibrium
-  !! 2. Compute scaling factor 
+  !! 2. Compute scaling factor
   !! 3. calculate target: Eq + Scale * nonEquilibrium
   !!
   !! This subroutine's interface must match the abstract interface definition
@@ -1105,8 +1105,8 @@ module mus_interpolate_average_module
     integer :: indElem        ! element counter for indirection list
     integer :: iSourceElem    ! current source element (for inner loop)
     integer :: nSourceElems   ! number of source elements for the current target
-    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
-    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ )
+    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ )
     real(kind=rk) :: weight(layout%fStencil%QQ), sTurbVisc(layout%fStencil%QQ)
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
@@ -1117,7 +1117,7 @@ module mus_interpolate_average_module
     real(kind=rk) :: fVisc, cOmegaKine, fOmegaKine, rho, vel(3), fac
     integer :: elemOff, dens_pos, vel_pos(3), nScalars
     ! --------------------------------------------------------------------------
- 
+
 ?? if( DEBUG ) then
     write(dbgUnit(4),*) "iteration = ", time%iter
     flush(dbgUnit(4))
@@ -1129,7 +1129,7 @@ module mus_interpolate_average_module
 
     sourceLevel = level
     targetLevel = level + 1
-    
+
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -1181,17 +1181,17 @@ module mus_interpolate_average_module
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))
 ?? endif
-        
+
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho,  &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
-        
+
         f_neq(:, iSourceElem) = f(:) - f_eq(:, iSourceElem)
 
         ! get turbulent viscosity
         sTurbVisc(iSourceElem) = fluid%turbulence%dataOnLvl(sourceLevel) &
           &                                       %visc(sourceElem)
-      
+
       end do ! iSourceElem
 
       ! interpolate all pdfs by weighted average
@@ -1199,7 +1199,7 @@ module mus_interpolate_average_module
       do iDir = 1,QQ
         t_f_eq(iDir) = sum(weight(1:nSourceElems)*f_eq(iDir,1:nSourceElems))
         t_f_neq(iDir) = sum(weight(1:nSourceElems)*f_neq(iDir,1:nSourceElems))
-      end do                                        
+      end do
 
       ! scale interpolated turbulent viscosity to target element
       fluid%turbulence%dataOnLvl(targetLevel)%visc(targetElem) &
@@ -1214,7 +1214,7 @@ module mus_interpolate_average_module
       fOmegaKine = mus_calcOmegaFromVisc(fVisc + fluid%turbulence%fac_c2f*tTurbVisc)
       cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc + tTurbVisc)
 
-      !evaluate scaling factor 
+      !evaluate scaling factor
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
@@ -1223,8 +1223,8 @@ module mus_interpolate_average_module
         f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
-      enddo      
-      
+      enddo
+
 ?? if( DEBUG ) then
 
       ! local density
@@ -1246,7 +1246,7 @@ module mus_interpolate_average_module
 ! **************************************************************************** !
   !> [Linear interpolation](../page/features/intp_methods.html) of ghostFromFiner
   !! 1. Calculate Equilibrium and nonEquilibrium
-  !! 2. Compute scaling factor 
+  !! 2. Compute scaling factor
   !! 3. calculate target: Eq + Scale * nonEquilibrium
   !!
   !! This subroutine's interface must match the abstract interface definition
@@ -1310,8 +1310,8 @@ module mus_interpolate_average_module
     integer :: indElem        ! element counter for indirection list
     integer :: iSourceElem    ! current source element (for inner loop)
     integer :: nSourceElems   ! number of source elements for the current target
-    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
-    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ )
+    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ )
     real(kind=rk) :: weight(layout%fStencil%QQ)
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
@@ -1322,7 +1322,7 @@ module mus_interpolate_average_module
     real(kind=rk) :: fVisc, cOmegaKine, fOmegaKine, rho, vel(3), fac
     integer :: elemOff, dens_pos, vel_pos(3), nScalars
     ! --------------------------------------------------------------------------
- 
+
 ?? if( DEBUG ) then
     write(dbgUnit(4),*) "iteration = ", time%iter
     flush(dbgUnit(4))
@@ -1335,7 +1335,7 @@ module mus_interpolate_average_module
 
     sourceLevel = level
     targetLevel = level + 1
-    
+
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -1385,13 +1385,13 @@ module mus_interpolate_average_module
         write(dbgUnit(5),*) "Source: pdfs = ", f
         flush(dbgUnit(5))
 ?? endif
-        
+
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho,  &
           &                                    vel = vel,               &
           &                                    QQ = QQ                  )
-        
+
         f_neq(:, iSourceElem) = f(:) - f_eq(:, iSourceElem)
-        
+
       end do ! iSourceElem
 
       ! interpolate all pdfs by weighted average
@@ -1409,7 +1409,7 @@ module mus_interpolate_average_module
       fOmegaKine = mus_calcOmegaFromVisc(fVisc)
       cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
-      !evaluate scaling factor 
+      !evaluate scaling factor
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
@@ -1418,8 +1418,8 @@ module mus_interpolate_average_module
         f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
-      enddo      
-      
+      enddo
+
 ?? if( DEBUG ) then
 
       ! local density

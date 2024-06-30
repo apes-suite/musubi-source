@@ -89,7 +89,7 @@ module mus_program_module
     &                                      get_mainLoopTime,    &
     &                                      get_stageRatio, nStages
   use mus_weights_module,           only: mus_getWeights, mus_dumpWeights
-  
+
   ! include aotus nmodules
   use aotus_module, only: close_config
 

@@ -146,7 +146,7 @@ module mus_interpolate_module
     type(tem_stencilHeader_type), intent(in) :: stencil
     !> scheme header
     type(mus_scheme_header_type), intent(in) :: schemeHeader
-    !> field properties 
+    !> field properties
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
     ! ---------------------------------------------------------------------------
     integer :: iOrder
@@ -161,13 +161,13 @@ module mus_interpolate_module
       if (fieldProp(1)%fluid%turbulence%active) then
         call assign_intp_fluidLES( intp  = intp,          &
           &                        nDims = stencil%nDims, &
-          &                        QQ    = stencil%QQ     )       
+          &                        QQ    = stencil%QQ     )
       else
         call assign_intp_fluid( intp  = intp,          &
           &                     nDims = stencil%nDims, &
           &                     QQ    = stencil%QQ     )
       end if
-    case default  
+    case default
         write(logUnit(1),"(A)") ' Multilevel interpolation is not supported' &
           &                     // 'for scheme: '//trim(schemeHeader%kind)
         call tem_abort()
@@ -209,7 +209,7 @@ module mus_interpolate_module
     select case(nDims)
     case(2)
       write(logUnit(3),*) 'fillCoarser average 2D'
-      intp%fillMineFromFiner%do_intp => fillMyGhostsFromFiner_avg2D_feq_fneq 
+      intp%fillMineFromFiner%do_intp => fillMyGhostsFromFiner_avg2D_feq_fneq
 
     case(3)
       write(logUnit(3),*) 'fillCoarser average 3D'
@@ -218,7 +218,7 @@ module mus_interpolate_module
     case default
       call tem_abort('Unsupported nDims')
     end select
-    
+
     ! assign pointers to fillFiner
     do ii = 0, intp%config%order
       select case(ii)
@@ -245,11 +245,11 @@ module mus_interpolate_module
             & => fillArbiFinerGhostsFromMe_linear2D
           intp%fillFinerFromMe(ii)                         &
             & %do_intp => fillFinerGhostsFromMe_linear2D_feq_fneq
-            
+
         case(3)
           write(logUnit(3),*) 'fillFiner linear 3D'
           intp%fillFinerFromMe(ii)%do_intpArbiVal &
-            & => fillArbiFinerGhostsFromMe_linear          
+            & => fillArbiFinerGhostsFromMe_linear
           intp%fillFinerFromMe(ii)%do_intp => &
             & fillFinerGhostsFromMe_linear_feq_fneq
         end select
@@ -262,15 +262,15 @@ module mus_interpolate_module
             & => fillArbiFinerGhostsFromMe_quad2D
           intp%fillFinerFromMe(ii)                       &
             & %do_intp => fillFinerGhostsFromMe_quad2D_feq_fneq
-            
+
         case(3)
           write(logUnit(3),*) 'fillFiner quadratic 3D'
           intp%fillFinerFromMe(ii)%do_intpArbiVal &
             & => fillArbiFinerGhostsFromMe_quad
           intp%fillFinerFromMe(ii)%do_intp => fillFinerGhostsFromMe_quad_feq_fneq
-          
+
         end select
-        
+
       case default
         call tem_abort('Unknown interpolation method')
       end select
@@ -301,7 +301,7 @@ module mus_interpolate_module
     case(3)
       write(logUnit(3),*) 'fillCoarser average 3D LES'
       intp%fillMineFromFiner%do_intp => fillMyGhostsFromFiner_avgLES_feq_fneq
-      
+
     case default
       call tem_abort('Unsupported nDims')
     end select
@@ -317,7 +317,7 @@ module mus_interpolate_module
           write(logUnit(3),*) 'fillFiner weighted average 3D LES'
           intp%fillFinerFromMe(ii)%do_intp &
             & => fillFinerGhostsFromMe_weighAvgLES_feq_fneq
-            
+
         end select
 
       case(linear)
@@ -327,7 +327,7 @@ module mus_interpolate_module
           intp%fillFinerFromMe(ii)%do_intpArbiVal &
             & => fillArbiFinerGhostsFromMe_linear
           intp%fillFinerFromMe(ii)%do_intp => fillFinerGhostsFromMe_linearLES_feq_fneq
-          
+
         end select
 
       case(quadratic)
@@ -337,7 +337,7 @@ module mus_interpolate_module
             & => fillArbiFinerGhostsFromMe_quad
           write(logUnit(3),*) 'fillFiner quadratic 3D LES'
           intp%fillFinerFromMe(ii)%do_intp => fillFinerGhostsFromMe_quadLES_feq_fneq
-          
+
         end select
       case default
         call tem_abort('Unknown interpolation method')
@@ -360,7 +360,7 @@ module mus_interpolate_module
     type(tem_levelDesc_type), intent(inout) :: levelDesc(minLevel:maxLevel)
     ! --------------------------------------------------------------------------
     integer :: iLevel
-    ! --------------------------------------------------------------------------      
+    ! --------------------------------------------------------------------------
     write(logUnit(10),*) 'Initiale levelDesc intp arrays'
     do iLevel = minLevel, maxLevel
       call init_intpArraysPerLevel(                                   &
@@ -592,12 +592,12 @@ write(dbgUnit(4),"(A,I0)") ' nGhostFromCoarser: ', nGhostElems
       !  !childNum = levelDesc(targetLevel)%depFromCoarser(iElem)%childNum
       !  !allocate(levelDesc( targetLevel )%depFromCoarser( iElem )%bitmask(stencil%QQ))
       !  !levelDesc( targetLevel )%depFromCoarser( iElem )%bitmask = .true.
-      !  
+      !
       !  !if (suppChild == 1) supp_bitmask = .true.
-      !  
+      !
       !  targetElem = iElem + levelDesc( targetLevel )%             &
       !    &                                offset( 1, eT_ghostFromCoarser)
-        
+
 !write(dbgUnit(5),"(A, I0)") '      iElem: ', iElem
 !!write(dbgUnit(5),"(A, I0)") '      suppChild: ', suppChild
 !!write(dbgUnit(5),"(A, I0)") '      childNum: ', childNum
@@ -617,13 +617,13 @@ write(dbgUnit(4),"(A,I0)") ' nGhostFromCoarser: ', nGhostElems
       !      nghElem = levelDesc( targetLevel )%neigh(1)%nghElems( iNeigh, targetElem )
       !      if (nghElem > 0) then ! nghElem exists
       !        if ( btest(levelDesc( targetLevel )%property( nghElem ), prp_fluid) ) then
-      !          ! nghElem is 
+      !          ! nghElem is
       !          !invDir = stencil%cxDirInv( iNeigh )
       !          !supp_bitmask(invDir) = .false.
       !          ! then this is the closest fine ghost cell to the fluid cell
       !          levelDesc( targetLevel )%property( targetElem ) = &
       !            & ibset( levelDesc( targetLevel )%property( targetElem ), prp_fineGhostClosestToFluid )
-      !         else 
+      !         else
       !          ! find the second layer of closest fine ghosts to fluid
       !          nghElem_2 = levelDesc( targetLevel )%neigh(1)%nghElems( iNeigh, nghElem )
       !          if ( nghElem_2 > 0 ) then
@@ -632,24 +632,24 @@ write(dbgUnit(4),"(A,I0)") ' nGhostFromCoarser: ', nGhostElems
       !              levelDesc( targetLevel )%property( targetElem ) = &
       !            & ibset( levelDesc( targetLevel )%property( targetElem ), prp_fineGhostClosestToFluid )
       !            end if
-      !          end if 
+      !          end if
       !        end if
       !      end if
-      !    !end if 
+      !    !end if
       !  end do ! iNeigh
-      !  
-      !  
+      !
+      !
       !  !if (childNum == 8) then
       !  !  do iChild = 1, suppChild
       !  !    levelDesc( targetLevel )%depFromCoarser( iElem - suppChild + iChild )%bitmask = supp_bitmask
       !  !  end do
       !  !  suppChild = 1
-      !  !else 
-      !  !  suppChild = suppChild + 1        
+      !  !else
+      !  !  suppChild = suppChild + 1
       !  !end if
-      !  
+      !
       !end do
-      
+
       ! Treat all the fromCoarser elements
       do iElem = 1, nGhostElems
 
@@ -704,7 +704,7 @@ write(dbgUnit(5),"(A, I0)") '  sourceID: ', levelDesc(sourceLevel)%total(posInTo
             myNeighDir( nFoundSources ) = iNeigh
           end if ! posIntotal > 0, i.e. this source is a valid one
         end do ! iNeigh
-        
+
 !write(dbgUnit(3),*) '  bitmask = ', levelDesc( targetLevel )%depFromCoarser( iElem )%bitmask(:)
 
         ! if sources are found then determine which interpolation to use
@@ -727,7 +727,7 @@ write(dbgUnit(4),*) '    mySources: ', mySources(1:nFoundSources)
 write(dbgUnit(4),"(A,I0)") '   intpOrder: ', intpOrder
 write(dbgUnit(4),"(A, I0)")   '      nFound_new: ', nFoundSources
 
-          
+
           ! Compute interpolation matrix for least square fit using stencil
           ! direction of available sources
           ! The parent of target childs coord is 0,0,0 so we could
@@ -752,7 +752,7 @@ write(dbgUnit(4),"(A, I0)")   '      nFound_new: ', nFoundSources
                intpOrder = linear
              end if
           end if
-          
+
           if (intpOrder == linear) then
             call append( me       = intp%fillFinerFromMe(intpOrder) &
               &                          %intpMat_forLSF,           &
@@ -772,7 +772,7 @@ write(dbgUnit(4),"(A, I0)")   '      nFound_new: ', nFoundSources
                intpOrder = weighted_average
              end if
           end if
-        
+
           if (intpOrder == weighted_average) then
             ! Compute weights for weighted average interperation.
             ! Weights are computed according to available sources.
@@ -840,7 +840,7 @@ write(dbgUnit(4),"(A,I0)") '   Final intpOrder: ', intpOrder
   !! interpolation order starting from interpolation order defined by user
   subroutine find_possIntpOrderAndUpdateMySources( intp, mySources, neighDir, &
     &                                              nFoundSources, childNum,   &
-    &                                              intpOrder                  ) 
+    &                                              intpOrder                  )
     ! ---------------------------------------------------------------------------
     !> interpolation type
     type(mus_interpolation_type), intent(in)  :: intp
@@ -923,7 +923,7 @@ write(dbgUnit(4),"(A,I0)") '   Final intpOrder: ', intpOrder
       ! ------------------------------------------------------------------------
       allSrcFound = .false.
       nFoundSources_new = 0
-    
+
       do iSrc = 1, nFoundSources
         if ( any(intpStencil%neighDir(1:nMaxSources, childNum) &
           & == neighDir(iSrc)) ) then
@@ -948,7 +948,7 @@ write(dbgUnit(4),"(A,I0)") '   Final intpOrder: ', intpOrder
 ! **************************************************************************** !
 
 ! ****************************************************************************** !
-  !> This routine computes weights for weighted_average interpolation. 
+  !> This routine computes weights for weighted_average interpolation.
   subroutine compute_weight( weights, nFoundSources, neighDir, targetBary, &
     &                        intp_config, cxDirRK )
     ! ---------------------------------------------------------------------------
@@ -1065,16 +1065,16 @@ call tem_horizontalSpacer( fUnit = dbgUnit(4), before = 1 )
         ! add into interpolation list
         call append( me  = levelDesc( iLevel )%intpFromFiner, &
           &          val = iElem )
-          
+
         !targetElem = iElem + levelDesc( iLevel )%             &
         !  &                                offset( 1, eT_ghostFromFiner)
-          
+
         !write(logUnit(1),"(A)") 'Create mask for coarse ghosts.'
         !flush(logunit(1))
         !allocate(levelDesc( iLevel )%depFromFiner( iElem )%bitmask(stencil%QQ))
         !levelDesc( iLevel )%depFromFiner( iElem )%bitmask = .false.
 
-        ! Now loop over all neighbors 
+        ! Now loop over all neighbors
         !do iNeigh = 1, stencil%QQ-1 !no rest position
         !  !if ( iNeigh == stencil%restPosition ) then
         !    ! for rest position coarse ghost has the correct value
@@ -1093,12 +1093,12 @@ call tem_horizontalSpacer( fUnit = dbgUnit(4), before = 1 )
         !    end if
         !  !end if
         !end do
-        
+
 !write(dbgUnit(3),*) '  bitmask = ', levelDesc( iLevel )%depFromFiner( iElem )%bitmask(:)
 
 
       end do ! elem%nElems( eT_ghostFromFiner )
-      
+
       write(dbgUnit(4),*) 'SourceIDs on targetlevel:', iLevel
       do iSourceElem = 1, levelDesc(iLevel)%sourceFromFiner%nVals
         sourceElem = levelDesc(iLevel)%sourceFromFiner%val(iSourceElem)

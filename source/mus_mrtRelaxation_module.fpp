@@ -24,7 +24,7 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !> This module contains functions for MRT relaxation paramater for different
 !! stencil layouts.
-!! NOTE: The order of relaxation entries is consistent with moments 
+!! NOTE: The order of relaxation entries is consistent with moments
 !! transformation matrix used in compute kernel.
 !! author: Kannan Masilamani
 ?? include 'header/lbm_macros.inc'
@@ -79,7 +79,7 @@ contains
   !! -omega in BGK model, because it express the LB equation is slightly
   !! different way.
   !!
-  subroutine mus_assign_mrt_ptr(mrtPtr, schemeHeader) 
+  subroutine mus_assign_mrt_ptr(mrtPtr, schemeHeader)
     ! --------------------------------------------------------------------------
     !> mrt function pointer
     procedure(mus_proc_mrt), pointer :: mrtPtr
@@ -93,7 +93,7 @@ contains
       case ('standard', 'standard_no_opt')
         select case (trim(schemeHeader%layout))
         case ('d2q9')
-          if (trim(schemeHeader%kind) == 'fluid_incompressible') then 
+          if (trim(schemeHeader%kind) == 'fluid_incompressible') then
             mrtPtr => mrt_d2q9_incomp
           else
             mrtPtr => mrt_d2q9
@@ -123,16 +123,16 @@ contains
   ! ************************************************************************** !
   !> This function returns mrt relaxation diagonal matrix for d2q9 layout
   !! Parameters are taken from:
-  !! Lallemand, P., & Luo, L. (2000). 
-  !! Theory of the lattice boltzmann method: dispersion, dissipation, 
-  !! isotropy, galilean invariance, and stability. Physical Review. E, 
-  !! Statistical Physics, Plasmas, Fluids, and Related Interdisciplinary 
+  !! Lallemand, P., & Luo, L. (2000).
+  !! Theory of the lattice boltzmann method: dispersion, dissipation,
+  !! isotropy, galilean invariance, and stability. Physical Review. E,
+  !! Statistical Physics, Plasmas, Fluids, and Related Interdisciplinary
   !! Topics, 61(6 Pt A), 6546–62.
   !!
-  !! Another paper for d2q9 with different set of parameters 
-  !! Chen, S., Peng, C., Teng, Y., Wang, L. P., & Zhang, K. (2016). 
-  !! Improving lattice Boltzmann simulation of moving particles in a 
-  !! viscosity flow using local grid refinement. Computers and Fluids, 
+  !! Another paper for d2q9 with different set of parameters
+  !! Chen, S., Peng, C., Teng, Y., Wang, L. P., & Zhang, K. (2016).
+  !! Improving lattice Boltzmann simulation of moving particles in a
+  !! viscosity flow using local grid refinement. Computers and Fluids,
   !! 136, 228–246.
   pure function mrt_d2q9_incomp(omegaKine, omegaBulk, QQ) result(s_mrt)
     ! --------------------------------------------------------------------------
@@ -231,10 +231,10 @@ contains
   ! ************************************************************************** !
   !> This function returns mrt relaxation diagonal matrix for d3q19 layout
   !! Parameters are taken from:
-  !! D’Humières, D., Ginzburg, I., Krafczyk, M., Lallemand, P., & Luo, L.-S. 
-  !! (2002). Multiple-relaxation-time lattice Boltzmann models in three 
-  !! dimensions. Philosophical Transactions. Series A, Mathematical, 
-  !! Physical, and Engineering Sciences, 360(1792), 437–51. 
+  !! D’Humières, D., Ginzburg, I., Krafczyk, M., Lallemand, P., & Luo, L.-S.
+  !! (2002). Multiple-relaxation-time lattice Boltzmann models in three
+  !! dimensions. Philosophical Transactions. Series A, Mathematical,
+  !! Physical, and Engineering Sciences, 360(1792), 437–51.
   pure function mrt_d3q19(omegaKine, omegaBulk, QQ) result(s_mrt)
     ! --------------------------------------------------------------------------
     !> omega related to kinematic viscosity

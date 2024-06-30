@@ -222,7 +222,7 @@ contains
   !> Linkwise Dirichlet velocity non-equilibrium boundary condition for
   !! curved using the subroutine "mus_set_nonEqExpol".
   !! For curved wall, values are extrapolated along
-  !! element normal 
+  !! element normal
   !!
   !! Notation: b (fictious boundary)   w  (physical bolundary or surface)
   !!           f (local element)      ff  (overnext fluidneighbor)

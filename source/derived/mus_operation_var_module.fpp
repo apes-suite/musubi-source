@@ -111,7 +111,7 @@ contains
 
   ! ************************************************************************** !
   !> Same as reductionTransient_forElement except it evaluate it multiply values
-  !! from points 
+  !! from points
   !!
   !! The interface has to comply to the abstract interface
   !! tem_varSys_module#tem_varSys_proc_point.

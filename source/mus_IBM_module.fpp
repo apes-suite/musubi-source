@@ -984,7 +984,7 @@ contains
         &               comm   = general%proc%comm,                     &
         &               triggered = triggered )
 
-      ! @todo: IBM: use a sim_control table to set timings%timedat 
+      ! @todo: IBM: use a sim_control table to set timings%timedat
       !             in which the stl should be dumped
       ! check convergence if timeControl is triggered
       if( triggered &
@@ -3732,7 +3732,7 @@ contains
 
 
 ! **************************************************************************** !
-  !> This routine finishes the buffers for Xk and X_pdf. This is moved to 
+  !> This routine finishes the buffers for Xk and X_pdf. This is moved to
   !! a seperate routine since both buffers depend on a local communication
   !! which should be done nearby the global synchronization point (mus_exchange)
   !!
@@ -3918,7 +3918,7 @@ contains
     end do
 
     ! --------------------------------------------------------------------------
-    ! Now we the buffers are ready to communicate all infromation on the 
+    ! Now we the buffers are ready to communicate all infromation on the
     ! surface points Xk (e.g. velocity, force, coordinates, ...)
 
     ! in case of a non predefined motion ...

@@ -25,7 +25,7 @@
 ?? include 'header/lbm_macros.inc'
 module mus_compute_cumulant_module
   use iso_c_binding,            only: c_f_pointer
-  
+
   use env_module,               only: rk
   use tem_varSys_module,        only: tem_varSys_type
   use tem_aux_module,           only: tem_abort
@@ -994,7 +994,7 @@ contains
 
       ! switch to non parametrized Cumulant when omega 3, 4, 5 are not within
       ! the limits 0 < omega < 2
-      if (      omega(3) <= 0._rk .or. omega(3) >= 2._rk & 
+      if (      omega(3) <= 0._rk .or. omega(3) >= 2._rk &
         &  .or. omega(4) <= 0._rk .or. omega(4) >= 2._rk &
         &  .or. omega(5) <= 0._rk .or. omega(5) >= 2._rk ) then
         omega(2:10) = 1._rk
@@ -1123,7 +1123,7 @@ contains
       ! Collision --------------------------------------------------------------
 
       ! Back to central moment -------------------------------------------------
-      k = c      
+      k = c
       ! 1st order with inverted sign
       k(1,0,0) = -c(1,0,0)
       k(0,1,0) = -c(0,1,0)
@@ -1450,25 +1450,25 @@ contains
 ?? if (DEBUG) then
       ! check only for fluid cell
       if ( iElem <= nElems_fluid ) then
-        delta_rho_pre = f(-1, 0, 0) + f( 0,-1, 0) + f( 0, 0,-1) + f( 1, 0, 0) & 
-          & + f( 0, 1, 0) + f( 0, 0, 1) + f( 0,-1,-1) + f( 0,-1, 1) + f( 0, 1,-1) & 
-          & + f( 0, 1, 1) + f(-1, 0,-1) + f( 1, 0,-1) + f(-1, 0, 1) + f( 1, 0, 1) & 
-          & + f(-1,-1, 0) + f(-1, 1, 0) + f( 1,-1, 0) + f( 1, 1, 0) + f(-1,-1,-1) & 
-          & + f(-1,-1, 1) + f(-1, 1,-1) + f(-1, 1, 1) + f( 1,-1,-1) + f( 1,-1, 1) & 
+        delta_rho_pre = f(-1, 0, 0) + f( 0,-1, 0) + f( 0, 0,-1) + f( 1, 0, 0) &
+          & + f( 0, 1, 0) + f( 0, 0, 1) + f( 0,-1,-1) + f( 0,-1, 1) + f( 0, 1,-1) &
+          & + f( 0, 1, 1) + f(-1, 0,-1) + f( 1, 0,-1) + f(-1, 0, 1) + f( 1, 0, 1) &
+          & + f(-1,-1, 0) + f(-1, 1, 0) + f( 1,-1, 0) + f( 1, 1, 0) + f(-1,-1,-1) &
+          & + f(-1,-1, 1) + f(-1, 1,-1) + f(-1, 1, 1) + f( 1,-1,-1) + f( 1,-1, 1) &
           & + f( 1, 1,-1) + f( 1, 1, 1) + f( 0, 0, 0)
-          
+
         rho_pre = 0._rk
         do ii = 1, QQ
           rho_pre = rho_pre + inState(?FETCH?( ii, 1, iElem, QQ, nScalars, nElems,neigh ))
         end do
-        
+
         if (abs(rho_pre - rho) >= 1e-8) then
           write (*,*) 'ERROR! >>> |rho_pre - rho_AUX| = ', abs(rho_pre - rho)
           write (*,*) '           |delta_rho_pre - delta_rho_AUX| = ', abs(delta_rho_pre - delta_rho)
           write (*,*) 'Level = ', Level
           call tem_abort()
         end if
-        
+
         if (abs(delta_rho_pre - delta_rho) >= 1e-8) then
           write (*,*) 'ERROR! >>> |delta_rho_pre - delta_rho| = ', abs(delta_rho_pre - delta_rho)
           write (*,*) '           |rho_pre - rho| = ', abs(rho_pre - rho)
@@ -1611,7 +1611,7 @@ contains
 
       ! switch to non parametrized Cumulant when omega 3, 4, 5 are not within
       ! the limits 0 < omega < 2
-      if (      omega(3) <= 0._rk .or. omega(3) >= 2._rk & 
+      if (      omega(3) <= 0._rk .or. omega(3) >= 2._rk &
         &  .or. omega(4) <= 0._rk .or. omega(4) >= 2._rk &
         &  .or. omega(5) <= 0._rk .or. omega(5) >= 2._rk ) then
         omega(2:10) = 1._rk
@@ -1818,13 +1818,13 @@ contains
 ?? if (DEBUG) then
       ! check only for fluid cell
       if ( iElem <= nElems_fluid ) then
-        delta_rho_post = f(-1, 0, 0) + f( 0,-1, 0) + f( 0, 0,-1) + f( 1, 0, 0) & 
-          & + f( 0, 1, 0) + f( 0, 0, 1) + f( 0,-1,-1) + f( 0,-1, 1) + f( 0, 1,-1) & 
-          & + f( 0, 1, 1) + f(-1, 0,-1) + f( 1, 0,-1) + f(-1, 0, 1) + f( 1, 0, 1) & 
-          & + f(-1,-1, 0) + f(-1, 1, 0) + f( 1,-1, 0) + f( 1, 1, 0) + f(-1,-1,-1) & 
-          & + f(-1,-1, 1) + f(-1, 1,-1) + f(-1, 1, 1) + f( 1,-1,-1) + f( 1,-1, 1) & 
+        delta_rho_post = f(-1, 0, 0) + f( 0,-1, 0) + f( 0, 0,-1) + f( 1, 0, 0) &
+          & + f( 0, 1, 0) + f( 0, 0, 1) + f( 0,-1,-1) + f( 0,-1, 1) + f( 0, 1,-1) &
+          & + f( 0, 1, 1) + f(-1, 0,-1) + f( 1, 0,-1) + f(-1, 0, 1) + f( 1, 0, 1) &
+          & + f(-1,-1, 0) + f(-1, 1, 0) + f( 1,-1, 0) + f( 1, 1, 0) + f(-1,-1,-1) &
+          & + f(-1,-1, 1) + f(-1, 1,-1) + f(-1, 1, 1) + f( 1,-1,-1) + f( 1,-1, 1) &
           & + f( 1, 1,-1) + f( 1, 1, 1) + f( 0, 0, 0)
-        
+
         if (abs(delta_rho_pre - delta_rho_post) >= 1e-8) then
           write (*,*) 'ERROR! >>> |delta_rho_pre - delta_rho_post| = ', abs(delta_rho_pre - delta_rho_post)
           write (*,*) 'Level = ', Level

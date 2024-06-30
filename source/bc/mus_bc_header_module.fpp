@@ -669,8 +669,8 @@ module mus_bc_header_module
       type(mus_mixture_type), intent(in) :: mixture
     end subroutine boundaryRoutine
 
-    !>  This abstract interface defines the interface for bndForce calculation. 
-    !! [[boundary_type:calcBndForce]] in order to find the routine in case the 
+    !>  This abstract interface defines the interface for bndForce calculation.
+    !! [[boundary_type:calcBndForce]] in order to find the routine in case the
     !! interface needs to be changed.
     subroutine mus_proc_calcBndForce( me, bndForce, bndMoment, posInBndID, &
       &                               globBC, currState, levelDesc, nSize, &

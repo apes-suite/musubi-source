@@ -443,7 +443,7 @@ outState( ?SAVE?( qNNN,1,iElem,QQ,QQ,nElems,neigh )) = cmpl_o*f(-1,-1,-1) + XNYN
         do ii = 1, QQ
           rho_pre = rho_pre + inState(?FETCH?( ii, 1, iElem, QQ, nScalars, nElems,neigh ))
         end do
-        
+
         if (abs(rho_pre - rho) >= 1e-8) then
           write (*,*) 'ERROR! >>> |rho_pre - rho_AUX| = ', abs(rho_pre - rho)
           write (*,*) 'Level = ', Level
@@ -516,13 +516,13 @@ outState( ?SAVE?( qNNN,1,iElem,QQ,QQ,nElems,neigh )) = cmpl_o*f(-1,-1,-1) + XNYN
       outState(?SAVE?(q000,1,iElem,QQ,QQ,nElems,neigh)) =                      &
         &      pdfTmp( q000 ) - omega*(pdfTmp( q000 ) - fEq( q000 ))
 
-?? if (DEBUG) then  
+?? if (DEBUG) then
       if ( iElem <= nElems_fluid ) then
         rho_post = 0._rk
         do ii = 1, QQ
           rho_post = rho_post + outState( ?SAVE?( ii, 1, iElem, QQ, QQ, nElems, neigh ) )
         end do
-        
+
         if (abs(rho_pre - rho_post) >= 1e-8) then
           write (*,*) 'ERROR! >>> |rho_pre - rho_post| = ', abs(rho_pre - rho_post)
           write (*,*) 'Level = ', Level
@@ -1534,7 +1534,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
   !> Projected Recursive Regularized relaxation routine for the D3Q27
   ! based on High-order extension of the recursive regularized lattice
   ! Boltzmann method, PhD Thesis, COREIXAS 2018
-  ! the suggested basis in this thesis has an error. 
+  ! the suggested basis in this thesis has an error.
   ! GGS: fixed by adding 4th order terms xxyz
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
@@ -1681,7 +1681,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
   !> Projected Recursive Regularized relaxation routine for the D3Q19
   ! based on High-order extension of the recursive regularized lattice
   ! Boltzmann method, PhD Thesis, COREIXAS 2018
-  ! the suggested basis in this thesis has an error. 
+  ! the suggested basis in this thesis has an error.
   ! GGS: fixed by adding 4th order terms xxyz
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
@@ -1834,7 +1834,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
   !> Projected Recursive Regularized relaxation routine for the D3Q19
   ! based on High-order extension of the recursive regularized lattice
   ! Boltzmann method, PhD Thesis, COREIXAS 2018
-  ! the suggested basis in this thesis has an error. 
+  ! the suggested basis in this thesis has an error.
   ! GGS: fixed by adding 4th order terms xxyz
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
@@ -1910,18 +1910,18 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     do iSrc = 1, scheme%field(1)%internalSource%varDict%nVals
       if ( trim(scheme%field(1)%internalSource%varDict%val(iSrc)%key) == 'hrr_correction' ) exit
     end do
-  
-    associate( HRR_Corr => scheme%field(1)%internalSource%method(iSrc)%elemLvl(Level)%HRR_Corr  )   
+
+    associate( HRR_Corr => scheme%field(1)%internalSource%method(iSrc)%elemLvl(Level)%HRR_Corr  )
 
 !$omp do schedule(static)
       !NEC$ ivdep
       !DIR$ NOVECTOR
       nodeloop: do iElem = 1, nSolve
-  
+
         do iDir = 1, QQ
           f(iDir) = inState( ?FETCH?( iDir, 1, iElem, QQ, nScalars, nElems,neigh))
         enddo
-  
+
         ! element offset for auxField array
         elemOff = (iElem-1)*varSys%nAuxScalars
         ! local density
@@ -1930,7 +1930,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
         u_x = auxField(elemOff + velpos(1))
         u_y = auxField(elemOff + velpos(2))
         u_z = auxField(elemOff + velpos(3))
-  
+
         ! Stress tensor components
         gradU(:,:,1:1) = scheme%Grad%U_ptr(         &
              &   auxField     = auxField,           &
@@ -1951,7 +1951,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
             &   nDims        = 3,                   &
             &   nSolve       = 1,                   &
             &   elemOffset   = iElem-1              )
-            
+
           ! Calculate correction
           call HRR_Correction_d3q27 (               &
             &    QQ         = QQ,                   &
@@ -1960,7 +1960,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
             &    phi        = S_corr(:),            &
             &    dens       = HRR_Corr%dens(iElem), &
             &    vel        = HRR_Corr%vel(iElem,:) )
-  
+
         ! symmetric strain rate tensors
         ! transformed inro RHS of a1 FD equation
         ! the trace is needed only for energy conservation, which is not
@@ -1972,7 +1972,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
         SR(4) = gradU(1, 2, 1)+gradU(2, 1, 1)  !S_XY
         SR(5) = gradU(2, 3, 1)+gradU(3, 2, 1)  !S_YZ
         SR(6) = gradU(1, 3, 1)+gradU(3, 1, 1)  !S_XZ
-  
+
         ! non equilibrium second-order moments
         ! SOM_neq = SOM - SOM_eq
         ! Apply correction
@@ -1986,7 +1986,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
         SOM_neq(4) = SOM(4) - rho * u_x * u_y
         SOM_neq(5) = SOM(5) - rho * u_y * u_z
         SOM_neq(6) = SOM(6) - rho * u_x * u_z
-  
+
         ! Hermitian coefficients
         omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
         cmpl_o = 1.0_rk - omega
@@ -1997,15 +1997,15 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
         a12xy = SOM_neq(4) * sigma + (1.0_rk - sigma) * (-taup * SR(4))
         a12yz = SOM_neq(5) * sigma + (1.0_rk - sigma) * (-taup * SR(5))
         a12xz = SOM_neq(6) * sigma + (1.0_rk - sigma) * (-taup * SR(6))
-  
+
         call f_f_eq_regularized_4th_ord_d3q27 ( layout%weight(:), rho, u_x, u_y, u_z, feq, &
           &  f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
-  
+
         do iDir = 1, QQ
           outState( ?SAVE?( iDir,1, iElem, QQ, nScalars, nElems,neigh )) = feq(iDir) &
             &                              + cmpl_o*f1(iDir) + 0.5_rk * S_corr(iDir)
         enddo
-  
+
       enddo nodeloop
 !$omp end do nowait
 
@@ -2035,7 +2035,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q27 ( weight, rho, u_x, u_y, u_z, f
     integer :: QQ
     ! --------------------------------------------------------------------------
     QQ = 27
-    f(-1, 0, 0) = state(?SAVE?( qN00, 1, elem, QQ, nScalars, nSize, Neigh )) !- layout%weight( qN00 ) 
+    f(-1, 0, 0) = state(?SAVE?( qN00, 1, elem, QQ, nScalars, nSize, Neigh )) !- layout%weight( qN00 )
     f( 0,-1, 0) = state(?SAVE?( q0N0, 1, elem, QQ, nScalars, nSize, Neigh )) !- layout%weight( q0N0 )
     f( 0, 0,-1) = state(?SAVE?( q00N, 1, elem, QQ, nScalars, nSize, Neigh )) !- layout%weight( q00N )
     f( 1, 0, 0) = state(?SAVE?( q100, 1, elem, QQ, nScalars, nSize, Neigh )) !- layout%weight( q100 )

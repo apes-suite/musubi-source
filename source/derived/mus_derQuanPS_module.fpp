@@ -298,7 +298,7 @@ contains
     !> variable system which is required to access fieldProp
     !! information via variable method data c_ptr
     type(tem_varSys_type), intent(in) :: varSys
-    
+
     !> Class that contains pointers to the proper derived quantities functions
     type(mus_scheme_derived_quantities_type), intent(in) :: quantities
 
