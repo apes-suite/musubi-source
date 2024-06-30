@@ -94,7 +94,7 @@ program musubi
   ! KM: Do not move this init_levelTimer and init_bcTimer from here,
   ! Need to be here for apesmate
   call mus_init_levelTimer( geometry%tree%global%minLevel, &
-    &                       geometry%tree%global%maxLevel )
+    &                       geometry%tree%global%maxLevel  )
   call mus_init_bcTimer( geometry%boundary%nBCtypes )
 
   ! initialize musubi

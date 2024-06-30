@@ -98,10 +98,10 @@ contains
 
 
   ! ************************************************************************** !
-  !> This routine load additional information for absorblayer 
+  !> This routine load additional information for absorblayer
   subroutine mus_load_absorbLayer(me, conf, key, parent, loadPres, loadVel)
     ! -------------------------------------------------------------------------!
-    !> Absorb layer 
+    !> Absorb layer
     type(absorbLayer_config_type), intent(out) :: me
     !> flu state
     type( flu_State ) :: conf
@@ -118,7 +118,7 @@ contains
     character(len=labelLen) :: tarStateAsStr
     ! -------------------------------------------------------------------------!
     errfatal = aotErr_Fatal
- 
+
     call aot_table_open( L       = conf,                 &
       &                  parent  = parent,               &
       &                  thandle = target_handle,        &
@@ -232,7 +232,7 @@ contains
     !> Number of source elements
     integer, intent(in) :: nElems
     ! --------------------------------------------------------------------------
-    if (absLayer%config%isPressDyn .or. absLayer%config%isVelDyn) then 
+    if (absLayer%config%isPressDyn .or. absLayer%config%isVelDyn) then
       allocate(dynAvg%dens(nElems))
       allocate(dynAvg%velX(nElems))
       allocate(dynAvg%velY(nElems))
@@ -252,4 +252,4 @@ contains
   end subroutine mus_init_absorbLayer
   ! ************************************************************************** !
 
-end module mus_absorbLayer_module 
+end module mus_absorbLayer_module
