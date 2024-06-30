@@ -57,9 +57,11 @@ module mus_buffer_module
   public :: mus_pdf_serialize
   public :: mus_pdf_unserialize
 
+
 contains
 
-! **************************************************************************** !
+
+  ! ************************************************************************** !
   !> Preparation of the serialize PDF data
   !!
   !! Serialize the information from the (level-wise) state vector (scheme%state)
@@ -77,7 +79,7 @@ contains
   !!
   subroutine mus_pdf_serialize( scheme, treeID, levelPointer, varMap, &
     &                            nElems, buffer,minLevel, maxLevel    )
-    ! ------------------------------------------------------------------------ !
+    ! ---------------------------------------------------------------------- !
     !> scheme type containing the different state vectors
     type(mus_scheme_type), intent(in) :: scheme
     !> number of valid elements in this buffer
@@ -91,11 +93,11 @@ contains
     !> Data buffer
     real(kind=rk), intent(inout) :: buffer(:)
     integer :: minLevel, maxLevel
-    ! ------------------------------------------------------------------------ !
+    ! ---------------------------------------------------------------------- !
     integer :: iVar, iElem, iLevel, iComp, iIndex
     integer :: nComp   ! max number of components
     integer :: nScalars, varPos, nSize, QQ, elemPos
-    ! ------------------------------------------------------------------------ !
+    ! ---------------------------------------------------------------------- !
 
     ! Global counter for all words put into the buffer.
     iIndex = 0
@@ -131,16 +133,16 @@ contains
     end do  ! iElem
 
   end subroutine mus_pdf_serialize
-! **************************************************************************** !
+  ! ************************************************************************** !
 
 
-! **************************************************************************** !
+  ! ************************************************************************** !
   !> This subroutine unserializes the read data and stores it in the state-
   !! vector to perform a restart.
   !!
   subroutine mus_pdf_unserialize( scheme, treeID, levelPointer, varMap, &
     &                              nElems, buffer, minlevel, maxlevel)
-    ! ------------------------------------------------------------------------ !
+    ! ---------------------------------------------------------------------- !
     !> scheme type containing the different state vectors
     type(mus_scheme_type), intent(inout) :: scheme
     integer, intent(in) :: nElems
@@ -152,13 +154,12 @@ contains
     type(tem_varMap_type), intent(in) :: varMap
     real(kind=rk), intent(in) :: buffer(:)
     integer :: minLevel, maxLevel
-    ! ------------------------------------------------------------------------ !
-    ! ------------------------------------------------------------------------ !
+    ! ---------------------------------------------------------------------- !
     integer :: iVar, iElem, iLevel, iComp ! counter variables
     integer :: iIndex       ! amount of written variable components per varsys
     integer :: nComp        ! max number of components
     integer :: nScalars, varPos, nSize, QQ, elemPos
-    ! ------------------------------------------------------------------------ !
+    ! ---------------------------------------------------------------------- !
 
     ! For all variable systems...
     iIndex = 0
@@ -196,7 +197,7 @@ contains
     end do  ! iElem
 
   end subroutine mus_pdf_unserialize
-  ! -------------------------------------------------------------------------- !
+  ! ************************************************************************** !
 
 end module mus_buffer_module
 ! **************************************************************************** !
