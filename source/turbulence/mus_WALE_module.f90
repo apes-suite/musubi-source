@@ -215,7 +215,7 @@ contains
       ! square of velocity gradient. gradU . gradU
         gradU_sqr(:,:,iElem) = matmul(gradU(:,:,iElem), gradU(:,:,iElem))
       end do !iElem
-      
+
       do iElem = 1, nChunkElems
         ! traceless symmetric part of the square of the velocity gradient tensor
         ! Sd_ij = 1/2(du_k/dx_i du_j/dx_k + du_k/dx_j du_i/dx_k)

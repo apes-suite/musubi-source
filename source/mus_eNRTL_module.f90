@@ -22,15 +22,15 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !> This module contains an interface for external C++ code to compute
-!! liquid mixture property like thermodynamic factor and 
+!! liquid mixture property like thermodynamic factor and
 !! Maxwell-Stefan Diffusivity coefficients
 module mus_eNRTL_module
   use, intrinsic :: iso_c_binding, only: c_ptr, c_int, c_double, c_float,      &
     &                                    c_int_least8_t, c_int_least64_t,      &
     &                                    c_char, c_loc, c_bool
 
-  use env_module,                  only: rk  
-  
+  use env_module,                  only: rk
+
   implicit none
 
   private
@@ -50,7 +50,7 @@ module mus_eNRTL_module
       !> Result, indicating the status of encode
       integer(kind=c_int) :: init_enrtl
     end function init_enrtl_loc
-  end interface  
+  end interface
 
   !> This routine calculates thermodynamic factor for given mole_frac
   !! of all species
@@ -64,7 +64,7 @@ module mus_eNRTL_module
       real(kind=c_double), dimension(*), intent(in) :: Mole_frac
       real(kind=c_double), dimension(*), intent(out) :: Therm_factors
     end subroutine calc_therm_factor_loc
-  end interface  
+  end interface
 
   !> This routine calculates Maxwell-Stefan diffusivity coeffcient Matrix
   !! for given mole_frac of all species
@@ -125,7 +125,7 @@ contains
       success = .false.
       nFields = -1
     end if
-     
+
   end function mus_init_eNRTL
 
   ! ************************************************************************** !
@@ -172,12 +172,12 @@ contains
 !      therm_factors(iField, iField) = 1.0_rk
 !    end do
 
-!    write(*,*) 'Therm_factors_c ', therm_factors_c  
+!    write(*,*) 'Therm_factors_c ', therm_factors_c
 !    write(*,*) 'Therm_factors '
 !    do iField = 1, nFields
 !    write(*,*) 'iField ', iField, ' factors ', therm_factors(iField,:)
 !    end do
-  end subroutine mus_calc_thermFactor_single  
+  end subroutine mus_calc_thermFactor_single
 
   ! ************************************************************************** !
   !> This routine calculates Diffusivity coefficients matrix for given mole_frac
@@ -214,7 +214,7 @@ contains
 !    write(*,*) 'temp ', temp
 !    write(*,*) 'press ', press
 !    write(*,*) 'mole_dens ', mole_dens
-    
+
     call calc_ms_diff_matrix_from_moledens( nFields_c, temp_c, press_c,        &
       & mole_dens_c, D_ij_out_c )
     do iField = 1, nFields
@@ -222,7 +222,7 @@ contains
         D_ij_out(iField, iField_2) = D_ij_out_c((iField-1)*nFields+ iField_2)
       end do
     end do
-!    write(*,*) 'D_ij_out_c ', D_ij_out_c  
+!    write(*,*) 'D_ij_out_c ', D_ij_out_c
 !    write(*,*) 'D_ij_out '
 !    do iField = 1, nFields
 !      write(*,*) 'iField ', iField, ' factors ', D_ij_out(iField,:)

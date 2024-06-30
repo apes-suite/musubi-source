@@ -220,7 +220,7 @@ module mus_turbulence_module
 
       !> current level lattice time step size
       real(kind=rk), intent(in) :: dtL
-      
+
       !> Object that contains pointers to calculate gradients
       type(mus_Grad_type), intent(in) :: Grad
     end subroutine proc_calc_turb_visc_fromGradU
@@ -390,7 +390,7 @@ contains
 
       write(logUnit(1),*) '  C_w: ', me%config%coeff%C_w
     case('vreman')
-      ! load model coefficients. 
+      ! load model coefficients.
       ! Vreman model constant is related to Smagorinsky constant: c_v = 2.5*c_s^2
       ! For c_s=0.17, c_v is approximately 0.07
       call aot_get_val(L       = conf,                &
@@ -520,7 +520,7 @@ contains
     !> turbulence configuration
     type(mus_turbulence_config_type), intent(in) :: turbConfig
     !> turbulence function
-    type(mus_turbulence_visc_proc_type), intent(in) :: calcTurbVisc 
+    type(mus_turbulence_visc_proc_type), intent(in) :: calcTurbVisc
     !> state array
     real(kind=rk), intent(in) :: state(:)
     !> neigh array to obtain precollision pdf

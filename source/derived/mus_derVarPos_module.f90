@@ -25,7 +25,7 @@
 ! ****************************************************************************** !
 !> author: Kannan Masilamani
 !! This module contains the type defintion which stores position of all
-!! derive variables in global varSys. 
+!! derive variables in global varSys.
 !!
 module mus_derVarPos_module
   use env_module,        only: rk
@@ -102,7 +102,7 @@ module mus_derVarPos_module
     !> interface to derive equilibrium from macro.
     !! Mainly used in initial condition and boundary condition routines
     !! to avoid dublication of routines between different scheme kinds.
-    !! In this interface, solver definition can be access via 
+    !! In this interface, solver definition can be access via
     !! varSys%method%val(1)%method_data c_ptr
     subroutine derive_FromMacro( density, velocity, iField, nElems, varSys,    &
       &                          layout, res )
@@ -184,10 +184,10 @@ module mus_derVarPos_module
       !> Current field
       integer, intent(in) :: iField
 
-      !> number of elements in state array 
+      !> number of elements in state array
       integer, intent(in) :: nSize
 
-      !> number of elements 
+      !> number of elements
       integer, intent(in) :: nElems
 
       !> variable system which is required to access fieldProp
@@ -213,7 +213,7 @@ module mus_derVarPos_module
       class(mus_derVarPos_type), intent(in) :: derVarPos
       !> Array of auxField.
       !! Single species: dens_1, vel_1, dens_2, vel_2, .. dens_n, vel_n
-      !! multispecies: dens_1_sp1, vel_1_spc1, dens_1_sp2, vel_1_spc2, 
+      !! multispecies: dens_1_sp1, vel_1_spc1, dens_1_sp2, vel_1_spc2,
       !!                dens_2_sp1, vel_2_spc2, dens_2_sp2, vel_2_spc2 ...
       !!                dens_n_sp1, vel_n_sp1, dens_n_sp2, vel_n_spc2
       !! Access: (iElem-1)*nFields + iField
@@ -258,7 +258,7 @@ module mus_derVarPos_module
 
       !> number of elements to compute
       integer, intent(in) :: nElems
-      
+
       !> number of elements in state array
       integer, intent(in) :: nSize
 
@@ -278,7 +278,7 @@ module mus_derVarPos_module
       !> Output of this routine
       !! auxField is inout to allow storing auxField for each species
       !! seperately
-      !! Size: nElems*nAuxScalars 
+      !! Size: nElems*nAuxScalars
       real(kind=rk), intent(inout) :: auxField(:)
     end subroutine derive_auxFromState
 
@@ -290,7 +290,7 @@ module mus_derVarPos_module
       class(mus_derVarPos_type), intent(in) :: derVarPos
       !> Array of auxField of single element.
       !! Single species: dens_1, vel_1
-      !! multispecies: dens_1_sp1, vel_1_spc1, dens_1_sp2, vel_1_spc2, 
+      !! multispecies: dens_1_sp1, vel_1_spc1, dens_1_sp2, vel_1_spc2,
       !! Access: (iElem-1)*nFields + iField
       real(kind=rk), intent(in) :: auxField(:)
 
@@ -330,12 +330,12 @@ module mus_derVarPos_module
       type(tem_varSys_type), intent(in) :: varSys
 
       !> Output of this routine
-      !! Size: nAuxScalars 
+      !! Size: nAuxScalars
       real(kind=rk) :: res(varSys%nAuxScalars)
     end function derive_auxFromStateFunc
   end interface
 
-contains 
+contains
   ! ************************************************************************** !
   subroutine mus_derive_FromMacro_dummy( density, velocity, iField, nElems, &
     &                                    varSys, layout, res )
@@ -423,10 +423,10 @@ contains
     !> Current field
     integer, intent(in) :: iField
 
-    !> number of elements in state array 
+    !> number of elements in state array
     integer, intent(in) :: nSize
 
-    !> number of elements 
+    !> number of elements
     integer, intent(in) :: nElems
 
     !> variable system which is required to access fieldProp

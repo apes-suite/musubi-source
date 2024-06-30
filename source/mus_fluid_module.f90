@@ -284,7 +284,7 @@ contains
         &              val     = me%lambda,   &
         &              default = 0.25_rk,     &
         &              ErrCode = iError       )
-    
+
     case('hrr_bgk', 'hrr_bgk_corrected')
       ! load sigma for HRR_bgk
       call aot_get_val(L       = conf,        &
@@ -592,7 +592,7 @@ contains
       do iLevel = 1, 3
         write(outUnit, "(A,I2,A,F10.7)") '  ', iLevel,' = ', me%omega_Lim(iLevel)
       enddo
-      
+
       ! check Cumulant_extended range of admissibility for omegas
       write(logUnit(1),*) 'Checking admissibility of omegas for parametrized Cumulant scheme'
 

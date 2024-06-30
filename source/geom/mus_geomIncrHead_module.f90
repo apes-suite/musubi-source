@@ -64,9 +64,9 @@ module mus_geomIncrHead_module
     logical :: fluidify   = .false.
     logical :: proximity  = .false.  !< Check proximity condition if true
     type(tem_timeControl_type) :: timeControl
-   
+
     !> Name of the variable defined for condition varname in config file.
-    !! Variable refered should return 0 for if condition is false and 
+    !! Variable refered should return 0 for if condition is false and
     !  1 for true.
     !! If there are more than one condition variable required then they must
     !! be combined via variable definitions in config file.
@@ -110,13 +110,13 @@ contains
     integer, optional, intent(in) :: parent
     logical, intent(inout)        :: dynamicGeom
     ! ---------------------------------------------------------------------------
-    integer :: tc_handle, sub_handle 
-    integer :: nGeomIncrs 
+    integer :: tc_handle, sub_handle
+    integer :: nGeomIncrs
     integer :: iGInc
     ! ---------------------------------------------------------------------------
 
     ! Attempt to open the geomIncr table (within another table, if a parent is
-    ! given ) 
+    ! given )
     call aot_table_open( L       = conf,      &
       &                  parent  = parent,    &
       &                  thandle = tc_handle, &
@@ -124,7 +124,7 @@ contains
 
     ! Check if geomIncr is actually defined
     if (tc_handle /= 0) then
-      ! Set the dynamicGeom flag to true 
+      ! Set the dynamicGeom flag to true
       dynamicGeom = .true.
       ! check whether there are other members inside geomIncr
       call aot_table_open( L       = conf,       &
@@ -174,11 +174,11 @@ contains
     ! ---------------------------------------------------------------------------
     type( mus_geomIncrHead_type),intent(inout)  :: me
     type( flu_state ), intent(in) :: conf
-    integer, intent(in) :: thandle 
+    integer, intent(in) :: thandle
     ! ---------------------------------------------------------------------------
     integer :: iError
     ! ---------------------------------------------------------------------------
-   
+
     me%active = .true.
     ! Read the solidify, fluidify and proximity flags
     call aot_get_val( L       = conf,        &
@@ -203,7 +203,7 @@ contains
       &               default = .false.       )
 
     ! Load variable name for condition.
-    ! This variable should be logical operation variable which 
+    ! This variable should be logical operation variable which
     ! returns 0 for false and 1 for true.
     call aot_get_val( L       = conf,            &
       &               thandle = thandle,         &
@@ -212,7 +212,7 @@ contains
       &               key     = 'condition'      )
     if (btest(iError, aoterr_Fatal)) then
       write(logUnit(1),*) 'FATAL Error occured, while retrieving "condition" ' &
-        &                //'variable name from operation table :' 
+        &                //'variable name from operation table :'
       if ( btest( iError, aotErr_NonExistent ))                                &
         & write(logUnit(1),*)'Variable not existent!'
       if (btest(iError, aoterr_WrongType))                                     &

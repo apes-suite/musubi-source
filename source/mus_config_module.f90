@@ -32,7 +32,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
-!> In this module, all parameter files are read in 
+!> In this module, all parameter files are read in
 !! as lua script or a sample configuration is being loaded
 !!
 !! Possible Parameter configuration
@@ -47,7 +47,7 @@ module mus_config_module
   use mpi
   use mus_param_module,         only: mus_param_type, mus_load_param, &
     &                                 mus_init_latticeUnit
-  use mus_geom_module,          only: mus_geom_type, mus_load_geom 
+  use mus_geom_module,          only: mus_geom_type, mus_load_geom
   use mus_scheme_type_module,   only: mus_scheme_type
   use mus_scheme_module,        only: mus_load_scheme
   use mus_physics_module,       only: mus_create_funcStr, mus_load_physics
@@ -83,10 +83,10 @@ contains
 
 
 ! **************************************************************************** !
-  !> Read in LUA parameter file 
+  !> Read in LUA parameter file
   !! See http://www.lua.org for a reference on how to use
-  !! Lua is a scripting language in itself which allows 
-  !! more complex parameter files including comments 
+  !! Lua is a scripting language in itself which allows
+  !! more complex parameter files including comments
   !! And load / create the mesh depending on the configuration
   subroutine mus_load_config( scheme, solverData, geometry, params, adapt )
     ! --------------------------------------------------------------------------
@@ -107,7 +107,7 @@ contains
 
     call tem_startTimer( timerHandle = mus_timerHandles%loadMesh )
 
-    ! check whether params%general%solver%configFile is defined. When loading 
+    ! check whether params%general%solver%configFile is defined. When loading
     ! musubi from apes, musubi config file is provided via params
     if ( trim(params%general%solver%configFile) == '' ) then
       ! Get filename from command line argument
@@ -149,7 +149,7 @@ contains
     call mus_load_param( params = params,                       &
       &                  conf   = params%general%solver%conf(1) )
 
-    ! load geometry information like mesh, boundary, immersed_boundary and 
+    ! load geometry information like mesh, boundary, immersed_boundary and
     ! restart. If restart read is defined then simControl is updated
     call mus_load_geom( me              = geometry,                  &
       &                 restart         = params%general%restart,    &
@@ -157,8 +157,8 @@ contains
       &                 simControl      = params%general%simControl, &
       &                 proc            = params%general%proc,       &
       &                 scaleFactor     = params%scaleFactor,        &
-      &                 initial_balance = params%initial_balance     ) 
-      
+      &                 initial_balance = params%initial_balance     )
+
 
     if ( params%dump_linear_partition ) then
       call dump_linear_partition( treeID = geometry%tree%treeID,     &
@@ -220,7 +220,7 @@ contains
     !> process description to use
     type(tem_comm_env_type), intent(in) :: proc
     ! --------------------------------------------------------------------------
-    character(len=2048) :: fun_str !contains function to be used in musubi 
+    character(len=2048) :: fun_str !contains function to be used in musubi
     integer :: iThread
     ! --------------------------------------------------------------------------
 
@@ -232,7 +232,7 @@ contains
     !pre-loading musubi specific lua functions using same conf used to load
     !main musubi config file
     do iThread=1, proc%nThreads
-      call open_config_chunk(L = conf(iThread), chunk = fun_str) 
+      call open_config_chunk(L = conf(iThread), chunk = fun_str)
     end do
 
     ! Open the lua config

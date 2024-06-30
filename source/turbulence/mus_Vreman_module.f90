@@ -52,13 +52,13 @@ contains
   !> Calculate eddy viscosity with Vreman model for 3D stencil
   !! Fortran implementation of this model:
   !! http://www.vremanresearch.nl/Vreman_Subgridmodel_Fortran.txt
-  !! 
-  !! $$\nu_{turb}=c_v (\Delta_x)^2 \cdot 
+  !!
+  !! $$\nu_{turb}=c_v (\Delta_x)^2 \cdot
   !!            \left( \sqrt{\frac{B_\beta}{\alpha_{ij}\alpha{ij}}} \right)$$
   !! with
   !! $$ c_v = 2.5*C_s^2$$, $$C_s$$ - Smagorinsky constant,
   !!
-  !! $$ B_\beta = \beta_{11}\beta_{22} - \beta^2_{12} + \beta_{11}\beta_{33} 
+  !! $$ B_\beta = \beta_{11}\beta_{22} - \beta^2_{12} + \beta_{11}\beta_{33}
   !!            - \beta^2_{13} + \beta_{22}\beta_{33} - \beta^2_{23} $$,
   !!
   !! $$ \beta_{ij} = \alpha_{mi}\alpha_{mj}$$,

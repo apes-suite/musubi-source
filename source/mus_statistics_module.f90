@@ -25,8 +25,8 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
-!> In this module we collect routines  and type definitions related to 
-!! statistics for the runtime of the code. 
+!> In this module we collect routines  and type definitions related to
+!! statistics for the runtime of the code.
 !!
 !!
 module mus_statistics_module

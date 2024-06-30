@@ -170,7 +170,7 @@ contains
   !!   * do auxField calculation at iLevel
   !!   * do compute kernel at iLevel
   !!   * do apply source at iLevel
-  !!   * do do_IntpFinerAndExchange at iLevel if iLevel < maxLevel 
+  !!   * do do_IntpFinerAndExchange at iLevel if iLevel < maxLevel
   !!     * intp My Coarser ghost (iLevel) from Finer (iLevel+1)
   !!     * do exchange bufferFromFiner at iLevel
   !!   * exchange buffer at iLevel
@@ -199,7 +199,7 @@ contains
     write(logUnit(10), "(A,I0)") 'Entering do_computation with iLevel: ', iLevel
 
     ! Update auxField dependent source fields before adding source term to state
-    ! and auxField such that both auxField and apply_source uses same source in 
+    ! and auxField such that both auxField and apply_source uses same source in
     ! one multilevel cycle.
     write(logUnit(10), "(A)") 'Update source variables which depend on auxField'
     call mus_update_sourceVars( nFields    = scheme%nFields,              &
@@ -295,7 +295,7 @@ contains
         & stencil     = scheme%layout%fStencil,    &
         & iLevel      = iLevel,                    &
         & nAuxScalars = scheme%varSys%nAuxScalars, &
-        & general     = params%general             ) 
+        & general     = params%general             )
     end if
 
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
@@ -492,7 +492,7 @@ contains
 !$omp end parallel
     call tem_stopTimer( timerHandle = mus_timerHandles%intpFromFiner(iLevel) )
     ! -------------------------------------------------------------------------
-  
+
     ! if ( main_debug%checkEachAlgorithmicStep ) then
     !   buffer=' after fill Mine FromFiner       '
     !   call dump_debug_info( buffer, scheme, params, iLevel, 1, &
@@ -525,7 +525,7 @@ contains
           &  comm         = params%general%proc%comm                      )
       end if
     end if
-  
+
     call tem_stopTimer( timerHandle = mus_timerHandles%commFromFiner(iLevel) )
     ! -------------------------------------------------------------------------
 
@@ -613,7 +613,7 @@ contains
       &    state   = scheme%state(iLevel+1)%val(:,nextLevelNext),    &
       &    message_flag   = iLevel,                                  &
       &    comm    = params%general%proc%comm                             )
-    
+
     if (trim(scheme%header%kind) == 'fluid' .or. &
       & trim(scheme%header%kind) == 'fluid_incompressible') then
       if (scheme%field(1)%fieldProp%fluid%turbulence%active) then
@@ -729,7 +729,7 @@ contains
       & quantities        = scheme%layout%quantities              )
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
     ! --------------------------------------------------------------------------
-    
+
     ! --------------------------------------------------------------------------
     ! Update parameters, relaxation time .etc
     call tem_startTimer( timerHandle =  mus_timerHandles%relax(iLevel) )
@@ -876,7 +876,7 @@ contains
     ! Increasing with the smallest time step (maxLevel)
     call tem_time_advance( me = params%general%simControl%now,   &
       &                    sim_dt = params%physics%dtLvl(iLevel ))
-  
+
     ! --------------------------------------------------------------------------
     !set boundary for each field in current scheme
     call set_boundary( field       = scheme%field,               &

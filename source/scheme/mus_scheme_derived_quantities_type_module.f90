@@ -21,7 +21,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
-!> This module contains data types, function and routines for gradient 
+!> This module contains data types, function and routines for gradient
 !! computation.
 !!
 !! author: Gregorio Gerardo Spinelli
@@ -64,7 +64,7 @@ module mus_scheme_derived_quantities_module
     !> function pointer to get pdf equilibrium from vel and density
     pure function get_pdfEq( rho, vel, QQ, cxDirRK, weight ) result( fEq )
       import :: rk
-    
+
       !> density
       real(kind=rk), intent(in) :: rho
       !> velocity
@@ -77,14 +77,14 @@ module mus_scheme_derived_quantities_module
       real(kind=rk), optional, intent(in) :: weight(:)
       !> output: equilibrium pdf
       real(kind=rk) :: fEq(QQ)
-  
+
     end function get_pdfEq
 
     !> function pointer to get pdf equilibrium from vel and density along a
     !  specific direction
     pure function get_pdfEq_iDir( rho, vel, iDir, cxDirRK, weight ) result( fEq )
       import :: rk
-    
+
       !> density
       real(kind=rk), intent(in) :: rho
       !> velocity
@@ -97,13 +97,13 @@ module mus_scheme_derived_quantities_module
       real(kind=rk), intent(in) :: weight
       !> output: equilibrium pdf
       real(kind=rk) :: fEq
-  
+
     end function get_pdfEq_iDir
 
     !> function pointer to get pdf equilibrium from vel and density
     pure function get_vel_from_pdf( pdf, dens, cxDirRK ) result( vel )
       import :: rk
-    
+
       !> pdf
       real(kind=rk), intent(in) :: pdf(:)
       !> density
@@ -112,13 +112,13 @@ module mus_scheme_derived_quantities_module
       real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
       !> velocity
       real(kind=rk) :: vel(3)
-  
+
     end function get_vel_from_pdf
 
     !> function pointer to get pdf equilibrium from vel and density VECTORIZED
     pure function get_vel_from_pdf_vectorized( pdf, dens, cxDirRK, nSolve ) result( vel )
       import :: rk, vlen
-    
+
       !> pdf
       real(kind=rk), intent(in) :: pdf(:,:)
       !> density
@@ -129,51 +129,51 @@ module mus_scheme_derived_quantities_module
       integer, intent(in) :: nSolve
       !> velocity
       real(kind=rk) :: vel(3,vlen)
-  
+
     end function get_vel_from_pdf_vectorized
 
     !> function pointer to get pdf equilibrium from vel and density
     pure function get_vector_from_vel_dens( vel, dens ) result( vector )
       import :: rk
-    
+
       !> velocity
       real(kind=rk), intent(in) :: vel(:)
       !> density
       real(kind=rk), intent(in) :: dens
       !> momentum
       real(kind=rk) :: vector(3)
-  
+
     end function get_vector_from_vel_dens
 
     !> function pointer to get pdf equilibrium from vel and density
     pure function get_scalar_from_vel_dens( vel, dens ) result( scalar )
       import :: rk
-    
+
       !> velocity
       real(kind=rk), intent(in) :: vel(:)
       !> density
       real(kind=rk), intent(in) :: dens
       !> momentum
       real(kind=rk) :: scalar
-  
+
     end function get_scalar_from_vel_dens
 
     !> function pointer to get 1/rho as a mask regardless incompressibility
     pure function get_rho0Inv( dens ) result( inv_rho0 )
       import :: rk
-    
+
       !> density
       real(kind=rk), intent(in) :: dens
       !> inverse of density regardless compressibility
       real(kind=rk) :: inv_rho0
-  
+
     end function get_rho0Inv
   end interface
 
 contains
 
 ! ************************************************************************** !
-!> This function assigns the pointers for the respective derived function in 
+!> This function assigns the pointers for the respective derived function in
 !  terms of stencil and fluid type
 function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(getQuantities)
   ! --------------------------------------------------------------------------
@@ -202,7 +202,7 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
     getQuantities%momentum_from_vel_dens_ptr => get_momentum_from_vel_dens_incompressible
     getQuantities%kineticEnergy_from_vel_dens_ptr => get_kineticEnergy_from_vel_dens_incompressible
     getQuantities%rho0Inv_ptr => get_rho0Inv_incompressible
-  else 
+  else
     write(*,*) 'fluid type = "', trim(label_fluid), '"'
     call tem_abort("get_pdfEq_iDir not set for fluid type")
   end if
@@ -217,7 +217,7 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%pdfEq_ptr => get_pdfEq_incomp_d2q9
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d2q9_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d2q9_vectorized_incompressible
-    else 
+    else
       write(*,*) 'stencil label = "', trim(label_stencil), '"'
       write(*,*) 'fluid type = "', trim(label_fluid), '"'
       call tem_abort("get_pdfEq not set for fluid type")
@@ -231,7 +231,7 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%pdfEq_ptr => get_pdfEq_incomp_d3q19
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d3q19_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d3q19_vectorized_incompressible
-    else 
+    else
       write(*,*) 'stencil label = "', trim(label_stencil), '"'
       write(*,*) 'fluid type = "', trim(label_fluid), '"'
       call tem_abort("get_pdfEq not set for fluid type")
@@ -245,7 +245,7 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%pdfEq_ptr => get_pdfEq_incomp_d3q27
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d3q27_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d3q27_vectorized_incompressible
-    else 
+    else
       write(*,*) 'stencil label = "', trim(label_stencil), '"'
       write(*,*) 'fluid type = "', trim(label_fluid), '"'
       call tem_abort("get_pdfEq not set for fluid type")
@@ -259,7 +259,7 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%pdfEq_ptr => get_pdfEq_incompressible
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_incompressible_vectorized
-    else 
+    else
       write(*,*) 'stencil label = "', trim(label_stencil), '"'
       write(*,*) 'fluid type = "', trim(label_fluid), '"'
       call tem_abort("get_pdfEq not set for fluid type")
@@ -381,7 +381,7 @@ end function get_pdfEq_compressible
 ! ************************************************************************** !
 
 ! ************************************************************************** !
-!> This function computes the sigma vector necessary to get the 
+!> This function computes the sigma vector necessary to get the
 !  equilibrium pdf from velocity and density for d2q9 stencil.
 pure function get_sigma_d2q9( vel ) result( sigma )
 ! --------------------------------------------------------------------------
@@ -404,7 +404,7 @@ end function get_sigma_d2q9
 ! ************************************************************************** !
 
 ! ************************************************************************** !
-!> This function computes the equilibrium pdf from velocity 
+!> This function computes the equilibrium pdf from velocity
 !  and density for d2q9 stencil.
 pure function get_pdfEq_d2q9( rho, vel, QQ, cxDirRK, weight ) &
 & result( fEq )
@@ -445,7 +445,7 @@ end function get_pdfEq_d2q9
 
 
 ! ************************************************************************** !
-!> This function computes the incompressible equilibrium pdf from velocity 
+!> This function computes the incompressible equilibrium pdf from velocity
 !  and density for d2q9 stencil.
 pure function get_pdfEq_incomp_d2q9( rho, vel, QQ, cxDirRK, weight ) &
 & result( fEq )
@@ -488,7 +488,7 @@ end function get_pdfEq_incomp_d2q9
 
 
 ! ************************************************************************** !
-!> This function computes the sigma vector necessary to get the 
+!> This function computes the sigma vector necessary to get the
 !  equilibrium pdf from velocity and density for d3q19 stencil.
 pure function get_sigma_d3q19( vel ) result( sigma )
 ! --------------------------------------------------------------------------
@@ -524,7 +524,7 @@ end function get_sigma_d3q19
 ! ************************************************************************** !
 
 ! ************************************************************************** !
-!> This function computes the equilibrium pdf from velocity 
+!> This function computes the equilibrium pdf from velocity
 !  and density for d3q19 stencil.
 pure function get_pdfEq_d3q19( rho, vel, QQ, cxDirRK, weight ) &
 & result( fEq )
@@ -554,7 +554,7 @@ pure function get_pdfEq_d3q19( rho, vel, QQ, cxDirRK, weight ) &
   fEq(4)  = (rho_div_18 * ( 3._rk * vel(1) + sigma(4) - sigma(1) + 1._rk ) )
   fEq(5)  = (rho_div_18 * ( 3._rk * vel(2) + sigma(3) - sigma(1) + 1._rk ) )
   fEq(6)  = (rho_div_18 * ( 3._rk * vel(3) + sigma(2) - sigma(1) + 1._rk ) )
- 
+
   fEq(7)  = (rho_div_36 * ( sigma(6) - sigma(12) - sigma(1) + 1._rk ) )
   fEq(8)  = (rho_div_36 * ( sigma(5) - sigma(11) - sigma(1) + 1._rk ) )
   fEq(9)  = (rho_div_36 * ( sigma(5) + sigma(11) - sigma(1) + 1._rk ) )
@@ -577,7 +577,7 @@ end function get_pdfEq_d3q19
 
 
 ! ************************************************************************** !
-!> This function computes the incompressible equilibrium pdf from velocity 
+!> This function computes the incompressible equilibrium pdf from velocity
 !  and density for d3q19 stencil.
 pure function get_pdfEq_incomp_d3q19( rho, vel, QQ, cxDirRK, weight ) &
 & result( fEq )
@@ -609,7 +609,7 @@ pure function get_pdfEq_incomp_d3q19( rho, vel, QQ, cxDirRK, weight ) &
   fEq(4)  = (rho_div_18 + rho0_div_18 * ( 3._rk * vel(1) + sigma(4) - sigma(1) ) )
   fEq(5)  = (rho_div_18 + rho0_div_18 * ( 3._rk * vel(2) + sigma(3) - sigma(1) ) )
   fEq(6)  = (rho_div_18 + rho0_div_18 * ( 3._rk * vel(3) + sigma(2) - sigma(1) ) )
- 
+
   fEq(7)  = (rho_div_36 + rho0_div_36 * ( sigma(6) - sigma(12) - sigma(1) ) )
   fEq(8)  = (rho_div_36 + rho0_div_36 * ( sigma(5) - sigma(11) - sigma(1) ) )
   fEq(9)  = (rho_div_36 + rho0_div_36 * ( sigma(5) + sigma(11) - sigma(1) ) )
@@ -632,7 +632,7 @@ end function get_pdfEq_incomp_d3q19
 
 
 ! ************************************************************************** !
-!> This function computes the sigma vector necessary to get the 
+!> This function computes the sigma vector necessary to get the
 !  equilibrium pdf from velocity and density for d3q27 stencil.
 pure function get_sigma_d3q27( vel ) result( sigma )
 ! --------------------------------------------------------------------------
@@ -680,7 +680,7 @@ end function get_sigma_d3q27
 ! ************************************************************************** !
 
 ! ************************************************************************** !
-!> This function computes the equilibrium pdf from velocity 
+!> This function computes the equilibrium pdf from velocity
 !  and density for d3q27 stencil.
 pure function get_pdfEq_d3q27( rho, vel, QQ, cxDirRK, weight ) &
 & result( fEq )
@@ -711,7 +711,7 @@ pure function get_pdfEq_d3q27( rho, vel, QQ, cxDirRK, weight ) &
   fEq(4)  = (rho_div2_27 * ( 3._rk * vel(1) + sigma(4) - sigma(1) + 1._rk ) )
   fEq(5)  = (rho_div2_27 * ( 3._rk * vel(2) + sigma(3) - sigma(1) + 1._rk ) )
   fEq(6)  = (rho_div2_27 * ( 3._rk * vel(3) + sigma(2) - sigma(1) + 1._rk ) )
- 
+
   fEq(7)  = (rho_div_54 * ( sigma(10) - sigma(20) - sigma(1) + 1._rk ) )
   fEq(8)  = (rho_div_54 * ( sigma(9) - sigma(19) - sigma(1) + 1._rk ) )
   fEq(9)  = (rho_div_54 * ( sigma(9) + sigma(19) - sigma(1) + 1._rk ) )
@@ -743,7 +743,7 @@ end function get_pdfEq_d3q27
 
 
 ! ************************************************************************** !
-!> This function computes the incompressible equilibrium pdf from velocity 
+!> This function computes the incompressible equilibrium pdf from velocity
 !  and density for d3q27 stencil.
 pure function get_pdfEq_incomp_d3q27( rho, vel, QQ, cxDirRK, weight ) &
 & result( fEq )
@@ -778,7 +778,7 @@ pure function get_pdfEq_incomp_d3q27( rho, vel, QQ, cxDirRK, weight ) &
   fEq(4)  = (rho_div2_27 + rho0_div2_27 * ( 3._rk * vel(1) + sigma(4) - sigma(1) ) )
   fEq(5)  = (rho_div2_27 + rho0_div2_27 * ( 3._rk * vel(2) + sigma(3) - sigma(1) ) )
   fEq(6)  = (rho_div2_27 + rho0_div2_27 * ( 3._rk * vel(3) + sigma(2) - sigma(1) ) )
- 
+
   fEq(7)  = (rho_div_54 + rho0_div_54 * ( sigma(10) - sigma(20) - sigma(1) ) )
   fEq(8)  = (rho_div_54 + rho0_div_54 * ( sigma(9)  - sigma(19) - sigma(1) ) )
   fEq(9)  = (rho_div_54 + rho0_div_54 * ( sigma(9)  + sigma(19) - sigma(1) ) )

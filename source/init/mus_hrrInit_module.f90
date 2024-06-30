@@ -24,7 +24,7 @@
 !> author: Gregorio Gerardo Spinelli
 !! This module provides the definitions of M and Minv for
 !! MRT advection relaxation scheme for all stencils.
-!! 
+!!
 !! The weighted MRT (D3Q27) is based on the following paper
 !! Abbas Fakhari, Diogo Bolster, Li-Shi Luo
 !! "A weighted multiple-relaxation-time lattice Boltzmann method for multiphase
@@ -49,7 +49,7 @@ module mus_hrrInit_module
   implicit none
 
   private
-  
+
   public :: HRR_Correction_d2q9
   public :: HRR_Correction_d3q19
   public :: HRR_Correction_d3q27
@@ -57,7 +57,7 @@ module mus_hrrInit_module
   public :: getHermitepolynomials_D3Q19
 
   contains
-  
+
   ! ****************************************************************************** !
   ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution
   ! functions, Jonas Latt and Bastien Chopard 2005
@@ -100,52 +100,52 @@ module mus_hrrInit_module
     phi(2) = weight(2) * phi_temp
     dens = dens + phi(2)
     !vel(1) = vel(1) + 0._rk
-    vel(2) = vel(2) - phi(2) 
+    vel(2) = vel(2) - phi(2)
 
     !iDir = 4
     phi(4) = weight(4) * phi_temp
     dens = dens + phi(4)
     !vel(1) = vel(1) + 0._rk
-    vel(2) = vel(2) + phi(4) 
+    vel(2) = vel(2) + phi(4)
 
     !iDir = 5
     phi_temp = div1_3 * cs4inv * ( - gradRHOU3(1) &
       &                            - gradRHOU3(2) )
     phi(5) = weight(5) * phi_temp
     dens = dens + phi(5)
-    vel(1) = vel(1) - phi(5) 
-    vel(2) = vel(2) - phi(5) 
+    vel(1) = vel(1) - phi(5)
+    vel(2) = vel(2) - phi(5)
 
     !iDir = 8
     phi(8) = weight(8) * phi_temp
     dens = dens + phi(8)
-    vel(1) = vel(1) + phi(8) 
-    vel(2) = vel(2) + phi(8) 
+    vel(1) = vel(1) + phi(8)
+    vel(2) = vel(2) + phi(8)
 
     !iDir = 6
     phi(6) = weight(6) * phi_temp
     dens = dens + phi(6)
-    vel(1) = vel(1) - phi(6) 
-    vel(2) = vel(2) + phi(6) 
+    vel(1) = vel(1) - phi(6)
+    vel(2) = vel(2) + phi(6)
 
     !iDir = 7
     phi(7) = weight(7) * phi_temp
     dens = dens + phi(7)
-    vel(1) = vel(1) + phi(7) 
-    vel(2) = vel(2) - phi(7) 
+    vel(1) = vel(1) + phi(7)
+    vel(2) = vel(2) - phi(7)
 
     !iDir = 9
     phi_temp = -div1_2 * phi_temp
     phi(9) = weight(9) * phi_temp
     dens = dens + phi(9)
-    !vel(1) = vel(1) + 0._rk 
+    !vel(1) = vel(1) + 0._rk
     !vel(2) = vel(2) + 0._rk
-  
+
   end subroutine HRR_Correction_d2q9
   ! ****************************************************************************** !
 
   ! ****************************************************************************** !
-  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution 
+  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution
   ! functions, Jonas Latt and Bastien Chopard 2005
   pure subroutine HRR_Correction_d3q19 ( QQ, weight, gradRHOU3, &
     &                                gradRHOUVZ, phi, dens, vel )
@@ -164,7 +164,7 @@ module mus_hrrInit_module
     ! -------------------------------------------------------------------- !
     dens = 0._rk
     vel(:) = 0._rk
-    
+
     !iDir = 1
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(1)         &
       &                            + gradRHOU3(2) + gradRHOU3(3) )
@@ -173,14 +173,14 @@ module mus_hrrInit_module
     vel(1) = vel(1) - phi(1)
     !vel(2) = vel(2) + 0._rk
     !vel(3) = vel(3) + 0._rk
-      
+
     !iDir = 4
     phi(4) = weight(4) * phi_temp
     dens = dens + phi(4)
     vel(1) = vel(1) + phi(4)
     !vel(2) = vel(2) + 0._rk
     !vel(3) = vel(3) + 0._rk
-      
+
     !iDir = 2
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(2)         &
       &                            + gradRHOU3(1) + gradRHOU3(3) )
@@ -189,30 +189,30 @@ module mus_hrrInit_module
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(2)
     !vel(3) = vel(3) + 0._rk
-      
+
     !iDir = 5
-    phi(5) = weight(5) * phi_temp 
+    phi(5) = weight(5) * phi_temp
     dens = dens + phi(5)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(5)
     !vel(3) = vel(3) + 0._rk
-    
+
     !iDir = 3
     phi_temp = div1_6 * cs4inv * ( -2._rk * gradRHOU3(3)         &
       &                            + gradRHOU3(1) + gradRHOU3(2) )
-    phi(3) = weight(3) * phi_temp 
+    phi(3) = weight(3) * phi_temp
     dens = dens + phi(3)
     !vel(1) = vel(1) + 0._rk
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) - phi(3)
-      
+
     !iDir = 6
     phi(6) = weight(6) * phi_temp
     dens = dens + phi(6)
     !vel(1) = vel(1) + 0._rk
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) + phi(6)
-      
+
     !iDir = 7
     phi_temp = phi_temp + div1_2 * cs4inv * ( -gradRHOU3(2) - gradRHOUVZ (1) )
     phi(7) = weight(7) * phi_temp
@@ -220,14 +220,14 @@ module mus_hrrInit_module
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(7)
     vel(3) = vel(3) - phi(7)
-        
-    !iDir = 10  
+
+    !iDir = 10
     phi(10) = weight(10) * phi_temp
     dens = dens + phi(10)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(10)
     vel(3) = vel(3) + phi(10)
-        
+
     !iDir = 8
     phi_temp = phi_temp + cs4inv * ( gradRHOUVZ(1) )
     phi(8) = weight(8) * phi_temp
@@ -235,30 +235,30 @@ module mus_hrrInit_module
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) - phi(8)
     vel(3) = vel(3) + phi(8)
-        
+
     !iDir = 9
     phi(9) = weight(9) * phi_temp
     dens = dens + phi(9)
     !vel(1) = vel(1) + 0._rk
     vel(2) = vel(2) + phi(9)
     vel(3) = vel(3) - phi(9)
-          
+
     !iDir = 11
     phi_temp = div1_6 * cs4inv * (- 2._rk * ( gradRHOU3(1) + gradRHOU3(3) ) &
       &                           + gradRHOU3(2) - 3._rk * gradRHOUVZ (2)   )
-    phi(11) = weight(11) * phi_temp 
+    phi(11) = weight(11) * phi_temp
     dens = dens + phi(11)
     vel(1) = vel(1) - phi(11)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) - phi(11)
-      
+
     !iDir = 14
     phi(14) = weight(14) * phi_temp
     dens = dens + phi(14)
     vel(1) = vel(1) + phi(14)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) + phi(14)
-      
+
     !iDir = 12
     phi_temp = phi_temp + cs4inv * ( gradRHOUVZ(2) )
     phi(12) = weight(12) * phi_temp
@@ -266,14 +266,14 @@ module mus_hrrInit_module
     vel(1) = vel(1) + phi(12)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) - phi(12)
-      
+
     !iDir = 13
     phi(13) = weight(13) * phi_temp
     dens = dens + phi(13)
     vel(1) = vel(1) - phi(13)
     !vel(2) = vel(2) + 0._rk
     vel(3) = vel(3) + phi(13)
-      
+
     !iDir = 15
     phi_temp = div1_6 * cs4inv * (-2._rk * ( gradRHOU3(1) + gradRHOU3(2) ) &
       &                           + gradRHOU3(3) - 3._rk * gradRHOUVZ (3)  )
@@ -282,14 +282,14 @@ module mus_hrrInit_module
     vel(1) = vel(1) - phi(15)
     vel(2) = vel(2) - phi(15)
     !vel(3) = vel(3) + 0._rk
-      
+
     !iDir = 18
     phi(18) = weight(18) * phi_temp
     dens = dens + phi(18)
     vel(1) = vel(1) + phi(18)
     vel(2) = vel(2) + phi(18)
     !vel(3) = vel(3) + 0._rk
-      
+
     !iDir = 16
     phi_temp = phi_temp + cs4inv * ( gradRHOUVZ(3) )
     phi(16) = weight(16) * phi_temp
@@ -297,21 +297,21 @@ module mus_hrrInit_module
     vel(1) = vel(1) - phi(16)
     vel(2) = vel(2) + phi(16)
     !vel(3) = vel(3) + 0._rk
-      
+
     !iDir = 17
     phi(17) = weight(17) * phi_temp
     dens = dens + phi(17)
     vel(1) = vel(1) + phi(17)
     vel(2) = vel(2) - phi(17)
     !vel(3) = vel(3) + 0._rk
-    
+
     !iDir = 19
     phi_temp = div1_6 * cs4inv * ( gradRHOU3(1) + gradRHOU3(2) + gradRHOU3(3) )
-    phi(19) = weight(19) * phi_temp 
+    phi(19) = weight(19) * phi_temp
     dens = dens + phi(19)
-    !vel(1) = vel(1) + 0._rk  
-    !vel(2) = vel(2) + 0._rk  
-    !vel(3) = vel(3) + 0._rk  
+    !vel(1) = vel(1) + 0._rk
+    !vel(2) = vel(2) + 0._rk
+    !vel(3) = vel(3) + 0._rk
 
   end subroutine HRR_Correction_d3q19
   ! ****************************************************************************** !
@@ -539,13 +539,13 @@ module mus_hrrInit_module
     phi_temp = -div1_2 * phi_temp
     phi(27) = weight(27) * phi_temp
     dens = dens + phi(27)
-    !vel(1) = vel(1) + 0._rk  
-    !vel(2) = vel(2) + 0._rk  
-    !vel(3) = vel(3) + 0._rk  
+    !vel(1) = vel(1) + 0._rk
+    !vel(2) = vel(2) + 0._rk
+    !vel(3) = vel(3) + 0._rk
 
 end subroutine HRR_Correction_d3q27
 ! ****************************************************************************** !
-  
+
 ! ************************************************************************** !
 !> This function computes Hermite polinomial. It gives in output minimum
 !  up to 2nd-order polynomials. It is coded for up to 6th-order polynomials
@@ -632,7 +632,7 @@ subroutine getHermitepolynomials( nDims, QQ, layout, H_order) !, H )
       write(dbgUnit(1),*) "  H3yyz_15 = ", H(iDir,15)
 
       ! only for D3Q27
-      ! 16=H3xyz, 17=H4xxyy, 18=H4xxzz, 19=H4yyzz, 20=H4xyzz, 21=H4xyyz, 
+      ! 16=H3xyz, 17=H4xxyy, 18=H4xxzz, 19=H4yyzz, 20=H4xyzz, 21=H4xyyz,
       ! 22=H4xxyz, 23=H5xxyzz, 24=H5xxyyz, 25=H5xyyzz, 26=H6xxyyzz
       if (QQ == 27) then
         H(iDir, 16) = c_x * c_y * c_z
@@ -662,7 +662,7 @@ subroutine getHermitepolynomials( nDims, QQ, layout, H_order) !, H )
         write(dbgUnit(1),*) "  H5xxyyz_24 = ", H(iDir,24)
         write(dbgUnit(1),*) "  H5xyyzz_25 = ", H(iDir,25)
 
-        ! 6th order 
+        ! 6th order
         if (H_order < 6) CYCLE
         H(iDir, 26) = H(iDir, 17) * H(iDir, 6)
         write(dbgUnit(1),*) "  H6xxyyzz_26 = ", H(iDir,26)
@@ -729,7 +729,7 @@ end subroutine getHermitepolynomials
 !> This function computes Hermite polinomial. It gives in output minimum
 !  up to 2nd-order polynomials. It is coded for up to 6th-order polynomials
 ! deprecated, used only to check the optimized R, RR, HRR, PRR, DRT functions
-subroutine getHermitepolynomials_D3Q19( layout ) 
+subroutine getHermitepolynomials_D3Q19( layout )
   ! --------------------------------------------------------------------------
   !> current layout
   type(mus_scheme_layout_type), intent(in) :: layout

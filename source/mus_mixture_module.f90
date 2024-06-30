@@ -67,7 +67,7 @@ module mus_mixture_module
     real(kind=rk) :: paramB
     !> lattice bulk viscosity for different level
     real(kind=rk) :: bulkVisc
-    !> relaxation parameter, 
+    !> relaxation parameter,
     !! \( \omega = K*B/\rho \), B - free parameter unit same as resistivity
     real(kind=rk) :: omega_diff
     real(kind=rk) :: omega_kine !< kinematic viscosity relaxation parameter
@@ -77,38 +77,38 @@ module mus_mixture_module
   !! @todo KM: implement parameters which depend on dx and dt for all levels
   type mus_mixture_type
     !> initialization case, initial condition of the mixture
-    type( tem_ini_condition_type ) :: ic  
-    !> mass density of the mixture 
+    type( tem_ini_condition_type ) :: ic
+    !> mass density of the mixture
     !! SI unit: kg/m^3.
     !! Physics to lattice conversion: rho0/physics%rho0
     real(kind=rk) :: rho0
-    !> lattice mass density of the mixture 
+    !> lattice mass density of the mixture
     real(kind=rk) :: rho0LB
     !> number density of the mixture or total mixture molar density
-    !! SI unit: mol/m^3. 
-    !! physics to lattice conversion: 
+    !! SI unit: mol/m^3.
+    !! physics to lattice conversion:
     !! nT0/physics%mol*physics%fac(minlevel)%length^3.
     !! mixture molar density is required if initial condition
     !! are defined by molar fraction.
     !! set only if initial molefraction is space independent
     real(kind=rk) :: moleDens0
     !> lattice number density of the mixture or total mixture molar density
-    !! physics to lattice conversion: 
+    !! physics to lattice conversion:
     !! moleDens0/physics%mol*physics%fac(minlevel)%length^3.
     real(kind=rk) :: moleDens0LB
     !> lattice kinematic shear viscosity of the mixture
     real(kind=rk) :: kine_viscosityLB
     !> physical kinematic shear viscosity of the mixture
     real(kind=rk) :: kine_viscosity
-    !> lattice bulk viscosity 
+    !> lattice bulk viscosity
     real(kind=rk) :: bulk_viscosityLB
-    !> physical bulk viscosity 
+    !> physical bulk viscosity
     real(kind=rk) :: bulk_viscosity
     !> lattice bulk modulus of the liquid mixture
-    !! \( K = c_s^2*\rho \), 
+    !! \( K = c_s^2*\rho \),
     !! \( c_s \) - speed of sound (in lattice unit: \f$ 1/\sqrt{3} \f$
     real(kind=rk) :: bulk_modulusLB
-    !> relaxation parameter, 
+    !> relaxation parameter,
     !! \( \omega = K*B/\rho \), B - free parameter unit same as resistivity
     real(kind=rk) :: omega_diff
     real(kind=rk) :: omega_kine !< kinematic viscosity relaxation parameter
@@ -125,15 +125,15 @@ module mus_mixture_module
     real(kind=rk) :: temp0
     !> temperature
     real(kind=rk) :: temp0LB
-    !> equilibrium theta to choose between mixture velocity 
-    !! and equilibrium species velocity in the quadratic term 
+    !> equilibrium theta to choose between mixture velocity
+    !! and equilibrium species velocity in the quadratic term
     !! equilibrium function.
     !! theta = 0 -> mixture velocity
     !! theta = 1 -> equilibrium species velocity
     !! \todo KM: remove theta_eq and use
     !! mixture velocity in quadratic term of equilibrium function
     real(kind=rk) :: theta_eq
-    !> spatial omega definition, e.g. for sponge layers 
+    !> spatial omega definition, e.g. for sponge layers
     type(tem_spatial_type) :: viscSpatial
     !> external electrical force
     !@todo use source term to define external force
@@ -161,15 +161,15 @@ contains
 
 
 ! **************************************************************************** !
-  !> This routine load mixture table from scheme table. 
+  !> This routine load mixture table from scheme table.
   !! Define either mass density or number density.
   !! If mass density is specified, number density can be computed at runtime
   !! or vice versa.
   !! KM: @todo Currently, the simulation is initialized by density, extend
-  !! it to initialize from mixture number density/volume fraction 
+  !! it to initialize from mixture number density/volume fraction
   !! and mole fraction
   !! \verbatim
-  !! mixture = { rho0 = 1.0, omega } 
+  !! mixture = { rho0 = 1.0, omega }
   !! \endverbatim
   subroutine mus_load_mixture( me, conf, parent, minLevel, maxLevel, physics,  &
     &                          schemeHeader, nFields )
@@ -231,7 +231,7 @@ contains
         me%prop_file = trim(me%prop_file)//C_NULL_CHAR
         write(logUnit(1),*) 'Thermodynamic property file name ' &
           &                 // trim(me%prop_file)
-        prop_read = mus_init_eNRTL( me%prop_file, nFields_loc )  
+        prop_read = mus_init_eNRTL( me%prop_file, nFields_loc )
         if (.not. prop_read) then
           write(logUnit(1),*) 'ERROR: loading prop_file need to compute ' &
             &                 // 'thermodynamic factors'
@@ -246,7 +246,7 @@ contains
             call tem_abort("Error: nFields in config file /= "&
               &          //"nFields in thermodynamic property file")
           end if
-        endif  
+        endif
       endif
     endif
 
@@ -256,7 +256,7 @@ contains
 
     if (btest(iError(1), aoterr_Fatal)) then
       write(logUnit(1),*) ' FATAL Error occured, while retrieving mixture '//  &
-        &             'density :' 
+        &             'density :'
       if (btest(iError(1), aoterr_WrongType)) then
         write(logUnit(1),*)' Variable has wrong type!'
         call tem_abort()
@@ -277,7 +277,7 @@ contains
 
     if (btest(iError(1), aoterr_Fatal)) then
       write(logUnit(1),*) ' FATAL Error occured, while retrieving mixture '//  &
-        &             'density :' 
+        &             'density :'
       if (btest(iError(1), aoterr_WrongType)) then
         write(logUnit(1),*)' Variable has wrong type!'
         call tem_abort()
@@ -289,7 +289,7 @@ contains
       &               val = me%theta_eq, ErrCode=iError(1) )
     if (btest(iError(1), aoterr_Fatal)) then
       write(logUnit(1),*) ' FATAL Error occured, while retrieving theta_eq '
-      if (btest(iError(1), aoterr_NonExistent)) then 
+      if (btest(iError(1), aoterr_NonExistent)) then
         write(logUnit(1),*)' ATTENTION: Setting theta_eq=1.0 i.e using mass '
         write(logUnit(1),*)'averaged mixture velocity in quadratic part of '
         write(logUnit(1),*)'equilibrium function'
@@ -318,11 +318,11 @@ contains
       &              val = me%omega_diff, default = 2.0_rk, ErrCode = iError(1))
     if (btest(iError(1), aoterr_Fatal)) then
       write(logUnit(1),*) ' FATAL Error occured, while retrieving relaxation ' &
-        &                 // 'parameter omega_diff :' 
+        &                 // 'parameter omega_diff :'
       if (btest(iError(1), aoterr_WrongType)) then
         write(logUnit(1),*)' Variable has wrong type!'
         call tem_abort()
-      end if  
+      end if
     end if
 
     ! if omega is not provided. load free parameter B and compute omega
@@ -331,16 +331,16 @@ contains
       write(logUnit(1),*) 'omega_diff not defined. Load paramB '
       call aot_get_val(L = conf, thandle = mix_handle, key = 'paramB',      &
         &              val = me%paramB, ErrCode = iError(1))
-      if (btest(iError(1), aoterr_NonExistent)) then 
+      if (btest(iError(1), aoterr_NonExistent)) then
         write(logUnit(1),*) 'ATTENTION: neither omega_diff nor paramB'
         write(logUnit(1),*) '           Setting default value to     '
         write(logUnit(1),*) '           omega_diff = 2.0'
         me%omega_diff = 2.0
         me%paramB = me%omega_diff / cs2
-      else  
+      else
         !compute omega from paramB
-        ! omega_diff = cs2 * B 
-        ! cs2 = p/rho for multispecies gas 
+        ! omega_diff = cs2 * B
+        ! cs2 = p/rho for multispecies gas
         ! cs2 = K/rho for multispecies liquid
         me%omega_diff = me%paramB * cs2
       end if
@@ -353,11 +353,11 @@ contains
       &              val = me%omega_kine, ErrCode = iError(1))
     if (btest(iError(1), aoterr_Fatal)) then
       write(logUnit(1),*) 'FATAL Error occured, while retrieving relaxation '//&
-        &             'parameter omega_kine:' 
+        &             'parameter omega_kine:'
       if (btest(iError(1), aoterr_WrongType)) then
         write(logUnit(1),*)'Variable has wrong type!'
         call tem_abort()
-      end if  
+      end if
     end if
     ! if omega_kine is not provided. load kinematic viscosity in physical unit
     ! if physics table is active
@@ -368,7 +368,7 @@ contains
       call aot_get_val(L = conf, thandle = mix_handle,             &
         &              key = 'kinematic_viscosity',                &
         &              val = me%kine_viscosity, ErrCode = iError(1))
-      if (btest(iError(1), aoterr_NonExistent)) then 
+      if (btest(iError(1), aoterr_NonExistent)) then
         write(logUnit(1),*) 'ATTENTION: neither omega_kine nor'//              &
           &             'kine_shear_viscosity is defined'
         write(logUnit(1),*) '           Setting default value to lattice'//    &
@@ -383,7 +383,7 @@ contains
           &                 / physics%fac(minLevel)%visc
         !compute omega_kine from kinematic shear viscosity
         ! omega_kine = cs2 / viscosity
-        me%omega_kine = cs2 / me%kine_viscosityLB 
+        me%omega_kine = cs2 / me%kine_viscosityLB
       end if
     else
     ! omega = cs^2/nu -> nu = cs^2/omega
@@ -397,9 +397,9 @@ contains
       &              ErrCode = iError(1))
 
     !convert to lattice
-    me%bulk_viscosityLB = me%bulk_viscosity/physics%fac(minLevel)%visc  
+    me%bulk_viscosityLB = me%bulk_viscosity/physics%fac(minLevel)%visc
 
-    if (btest(iError(1), aoterr_NonExistent)) then 
+    if (btest(iError(1), aoterr_NonExistent)) then
       ! formula for bulk viscosity.
       ! http://scienceworld.wolfram.com/physics/BulkViscosity.html
       ! require second viscosity coeff which is missing here
@@ -473,7 +473,7 @@ contains
 
     call aot_table_close(L=conf, thandle=mix_handle)
 
-    write(logUnit(1),*) ' Mixture properties ' 
+    write(logUnit(1),*) ' Mixture properties '
     write(logUnit(1),*) '   theta_eq:                        ',                &
       & real(me%theta_eq)
     write(logUnit(1),*) '   Phy.reference mass density:      ', real(me%rho0)
@@ -528,7 +528,7 @@ contains
   !> Set the omegas according to the time step setting
   subroutine set_omegasLvl( mixture, minLevel, maxLevel, physics )
     ! --------------------------------------------------------------------------
-    type( mus_mixture_type ),intent(inout) :: mixture !< mixture type 
+    type( mus_mixture_type ),intent(inout) :: mixture !< mixture type
     integer, intent(in) :: minLevel, maxLevel
     !> physics type to convert physics to lattice unit or vice versa
     type( mus_physics_type ), intent(in) :: physics
@@ -569,7 +569,7 @@ contains
     end do
 
     !> cross check whether omega at each level is set correctly
-    !! by computing physical viscosity from omega and check it with 
+    !! by computing physical viscosity from omega and check it with
     !! specified physical kinematic viscosity
     !! \( \nu = (1/ \omega - 0.5)*cs2 \)
     do iLevel = minLevel, maxLevel
@@ -580,7 +580,7 @@ contains
         &                 'physical viscosity to'
       write(logUnit(3),*) ' computed physical viscosity on level: ', ilevel
       write(logUnit(3),*) '                                  is : ', error_rel
-      if( abs(real(error_rel, kind=single_k)) > eps_single_k) then 
+      if( abs(real(error_rel, kind=single_k)) > eps_single_k) then
         write(logUnit(1),*) 'Error: Physical kinematic viscosity computed '//  &
           &                 'from omega'
         write(logUnit(1),*) '       does not match with specified physical '// &
@@ -630,7 +630,7 @@ contains
       call aot_out_val( put_conf = conf, vname = 'temp', val = me%temp0 )
       call aot_out_val( put_conf = conf, vname = 'atm_press',                  &
         &               val = me%atm_pressLB )
-      call aot_out_close_table( put_conf = conf )  
+      call aot_out_close_table( put_conf = conf )
     end select
 
   end subroutine mus_mixture_out

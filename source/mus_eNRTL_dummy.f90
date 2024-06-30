@@ -22,7 +22,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 !> This module contains an interface for external C++ code to compute
-!! liquid mixture property like thermodynamic factor and 
+!! liquid mixture property like thermodynamic factor and
 !! Maxwell-Stefan Diffusivity coefficients
 module mus_eNRTL_module
   use env_module,                  only: rk
@@ -32,7 +32,7 @@ module mus_eNRTL_module
 
   implicit none
 
-  private 
+  private
 
   public :: mus_init_eNRTL
   public :: mus_calc_thermFactor
@@ -72,7 +72,7 @@ contains
     therm_factors = 0.0_rk
     do iField = 1,nFields
       therm_factors(iField, iField) = 1.0_rk
-    end do  
+    end do
 
     end subroutine mus_calc_thermFactor_single
 ! **************************************************************************** !

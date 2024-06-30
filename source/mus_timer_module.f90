@@ -151,7 +151,7 @@ module mus_timer_module
 
     !> handle for source terms
     integer :: source
-    
+
     ! GGS: erase the following
     !integer :: kappa_abg, inv_kappa_abg, inner_loop
 
@@ -238,14 +238,14 @@ contains
 
     call tem_addTimer( timerHandle = mus_timerHandles%source, &
       &                timerName   = 'Source' )
-      
+
     ! GGS: erase the following 3
     !call tem_addTimer( timerHandle = mus_timerHandles%kappa_abg, &
     !  &                timerName   = 'Chimera_ops' )
-    !  
+    !
     !call tem_addTimer( timerHandle = mus_timerHandles%inv_kappa_abg, &
     !  &                timerName   = 'Backward_Chimera_ops' )
-    !  
+    !
     !call tem_addTimer( timerHandle = mus_timerHandles%inner_loop, &
     !  &                timerName   = 'Inner_Loop' )
 

@@ -1,5 +1,5 @@
 !> This module contains parameters to address the stencil directions. These
-!! parameters are valid for all stencils, however, the direction `q00` and 
+!! parameters are valid for all stencils, however, the direction `q00` and
 !! `q000` needs to be set on each use according to `QQ`.
 module mus_directions_module
 

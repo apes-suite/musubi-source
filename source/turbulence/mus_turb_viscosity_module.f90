@@ -45,7 +45,7 @@ module mus_turb_viscosity_module
     & mus_turbVisc_Smagorinsky_fromGradU2D_incomp,      &
     & mus_turbVisc_Smagorinsky_fromPreColPDF_2D,        &
     & mus_turbVisc_Smagorinsky_fromPreColPDF_3D,        &
-    & mus_turbVisc_Smagorinsky_fromPreColPDF_incomp_2D, & 
+    & mus_turbVisc_Smagorinsky_fromPreColPDF_incomp_2D, &
     & mus_turbVisc_Smagorinsky_fromPreColPDF_incomp_3D
 
   implicit none

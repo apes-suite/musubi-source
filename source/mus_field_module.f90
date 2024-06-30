@@ -35,7 +35,7 @@
 ! **************************************************************************** !
 !> author: Kannan Masilamani
 !! author: Simon Zimny
-!! This module contains information about all fields like fluid, 
+!! This module contains information about all fields like fluid,
 !! species, temperature etc. This field type will be used for
 !! multispecies and passive scalar transport.
 !!
@@ -77,7 +77,7 @@ module mus_field_module
   use mus_scheme_layout_module, only: mus_scheme_layout_type
   use mus_field_prop_module,    only: mus_field_prop_type, mus_field_prop_out, &
     &                                 mus_load_field_prop
-  use mus_fluid_module,         only: mus_fluid_cleanup  
+  use mus_fluid_module,         only: mus_fluid_cleanup
   use mus_species_module,       only: compute_molWeightRatio,                  &
     &                                 compute_bulkViscOmega
   use mus_physics_module,       only: mus_physics_type
@@ -104,7 +104,7 @@ module mus_field_module
 
   !> This type contains all information on fields with ic and bc
   !! Example fields: fluid, species etc.
-  !! Each field contains one initial condition and array of 
+  !! Each field contains one initial condition and array of
   !! boundary conditions
   !!
   type mus_field_type
@@ -134,7 +134,7 @@ module mus_field_module
     type(tem_restart_type) :: restart
   end type mus_field_type
 
-  !> Interface for dumping a single field or a set of fields in a file in lua 
+  !> Interface for dumping a single field or a set of fields in a file in lua
   !! format.
   !!
   interface mus_fields_out
@@ -160,7 +160,7 @@ contains
     ! --------------------------------------------------------------------------
     !> array of field type
     type(mus_field_type), intent(inout) :: me(:)
-    !> Global variable system required to append annoymous source and 
+    !> Global variable system required to append annoymous source and
     !! boundary variables
     type(tem_varSys_type), intent(inout) :: varSys
     integer, intent(in) :: nFields !< number of fields defined in lua file
@@ -186,7 +186,7 @@ contains
     character(len=labelLen), intent(in) :: scaling
     !> fluid stencil info
     type(mus_scheme_layout_type), intent(in) :: layout
-    !> Logic to not to load tracking and variable table if this routine 
+    !> Logic to not to load tracking and variable table if this routine
     !! is called from mus_hvs_config_load.
     !! Default is False
     logical, optional, intent(in) :: isMusHvs
@@ -197,16 +197,16 @@ contains
     integer :: field_handle, field_sub_handle
     ! --------------------------------------------------------------------------
     call tem_horizontalSpacer(fUnit = logUnit(1))
-    write(logUnit(1),*) 'Loading the fields ...' 
-    write(logUnit(1),*) 'Number of fields to load: ', nFields 
+    write(logUnit(1),*) 'Loading the fields ...'
+    write(logUnit(1),*) 'Number of fields to load: ', nFields
     call aot_table_open( L       = conf,         &
       &                  parent  = parent,       &
       &                  thandle = field_handle, &
-      &                  key     = 'field'       ) 
+      &                  key     = 'field'       )
 
     if ( field_handle == 0 ) then
       if (present(parent)) then
-        ! field table is not defined load field variable from scheme 
+        ! field table is not defined load field variable from scheme
         write(logUnit(1),*) 'No field table defined.' &
           &              // 'Loading field data from scheme'
 
@@ -228,7 +228,7 @@ contains
       ! scheme table is not defined load field variable from config
       else
         write(logUnit(1),*) 'No field table and scheme table are defined.' &
-          &              // 'Loading field data from config' 
+          &              // 'Loading field data from config'
 
         call mus_load_field_single( me           = me(1),        &
           &                         varSys       = varSys,       &
@@ -334,7 +334,7 @@ contains
       call mus_load_mixture( me           = mixture,      &
         &                    conf         = conf,         &
         &                    parent       = parent,       &
-        &                    schemeHeader = schemeHeader, & 
+        &                    schemeHeader = schemeHeader, &
         &                    minLevel     = minLevel,     &
         &                    maxLevel     = maxLevel,     &
         &                    physics      = physics,      &
@@ -382,11 +382,11 @@ contains
     ! --------------------------------------------------------------------------
     !> field type
     type(mus_field_type), intent(inout) :: me
-    !> Global variable system required to append annoymous source and 
+    !> Global variable system required to append annoymous source and
     !! boundary variables
     type(tem_varSys_type), intent(inout) :: varSys
     !> number of fields defined in lua file
-    integer, intent(in) :: nFields 
+    integer, intent(in) :: nFields
     !> boundary data from mesh
     type(tem_bc_prop_type), intent(in):: bc_prop
     !> flu state
@@ -405,7 +405,7 @@ contains
     character(len=labelLen), intent(in) :: scaling
     !> fluid stencil info
     type(mus_scheme_layout_type), intent(in) :: layout
-    !> Logic to not to load tracking and variable table if this routine 
+    !> Logic to not to load tracking and variable table if this routine
     !! is called from mus_hvs_config_load.
     !! Default is False
     logical, optional, intent(in) :: isMusHvs
@@ -504,19 +504,19 @@ contains
     integer :: field_handle, field_sub_handle
     ! --------------------------------------------------------------------------
     call tem_horizontalSpacer(fUnit = logUnit(1))
-    write(logUnit(1),*) 'Loading the field base info ...' 
+    write(logUnit(1),*) 'Loading the field base info ...'
 
     call aot_table_open( L       = conf,         &
       &                  parent  = parent,       &
       &                  thandle = field_handle, &
-      &                  key     = 'field'       ) 
+      &                  key     = 'field'       )
 
     ! allocate the fields
     nFields = 1
     allocate(me(nFields))
     me(nFields)%label = ''
 
-    ! load label only if field table is present 
+    ! load label only if field table is present
     if ( field_handle /= 0 ) then
       ! check whether field is a single table or multiple table
       call aot_table_open( L       = conf,             &
@@ -540,7 +540,7 @@ contains
       else ! field is multiple table
         call aot_table_close( L=conf, thandle=field_sub_handle )
         nFields = aot_table_length( L=conf, thandle=field_handle )
-        write(logUnit(1),*) 'Number of fields: ', nFields 
+        write(logUnit(1),*) 'Number of fields: ', nFields
 
         ! reallocate the fields
         deallocate( me )
@@ -560,12 +560,12 @@ contains
             &               ErrCode = iError            )
 
           if (btest(iError, aoterr_NonExistent)) then
-            write(logUnit(1),*) 'Error: field label is not specified' 
-            write(logUnit(1),*) 'field label is neccessary when nFields>1' 
+            write(logUnit(1),*) 'Error: field label is not specified'
+            write(logUnit(1),*) 'field label is neccessary when nFields>1'
             call tem_abort()
           end if
 
-          ! add underscore here to differentiate state variables and derived 
+          ! add underscore here to differentiate state variables and derived
           ! variables of each field
           if( trim(me(iField)%label) /= '' )                          &
             &          me(iField)%label = trim( me(iField)%label )//'_'
@@ -578,7 +578,7 @@ contains
           write(logUnit(1),*) iField, 'Field label: ', trim(me(iField)%label)
         end do !number of fields
 
-      end if ! single field  
+      end if ! single field
     else
       write(logUnit(1),*) 'No field table defined.'
       write(logUnit(1),*) 'Assuming single field and label = "".'
@@ -613,16 +613,16 @@ contains
       do iField = 1, size(me)
         call mus_field_out_scal( me           = me( iField ), &
           &                      conf         = conf,         &
-          &                      schemeHeader = schemeHeader, & 
+          &                      schemeHeader = schemeHeader, &
           &                      level        = 1             )
       end do
       call aot_out_close_table(put_conf = conf)
     else
       call mus_field_out_scal( me           = me( 1 ),      &
         &                      conf         = conf,         &
-        &                      schemeHeader = schemeHeader, & 
+        &                      schemeHeader = schemeHeader, &
         &                      level        = 0             )
-    end if    
+    end if
   end subroutine mus_fields_out_vec
 ! **************************************************************************** !
 
@@ -680,7 +680,7 @@ contains
     character(len=labelLen),  intent(in) :: scheme_kind
     character(len=labelLen), allocatable :: ic_states(:)
     !> Number of initial condition variables required to initialize state
-    integer, intent(out) :: IC_nVars 
+    integer, intent(out) :: IC_nVars
     ! --------------------------------------------------------------------------
 
     ! load scheme specific field
@@ -798,11 +798,11 @@ contains
         ! bulk omega
         omega_bulk = field(iField)%fieldProp%species%omBulkLvl(iLevel)  &
           &        * fac
-!write(*,*) 'omega_diff ', omega_diff 
-!write(*,*) 'omega_kine ', omega_kine        
-!write(*,*) 'omega_bulk ', omega_bulk    
+!write(*,*) 'omega_diff ', omega_diff
+!write(*,*) 'omega_kine ', omega_kine
+!write(*,*) 'omega_bulk ', omega_bulk
         ! Set the relaxation parameters (only the non-relaxing modes)
-        ! \ref Multiple-relaxation-time lattice Boltzmann scheme for 
+        ! \ref Multiple-relaxation-time lattice Boltzmann scheme for
         !      homogeneous mixture flows with external force- Pietro Asinari
         ! \ref Jens ICCMES paper
         ! initialize all entries in relaxation matrix
@@ -815,7 +815,7 @@ contains
           do iDir=2,3
             field( iField )%fieldProp%species%mrt( iLevel )             &
               & %s_mrt( iDir, iDir ) = omega_diff
-          end do    
+          end do
 
           do iDir=4,5
             field( iField )%fieldProp%species%mrt( iLevel )             &
@@ -865,7 +865,7 @@ contains
           field( iField )%fieldProp%species%mrt( iLevel )%s_mrt( 7, 6 ) &
             & = ( omega_bulk - omega_kine ) / 3.0_rk
 
-          do iDir=8,10 
+          do iDir=8,10
             field( iField )%fieldProp%species%mrt( iLevel )             &
               & %s_mrt( iDir, iDir ) = omega_kine
           end do
@@ -1013,7 +1013,7 @@ contains
 ! **************************************************************************** !
 
 ! **************************************************************************** !
-  !> This routine checks for the existence of symmetric boundaries and 
+  !> This routine checks for the existence of symmetric boundaries and
   !! returns the boundary IDs which are defined as symmetry
   subroutine mus_field_getSymmetricBCs(symmetricBCs, nSymBCs, nBCs, nFields, &
     & field)
@@ -1047,10 +1047,10 @@ contains
           nSymBCs = nSymBCs + 1
           symmetricBCs(nSymBCs) = iBC
         end if
-      end do  
+      end do
     end do
 
-  end subroutine mus_field_getSymmetricBCs  
+  end subroutine mus_field_getSymmetricBCs
 ! **************************************************************************** !
 
   ! ************************************************************************** !
@@ -1086,12 +1086,12 @@ contains
     ! Cleanup field source
     write(dbgUnit(1),"(A)") 'Enter mus_field_cleanup'
     do iFld = 1, nFields
-      call mus_source_cleanup(me(iFld)%source) 
+      call mus_source_cleanup(me(iFld)%source)
     end do
 
     ! Cleanup field boundary
     do iFld = 1, nFields
-      write(dbgUnit(3),*) "Cleanup BC: iField=",iFld 
+      write(dbgUnit(3),*) "Cleanup BC: iField=",iFld
       call mus_fieldBC_cleanup( me       = me(iFld)%bc, &
         &                       nBCs     = nBCs,        &
         &                       minLevel = minLevel,    &

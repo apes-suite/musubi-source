@@ -191,7 +191,7 @@ module mus_scheme_type_module
   !!   mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19
   !!   mus_advRel_kFluid_rBGK_vHRR_lD3Q19
   !!
-  !! For non-specific implementation leave names out. 
+  !! For non-specific implementation leave names out.
   !! So we do not use generic keyword in the kernel names anymore.
   !! Examples:
   !!   mus_advRel_kFluid_rBGK_vStd_l

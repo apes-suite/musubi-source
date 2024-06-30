@@ -153,7 +153,7 @@ contains
         write(logUnit(1),*) 'Choosen generic mrt multispecies liquid '// &
           &                 'kernel with thermodynamic factor'
         compute => mrt_advRel_MSLiquid_generic_WTDF
-      end if  
+      end if
 
     case default
       write(logUnit(1),*) 'Relaxation '//trim(relaxation)//' is not supported!'

@@ -54,18 +54,18 @@ module mus_scheme_header_module
   public :: mus_relaxation_header_type
 
 
-  !> Datatype containing additional options for the relaxation like variant and 
+  !> Datatype containing additional options for the relaxation like variant and
   !! other variant specific parameters
   type mus_relaxation_header_type
     !> Varaint name of the relaxation. Set to "default" to select default
-    !! relaxation 
+    !! relaxation
     character(len=labelLen) :: variant
     !> Addtional information to load for regularited bgk like
     !! "regularized", "recursive_regularited" and "hybrid_recursive_regularized"
     !! variant.
     real(kind=rk) :: regularization_omega
 
-    !> todo move omega_Cum, omega_Lim, DRT_tauN, lambda from mus_fluid_type 
+    !> todo move omega_Cum, omega_Lim, DRT_tauN, lambda from mus_fluid_type
     !! to here
   end type mus_relaxation_header_type
 
@@ -75,7 +75,7 @@ module mus_scheme_header_module
   !! Combination of scheme kind, relaxation and layout%stencilKind
   !! are used to choose the correct compute kernel for the
   !! scheme
-  !! 
+  !!
   !!> | type | options |
   !!> |:-----------------|:--------------|
   !!> | kind | **fluid** (default)             |
@@ -117,8 +117,8 @@ module mus_scheme_header_module
   !!> |                            | **mrt**                       |
   !!> |------------------------------------------------------------|
   type mus_scheme_header_type
-    !> scheme kind, Ex: fluid, fluid_incompressible, multispecies_gas, 
-    !! multispecies_liquid, poisson, poisson_boltzmann_linear, 
+    !> scheme kind, Ex: fluid, fluid_incompressible, multispecies_gas,
+    !! multispecies_liquid, poisson, poisson_boltzmann_linear,
     !! poisson_boltzmann_nonlinear, nernst_planck, isotherm_acEq
     character(len=labelLen) :: kind
     !> scheme layout, Ex: d3q19

@@ -38,7 +38,7 @@
 !!
 !! IMPORTANT NOTE: When you create a new variable, do not forget to add this
 !! variable
-!! name into [[mus_append_auxField]], [[mus_store_derVarPos]] and also in 
+!! name into [[mus_append_auxField]], [[mus_store_derVarPos]] and also in
 !! [[mus_store_bcVarPos]] routine.
 !!
 module mus_variable_module
@@ -67,7 +67,7 @@ module mus_variable_module
     &                                 tem_varSys_getValOfIndex_dummy,      &
     &                                 tem_varSys_setParams_dummy,          &
     &                                 tem_varSys_getParams_dummy
-  use tem_varMap_module,        only: tem_varMap_type,         & 
+  use tem_varMap_module,        only: tem_varMap_type,         &
     &                                 tem_possible_variable_type
   use tem_variable_module,      only: tem_variable_type
   use tem_dyn_array_module,     only: dyn_labelArray_type, init, append,       &
@@ -239,7 +239,7 @@ contains
     !> number of fields
     integer, intent(in)                      :: nFields
 
-    !> store position of each variable for each field and mixture 
+    !> store position of each variable for each field and mixture
     !! size: nFields+1
     type(mus_derVarPos_type), allocatable, intent(out)  :: derVarPos(:)
 
@@ -295,16 +295,16 @@ contains
     call mus_append_auxField( varSys       = varSys,         &
       &                       solverData   = solverData,     &
       &                       schemeHeader = schemeHeader,   &
-      &                       nFields      = nFields,        & 
+      &                       nFields      = nFields,        &
       &                       fldLabel     = field(:)%label, &
       &                       derVarName   = derVarName      )
-     
+
     ! do append variables until all variables with dependent variable
     ! are added recursively. With this variables with dependent variable
     ! can be appended in arbitrary order
     nVars = 0
     iWave = 0
-    do 
+    do
       if (nVars == varSys%varname%nVals) EXIT
       iWave = iWave + 1
       nVars = varSys%varname%nVals
@@ -336,7 +336,7 @@ contains
             & derVarName   = derVarName,                                &
             & turbConfig   = field(1)%fieldProp%fluid%turbulence%config )
         end if
- 
+
       case ( 'fluid_incompressible' )
         ! append derived variables
         call mus_append_derVar_fluidIncomp( varSys       = varSys,       &
@@ -360,7 +360,7 @@ contains
             & derVarName   = derVarName,                                &
             & turbConfig   = field(1)%fieldProp%fluid%turbulence%config )
         end if
- 
+
       case ( 'passive_scalar' )
         call mus_append_derVar_lbmPS( varSys       = varSys,         &
           &                           solverData   = solverData,     &
@@ -392,8 +392,8 @@ contains
           &                           fldLabel   = field(:)%label, &
           &                           derVarname = derVarname      )
 
-        do iField = 1, nFields 
-          derVarPos(iField)%equilFromMacro => deriveEquilMSGas_FromMacro 
+        do iField = 1, nFields
+          derVarPos(iField)%equilFromMacro => deriveEquilMSGas_FromMacro
           derVarPos(iField)%velFromState   => deriveVelMSGas_fromState
           derVarPos(iField)%momFromState   => deriveMomMSGas_fromState
           derVarPos(iField)%equilFromState => deriveEqMSGas_fromState
@@ -402,7 +402,7 @@ contains
             &                              => deriveVelocitiesMSGas_fromState
           derVarPos(iField)%auxFieldFromState => deriveAuxMSGas_fromState
           derVarPos(iField)%equilFromAux => deriveEquilMSGas_fromAux
-        end do  
+        end do
       case ( 'multispecies_liquid' )
         call mus_append_derVar_MSLiquid( varSys       = varSys,         &
           &                              solverData   = solverData,     &
@@ -412,8 +412,8 @@ contains
           &                              fldLabel     = field(:)%label, &
           &                              derVarname   = derVarname      )
 
-        do iField = 1, nFields 
-          derVarPos(iField)%equilFromMacro => deriveEquilMSLiquid_FromMacro 
+        do iField = 1, nFields
+          derVarPos(iField)%equilFromMacro => deriveEquilMSLiquid_FromMacro
           derVarPos(iField)%velFromState   => deriveVelMSLiquid_fromState
           derVarPos(iField)%momFromState   => deriveMomMSLiquid_fromState
           derVarPos(iField)%momentaFromState  => deriveMomentaMSLiquid_fromState
@@ -497,7 +497,7 @@ contains
           &                        stencil      = stencil,              &
           &                        poss_srcVar  = poss_srcVar,          &
           &                        fldLabel     = field(iField)%label   )
-        
+
         write(logUnit(10),*) 'Append internal field source: iField ', iField
         call mus_append_sourceVar( me           = field(iField)%internalSource, &
           &                        solverData   = solverData,                   &
@@ -520,7 +520,7 @@ contains
         &                        stencil      = stencil,      &
         &                        poss_srcVar  = poss_srcVar   )
 
-    end do  
+    end do
     write(logUnit(1),*) 'Done appending variables to varSys'
 
     call tem_varSys_dump( varSys, dbgUnit(10) )
@@ -535,7 +535,7 @@ contains
     ! Store boundary variable position
     call mus_store_bcVarPos( field   = field,   &
       &                      nFields = nFields, &
-      &                      varSys  = varSys   )  
+      &                      varSys  = varSys   )
 
   end subroutine mus_build_varSys
   ! **************************************************************************** !
@@ -583,8 +583,8 @@ contains
     nullify(get_point, get_element, set_params, get_params, setup_indices, &
       &     get_valOfIndex)
 
-    write(logUnit(1),*) 'Appending state variables read from restart file' 
-    
+    write(logUnit(1),*) 'Appending state variables read from restart file'
+
     ! Determine variables read from restart file are pdf variable
     ! or derived variable.
     ! Derived variable requires different treatment in mus_construction
@@ -595,7 +595,7 @@ contains
     call check_varSys_forPdfVar( readVarIsPdf = readVarIsPdf, &
       &                          varSys       = read_varSys,  &
       &                          nFields      = nFields,      &
-      &                          fldLabel     = fldLabel      ) 
+      &                          fldLabel     = fldLabel      )
 
     ! get all state variable using access_state
     get_element => mus_access_state_ForElement
@@ -624,14 +624,14 @@ contains
         &  pos            = addedPos,                           &
         &  wasAdded       = wasAdded                            )
 
-      if (wasAdded) then 
+      if (wasAdded) then
         write(logUnit(10),*) 'Appended state variable: '//trim(varname)
         call append( me = stateVarMap%varPos, val = addedPos )
         call append( me  = stateVarMap%varname, val = varname )
       else
         write(logUnit(1),*) 'Error: State variable '//trim(varname)// &
           &                 ' is not added to variable system'
-        call tem_abort()  
+        call tem_abort()
       end if
     end do
 
@@ -648,7 +648,7 @@ contains
 
 
   ! **************************************************************************** !
-  !> Append state variable depends on the scheme kind 
+  !> Append state variable depends on the scheme kind
   !!
   !! allocate function pointers, and append pdf to scheme%varSys
   subroutine mus_append_stateVar( varSys, stateVarMap, solverData,         &
@@ -690,14 +690,14 @@ contains
     nullify(get_point, get_element, set_params, get_params, setup_indices, &
       &     get_valOfIndex)
 
-    write(logUnit(1),*) 'Appending state variables ' 
+    write(logUnit(1),*) 'Appending state variables '
 
     ! check there no variables added to varSys before state variable
     if (varSys%varName%nVals /= 0) then
       write(logUnit(1),*) 'Error: Found variables before state variables'
       call tem_abort()
     end if
-    
+
     ! get all state variable using access_state
     get_element => mus_access_state_ForElement
     get_point => mus_stateVar_forPoint
@@ -732,7 +732,7 @@ contains
       else
         write(logUnit(1),*) 'Error: State variable '//trim(varname)// &
           &                 ' is not added to variable system'
-        call tem_abort()  
+        call tem_abort()
       end if
     end do
 
@@ -782,15 +782,15 @@ contains
     ! ---------------------------------------------------------------------------
     ! Initialize variables
     nDerVars = 0
-    
-    write(logUnit(1),*) 'Appending auxiliary variables ' 
+
+    write(logUnit(1),*) 'Appending auxiliary variables '
     select case (trim(schemeHeader%kind))
-    case ('fluid', 'fluid_incompressible') 
+    case ('fluid', 'fluid_incompressible')
       ! auxiliary variable for incompressible is same as compressible model
       ! append density and velocity as auxField variables
       nDerVars = 2
       allocate(derVarName_loc(nDerVars))
-      derVarName_loc    = [ 'density ', 'velocity'  ] 
+      derVarName_loc    = [ 'density ', 'velocity'  ]
     case ('passive_scalar')
       ! append density as auxField variable
       nDerVars = 1
@@ -819,11 +819,11 @@ contains
       nDerVars = 2
       allocate(derVarName_loc(nDerVars))
       derVarName_loc    = [ 'density ', 'velocity' ]
-    case default    
+    case default
       write(logUnit(1),*) ' The selected scheme kind is unknown '//        &
         &                 trim(schemeHeader%kind)
       call tem_abort()
-    end select  
+    end select
 
     ! get all auxField variable uses same access routines. auxField_varPos
     ! is used to access exact variable
@@ -853,7 +853,7 @@ contains
             &                 trim(derVarName_loc(iVar))
           cycle !go to next variable
         end select
-  
+
         write(varname,'(a)') trim(fldLabel(iField)) &
           &               //trim(adjustl(derVarName_loc(ivar)))
         call tem_varSys_append_auxFieldVar(                       &
@@ -869,32 +869,32 @@ contains
           &  get_valOfIndex = get_valOfIndex,                     &
           &  pos            = addedPos,                           &
           &  wasAdded       = wasAdded                            )
-  
+
         if (wasAdded) then
           write(logUnit(10),*) 'Appended auxField variable: '//trim(varname)
         else if (addedPos < 1) then
           write(logUnit(1),*) 'Error: AuxField variable '//trim(varname)// &
             &                 ' is not added to variable system'
-          call tem_abort()  
+          call tem_abort()
         end if
-      end do !iVar 
+      end do !iVar
     end do !iField
 
    ! debug output
     write(logUnit(10),"(A,I0)") '  nAuxVars in varSys: ', varSys%nAuxVars
     write(logUnit(10),"(A,I0)") '  nAuxScalars in varSys: ', varSys%nAuxScalars
- 
+
   end subroutine mus_append_auxField
   ! *************************************************************************** !
 
   ! *************************************************************************** !
-  !> Build a variable system of all possible source terms for the given 
+  !> Build a variable system of all possible source terms for the given
   !! schemeKind
   subroutine mus_append_sourceVar( me, solverData, schemeHeader, varSys,   &
     &                              nFields, stencil, poss_srcVar, fldLabel )
-    ! -------------------------------------------------------------------------- 
+    ! --------------------------------------------------------------------------
     !> Contains source function pointer,
-    !! source variable definition from lua and 
+    !! source variable definition from lua and
     !! mapping of source variable in global varSys
     type(mus_source_type), intent(inout)          :: me
 
@@ -919,7 +919,7 @@ contains
     !> array of field label prefix required only for field source.
     !! If not present, it is assumed as global source
     character(len=*), optional, intent(in)        :: fldLabel
-    ! -------------------------------------------------------------------------- 
+    ! --------------------------------------------------------------------------
     logical :: wasAdded
     character(len=labelLen), allocatable ::  input_varname(:)
     character(len=labelLen)  ::  varName, fldLabel_loc
@@ -934,7 +934,7 @@ contains
     integer :: iSrc, dataVar_InInVar, nSrcVars, nComponents
     integer :: addedPos, iField
     integer :: nComp_defined, nComp_expected, data_varPos, possSrc_varPos
-    ! -------------------------------------------------------------------------- 
+    ! --------------------------------------------------------------------------
     nullify(get_point, get_element, set_params, get_params, setup_indices, &
       &     get_valOfIndex)
 
@@ -961,7 +961,7 @@ contains
       ! use stencil%QQ since source variable return value which is
       ! added to state as source term so both state and source should
       ! have same nComponents
-      nComponents = stencil%QQ 
+      nComponents = stencil%QQ
     else
       fldLabel_loc = ''
       allocate(input_varname(nFields+1))
@@ -970,10 +970,10 @@ contains
       end do
       dataVar_InInVar = nFields + 1
       ! mixture source: return source value for all species
-      nComponents = stencil%QQ * nFields 
+      nComponents = stencil%QQ * nFields
     end if
 
-    srcLoop: do iSrc = 1, nSrcVars 
+    srcLoop: do iSrc = 1, nSrcVars
       input_varname(dataVar_InInVar) = trim(me%varDict%val(iSrc)%value)
       ! get actual source variable name from temSource varname
       ! which stores the name as defined in possible sources
@@ -988,7 +988,7 @@ contains
         ! position of variable name in possible variable list
         possSrc_varPos = PositionOfVal( me  = poss_srcVar%varname, &
           &                             val = trim(varname)        )
-        
+
         nComp_defined = varSys%method%val(data_varPos)%nComponents
         nComp_expected = poss_srcVar%nComponents%val(possSrc_varPos)
 
@@ -998,14 +998,14 @@ contains
             & trim(input_varname(dataVar_InInVar))//'"= ', nComp_defined
           write(logUnit(1),'(a,i0)') '/= nComponent of expected variable: "'// &
             & trim(varname)//'"= ', nComp_expected
-          call tem_abort()  
+          call tem_abort()
         end if
       else
         ! user st_fun variable is not found in varSys
         write(logUnit(1),*) 'Error: User defined space-time function variable'
         write(logUnit(1),*) '"'//trim(input_varName(dataVar_InInVar))// &
           &                 '" not found in varSys'
-        call tem_abort()  
+        call tem_abort()
       end if
 
       ! set to default to dummy routine which does noting to auxField
@@ -1014,7 +1014,7 @@ contains
       me%method(iSrc)%updateSourceVar => mus_updateSrcVar_dummy
 
       ! choose appropriate function pointer
-      ! select get_element, applySrc and addSrcToAuxField according to scheme 
+      ! select get_element, applySrc and addSrcToAuxField according to scheme
       ! kind
       select case (trim(schemeHeader%kind))
       case ('fluid', 'fluid_incompressible')
@@ -1024,7 +1024,7 @@ contains
           if (me%method(iSrc)%order == 2) then
             select case (trim(schemeHeader%relaxation))
             case ('mrt')
-              ! get_element and applySrc are same of fluid and 
+              ! get_element and applySrc are same of fluid and
               ! fluid_incompressible
               get_element => derive_force_MRT
               select case (trim(schemeHeader%layout))
@@ -1091,8 +1091,8 @@ contains
           ! Use time average quantities if pressure or velocity is defined
           ! as dynamic.
           if (me%method(iSrc)%absLayer%config%isPressDyn &
-            & .or. me%method(iSrc)%absLayer%config%isVelDyn) then 
-            ! \todo KM: 20210301 Implement seperate routine for 
+            & .or. me%method(iSrc)%absLayer%config%isVelDyn) then
+            ! \todo KM: 20210301 Implement seperate routine for
             ! absorb_layer_inlet and absorb_layer_outlet when target_velocity
             ! and target_pressure respectively are defined as stFun.
             me%method(iSrc)%addSrcToAuxField                   &
@@ -1129,7 +1129,7 @@ contains
               call tem_abort('HRR Correction not supported for '  &
               &            //trim(schemeHeader%relaxation)        )
             end select
-  
+
             ! select addSrcToAuxField  and get_element according to scheme kind
             select case (trim(schemeHeader%layout))
             case ('d2q9')
@@ -1144,7 +1144,7 @@ contains
             case default
               call tem_abort('HRR Correction not supported for '  &
               &            //trim(schemeHeader%layout)        )
-            end select 
+            end select
           else
             call tem_abort('HRR Correction not supported for '  &
             &            //trim(schemeHeader%kind)              )
@@ -1169,14 +1169,14 @@ contains
               me%method(iSrc)%addSrcToAuxField => mus_addForceToAuxField_MSL
               me%method(iSrc)%applySrc => applySrc_forceMSLiquid_2ndOrd
             end select
-          else ! 1st order  
+          else ! 1st order
             select case (trim(schemeHeader%relaxation))
             case ('bgk_withthermodynfac', 'mrt_withthermodynfac')
               me%method(iSrc)%applySrc => applySrc_forceMSLiquid_1stOrd_WTDF
             case default
               me%method(iSrc)%applySrc => applySrc_forceMSLiquid_1stOrd
             end select
-          end if  
+          end if
 
         case ('electric_field')
           ! select pointer according to order
@@ -1190,14 +1190,14 @@ contains
               me%method(iSrc)%addSrcToAuxField => mus_addElectricToAuxField_MSL
               me%method(iSrc)%applySrc => applySrc_electricMSLiquid_2ndOrd
             end select
-          else ! 1st order  
+          else ! 1st order
             select case (trim(schemeHeader%relaxation))
             case ('bgk_withthermodynfac', 'mrt_withthermodynfac')
               me%method(iSrc)%applySrc => applySrc_electricMSLiquid_1stOrd_WTDF
             case default
               me%method(iSrc)%applySrc => applySrc_electricMSLiquid_1stOrd
             end select
-          end if  
+          end if
         case default
           call tem_abort('Unknown source variable for ' &
             &            //trim(schemeHeader%kind)      )
@@ -1220,12 +1220,12 @@ contains
               & /= 'transport_velocity') then
               write(logUnit(1),*) 'Error: transport_velocity variable required ' &
                 &              // 'for injection source is not defined'
-              call tem_abort()  
+              call tem_abort()
             end if
           else
             write(logUnit(1),*) 'Error: injection source requires '&
               &               //'transport_velocity variable'
-            call tem_abort()  
+            call tem_abort()
           end if
           get_element => derive_injectionPS
           me%method(iSrc)%applySrc => applySrc_injectionPS
@@ -1235,7 +1235,7 @@ contains
         case default
           call tem_abort('Unknown source variable for ' &
             &            //trim(schemeHeader%kind)      )
-        end select  
+        end select
 
       case ('poisson')
         select case (trim(varname))
@@ -1243,21 +1243,21 @@ contains
           ! select pointer according to order
           if (me%method(iSrc)%order == 2) then
             me%method(iSrc)%addSrcToAuxField => mus_addSrcToAuxField_poisson
-            get_element => deriveSrc_chargeDensity 
+            get_element => deriveSrc_chargeDensity
             me%method(iSrc)%applySrc => applySrc_chargeDensity_2ndOrd
-          else ! 1st order  
-            get_element => deriveSrc_chargeDensity 
+          else ! 1st order
+            get_element => deriveSrc_chargeDensity
             me%method(iSrc)%applySrc => applySrc_chargeDensity_1stOrd
-          end if  
+          end if
         case default
           call tem_abort( 'Unknown source variable for ' &
             &             //trim(schemeHeader%kind)      )
-        end select    
+        end select
       case default
         write(logUnit(1),*) 'ERROR: Scheme kind: '//trim(schemeHeader%kind) &
           &                 // 'does not support source variable: '         &
           &                 // trim(varname)
-        call tem_abort()  
+        call tem_abort()
       end select
 
       varname = trim(fldLabel)//'src_'//trim(varname)
@@ -1286,7 +1286,7 @@ contains
       else if (addedpos < 1) then
         write(logUnit(1),*) 'Error: variable '//trim(varname)// &
           &                 ' is not added to variable system'
-        call tem_abort()  
+        call tem_abort()
       end if
     end do srcLoop
 
@@ -1416,7 +1416,7 @@ contains
 
 
   ! *************************************************************************** !
-  !> Store the position of each boundary variable in the global varSys 
+  !> Store the position of each boundary variable in the global varSys
   !! in the field%bc%varPos%<variable>.
   !! This routine also checks if boundary variable defined in config file
   !! has same number of components as expected.
@@ -1445,11 +1445,11 @@ contains
           ! position of boundary variable in varSys
           defVar_pos = PositionOfVal( me  = varSys%varName, &
             &                       val = trim(def_varName) )
-          ! continue only if this variable exist in varSys  
+          ! continue only if this variable exist in varSys
           if (defVar_pos>0) then
             nComp_defined = varSys%method%val(defVar_pos)%nComponents
 
-            ! check number of components defined for the variable is 
+            ! check number of components defined for the variable is
             ! same as expected, if so store the position if boundary type
             bc_varName = trim(field(iField)%bc(iBC)%varDict%val(iVar)%key)
             select case(trim(bc_varName))
@@ -1500,26 +1500,26 @@ contains
             end select
 
             if (nComp_defined /= nComp_expected) then
-              write(logUnit(1),*) 'Error: Storing boundary variable position' 
+              write(logUnit(1),*) 'Error: Storing boundary variable position'
               write(logUnit(1),'(a,i0)') 'nComponent of defined variable: "'// &
                 & trim(def_varName)//'"= ', nComp_defined
               write(logUnit(1),'(a,i0)') '/= nComponent of expected '// &
                 & 'variable: "'//trim(bc_varName)//'"= ', nComp_expected
-              call tem_abort()  
+              call tem_abort()
             end if
 
           else
             write(logUnit(1),*) 'Error: User defined space-time function '
             write(logUnit(1),*) 'or reference to varName for boundary variable'
             write(logUnit(1),*) '"'//trim(def_varName)//'" not found in varSys'
-            call tem_abort()  
+            call tem_abort()
           end if !defVar_pos
 
         end do !iVar
       end do !iiBC
     end do !iField
 
-  end subroutine mus_store_bcVarPos  
+  end subroutine mus_store_bcVarPos
   ! **************************************************************************** !
 
 
@@ -1547,7 +1547,7 @@ contains
     character(len=labelLen) :: buffer
     ! ---------------------------------------------------------------------------
 
-    readVarIsPdf = .true. 
+    readVarIsPdf = .true.
     do iField = 1, nFields
       write(buffer,'(a)') trim( fldLabel( iField ) )//'pdf'
       if ( trim(buffer) /= varSys%varName%val(iField) ) then
@@ -1559,7 +1559,7 @@ contains
          write(logUnit(1),*) '           * Interpolation of pdf for multilevel'
          exit
       end if
-    end do  
+    end do
 
   end subroutine check_varSys_forPdfVar
 ! ****************************************************************************** !

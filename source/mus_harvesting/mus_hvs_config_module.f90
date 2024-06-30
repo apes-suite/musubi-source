@@ -23,7 +23,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! ***************************************************************************** !
-!> In this module, all parameter files are read in 
+!> In this module, all parameter files are read in
 !! as lua script or a sample configuration is being loaded
 !!
 !! Possible Parameter configuration
@@ -92,10 +92,10 @@ module mus_hvs_config_module
 contains
 
 ! ****************************************************************************** !
-  !> Read in LUA parameter file 
+  !> Read in LUA parameter file
   !! See http://www.lua.org for a reference on how to use
-  !! Lua is a scripting language in itself which allows 
-  !! more complex parameter files including comments 
+  !! Lua is a scripting language in itself which allows
+  !! more complex parameter files including comments
   !! And load / create the mesh depending on the configuration
   subroutine mus_hvs_config_load( me, scheme, solverData, geometry, params )
     ! ---------------------------------------------------------------------------
@@ -177,7 +177,7 @@ contains
     call mus_load_bc_data( geometry, params%general%proc%rank, &
       &                              params%general%proc%comm  )
 
-    ! load params, physics and solver specific info 
+    ! load params, physics and solver specific info
     call mus_hvs_load_solverData( scheme     = scheme,     &
       &                           solverData = solverData, &
       &                           geometry   = geometry,   &
@@ -196,7 +196,7 @@ contains
         &                   conf = params%general%solver%conf(1),&
         &                   isReduce = .false. )
 
-      ! Load output folder 
+      ! Load output folder
       call aot_get_val( L       = params%general%solver%conf(1), &
         &               key     = 'output_folder',               &
         &               val     = me%prefix,                     &
@@ -214,7 +214,7 @@ contains
 
 
 ! ****************************************************************************** !
-  !> This routines load solver data from config file except tracking 
+  !> This routines load solver data from config file except tracking
   subroutine mus_hvs_load_solverData( scheme, solverData, geometry, params )
     ! ---------------------------------------------------------------------------
     !> scheme type

@@ -59,7 +59,7 @@ module mus_hvs_aux_module
 contains
 
 ! ****************************************************************************** !
-  !> Init auxiliary features such as interpolation boundaries, restart and 
+  !> Init auxiliary features such as interpolation boundaries, restart and
   !! the tracker
   subroutine mus_hvs_init_aux( scheme, geometry, params )
     ! ---------------------------------------------------------------------------
@@ -88,7 +88,7 @@ contains
     ! verify correct settings for the streaming layout
     call check_streaming_layout( minLevel, maxLevel )
 
-    ! When the restart is read from separate restart table, we start the 
+    ! When the restart is read from separate restart table, we start the
     ! simulation from the time step given in restart file. In the case,
     ! when restart is read from initial condition table, the simulation start
     ! time step is taken as the one defined in configuration file
@@ -115,7 +115,7 @@ contains
       if (scheme%nFields > 1) then
         call tem_abort('chosen scheme kind supports only one field')
       end if
-      ! initialize fluid viscosity relaxation paramters 
+      ! initialize fluid viscosity relaxation paramters
       call mus_init_fluid(                                &
         & me           = scheme%field(1)%fieldProp%fluid, &
         & physics      = params%physics,                  &
@@ -127,7 +127,7 @@ contains
         & stencil      = scheme%layout%fStencil,          &
         & general      = params%general,                  &
         & tNow         = params%general%simControl%now    )
-    end select  
+    end select
 
     ! Initialize gradient data. Required for LES tuburbulent and evaluating
     ! gradient of a variable

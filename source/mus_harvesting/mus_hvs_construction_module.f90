@@ -92,7 +92,7 @@ contains
   !! After this routine, all data structures for starting the main loop of the
   !! solver are allocated and ready.
   !!
-  !! Only difference between this routine and mus_construct is then 
+  !! Only difference between this routine and mus_construct is then
   !! creating of boundary elements and its stencil are omitted for harvesting
   !!
   subroutine mus_hvs_construct( scheme, geometry, params)
@@ -161,7 +161,7 @@ contains
     write(logUnit(6),*) 'before tem_find_allElements'
     write(dbgUnit(6),*) 'before find_allElements'
     ! The level descriptor is created from the below routine.
-    ! the neigh array is created using the LD and communication buffers are filled up. 
+    ! the neigh array is created using the LD and communication buffers are filled up.
     call tem_find_allElements(                                         &
       &                  tree            = geometry%tree,              &
       &                  levelDesc       = scheme%levelDesc,           &
