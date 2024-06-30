@@ -107,7 +107,7 @@ contains
     !> Level descriptors
     type( tem_levelDesc_type ), intent(in) :: levelDesc(tree%global%minLevel:)
 
-    !> stencil header 
+    !> stencil header
     type(tem_stencilHeader_type), intent(in) :: stencil
     ! --------------------------------------------------------------------------
     integer :: iLevel, iField, iSrc
@@ -119,7 +119,7 @@ contains
 
     minLevel = tree%global%minLevel
     maxLevel = tree%global%maxLevel
-    
+
     ! allocate source element array
     do iField = 1, nFields
       do iSrc = 1, field(iField)%internalSource%varDict%nVals
@@ -145,7 +145,7 @@ contains
           &  nSolve     = nSolve,                       &
           &  iLevel     = iLevel,                       &
           &  stencil    = stencil                       )
-        
+
       end do
 
     end do ! iLevel

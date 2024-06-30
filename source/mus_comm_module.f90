@@ -53,11 +53,11 @@ contains
 ! **************************************************************************** !
   !> Wrapper around the actual communication, to avoid copy-in, copy-out by the
   !! Intel compiler. (At least the intel compiler on pigeon (v12.0) seems to do
-  !! copying here, if a sub-array is passed to an assumed size dummy argument. 
+  !! copying here, if a sub-array is passed to an assumed size dummy argument.
   !! Therefore we use this wrapping with an assumed shape dummy argument, so we
-  !! can pass a complete field to the actual exchange which has an assumed size 
-  !! argument, without copying complete state field around, just for 
-  !! communication. Ugly, but it doesn't seem to have an impact on performance, 
+  !! can pass a complete field to the actual exchange which has an assumed size
+  !! argument, without copying complete state field around, just for
+  !! communication. Ugly, but it doesn't seem to have an impact on performance,
   !! and right it seems to be the most suitable solution.
   !!
   ! subroutine mus_exchange(send, recv, state, pattern, level, comm)

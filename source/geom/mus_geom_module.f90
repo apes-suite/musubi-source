@@ -29,7 +29,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! ****************************************************************************** !
-!> This module contains the definition of geometry type and routines to 
+!> This module contains the definition of geometry type and routines to
 !! geometry information like mesh, boundary, immersed_boundary and restart
 module mus_geom_module
 
@@ -83,7 +83,7 @@ module mus_geom_module
     !! How to use:
     !! do iElem = 1, tree%nElems
     !!   posInBndID = posInBndID( iElem )
-    !!   ! current element has boundary only if posInBndID>0 
+    !!   ! current element has boundary only if posInBndID>0
     !!   ! else posInBndID = -1
     !!   if (posInBnd > 0 )
     !!     bnd_ID(1:nDir) = bc_prop%boundary_ID( 1:nDir, posInBndID )
@@ -167,18 +167,18 @@ contains
     &                      scaleFactor, initial_balance)
     ! --------------------------------------------------------------------------
     !< contains geometry information which are loaded in this routine
-    type(mus_geom_type), intent(out) :: me 
+    type(mus_geom_type), intent(out) :: me
     !> contains restart information
     type(tem_restart_type), intent(out) :: restart
-    !> contains general description of the solver including flu_state 
+    !> contains general description of the solver including flu_state
     type(tem_solveHead_type), intent(inout) :: solverHead
     !> contains simulation time control information
     type(tem_simControl_type), intent(inout) :: simControl
-    !> contains MPI communication environment 
+    !> contains MPI communication environment
     type(tem_comm_env_type), intent(in) :: proc
-    !> Temporal scaling factor for multilevel mesh 
+    !> Temporal scaling factor for multilevel mesh
     integer, intent(in) :: scaleFactor
-    !> If true, do initial balancing using level_weights 
+    !> If true, do initial balancing using level_weights
     logical, intent(in) :: initial_balance
     ! --------------------------------------------------------------------------
     integer :: iLevel, minLevel, maxLevel
@@ -244,7 +244,7 @@ contains
           &            meshDir     = solverHead%meshFolder )
       else
         ! load the tree from the mesh = '' definition in case no restartRead is
-        ! given in this case the mesh from the restart header is read 
+        ! given in this case the mesh from the restart header is read
         ! (in tem_load_restart)
         call load_tem( me      = me%tree,              &
           &            conf    = solverHead%conf(1),   &

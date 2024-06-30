@@ -22,7 +22,7 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! ***************************************************************************** !
 !> author: Kannan Masilamani
-!! Module containing subroutines for building MUSUBI specific source 
+!! Module containing subroutines for building MUSUBI specific source
 !! variables
 !!
 module mus_source_type_module
@@ -72,7 +72,7 @@ module mus_source_type_module
   public :: mus_applySrc_dummy
   public :: mus_addSrcToAuxField_dummy
   public :: mus_updateSrcVar_dummy
-  
+
   ! ************************************************************************** !
   !> Stores correction term for HRR_bgk
   type mus_HRRCorrectionTerm_type
@@ -116,14 +116,14 @@ module mus_source_type_module
     !! F_dyn = (refVelBulk-avgVelXBulk) * refVelBulk / refHeight
     real(kind=rk) :: forceDyn(3)
 
-    !> Global number of elements in defined shape 
+    !> Global number of elements in defined shape
     integer :: nElemsGlobal_utau
     integer :: nElemsGlobal_umean
   end type mus_turbChannelForce_type
   ! ************************************************************************** !
 
   ! ************************************************************************** !
-  !> Contains source elements position in state array and idx to access 
+  !> Contains source elements position in state array and idx to access
   !! data variable refered in config file.
   !! This type is defined for each level
   type mus_source_elems_type
@@ -136,24 +136,24 @@ module mus_source_type_module
     !! Size: nElems
     integer, allocatable :: posInTotal(:)
 
-    !> Index to access point data type to retrieve values from variable 
+    !> Index to access point data type to retrieve values from variable
     !! refered for source variable
     integer, allocatable :: idx(:)
 
     !> source field value obtained from ST_fun data variable.
     !! Filled only for elements where source is active i.e. elements in
-    !! posInTotal. 
+    !! posInTotal.
     !! size: nElems*nComponents
     !! \todo KM: might be not neccessary
 !KM!    real(kind=rk), allocatable :: val(:)
 
-    !> Contains time average values of density and velocity for dynamic 
+    !> Contains time average values of density and velocity for dynamic
     !! absorblayer.
-    !! \todo KM: 02042021 Introduce method_data c_ptr and point to 
+    !! \todo KM: 02042021 Introduce method_data c_ptr and point to
     !! dynAvg for absorbLayer and change intent(inout) to intent(in) in
     !! proc_addSrcToAuxField.
     type(mus_absorbLayer_dynAvg_type) :: dynAvg
-    
+
     ! source term for HRR_bgk
     type(mus_HRRCorrectionTerm_type) :: HRR_Corr
   end type mus_source_elems_type
@@ -185,7 +185,7 @@ module mus_source_type_module
     !> Function pointer to append source field to auxilary variable
     procedure(proc_addSrcToAuxField), pointer :: addSrcToAuxField => null()
 
-    !> Function pointer to update source variable which are dependent on 
+    !> Function pointer to update source variable which are dependent on
     !! auxField.
     procedure(proc_updateSourceVar), pointer :: updateSourceVar => null()
 
@@ -216,7 +216,7 @@ module mus_source_type_module
     !! Size: varDict%nVals
     type(mus_source_op_type), allocatable :: method(:)
 
-    !> Dictionary of source variable with 
+    !> Dictionary of source variable with
     !! varDict%val()%key is the name of source variable and
     !! varDict%val()%value is the name of variable provided for the key
     type(grw_stringKeyValuePairArray_type) :: varDict
@@ -269,8 +269,8 @@ module mus_source_type_module
       type(mus_derVarPos_type), intent(in) :: derVarPos(:)
     end subroutine proc_apply_source
 
-    !> Interface to add source to auxField vars in source_op_type for 
-    !! all nSolve elements (nFluids+nGhostFromCoarser+nGhostFromFiner). 
+    !> Interface to add source to auxField vars in source_op_type for
+    !! all nSolve elements (nFluids+nGhostFromCoarser+nGhostFromFiner).
     !! Halo elements are exchanged
     subroutine proc_addSrcToAuxField(fun, auxField, iLevel, time, varSys, &
       & phyConvFac, derVarPos)
@@ -291,7 +291,7 @@ module mus_source_type_module
       type(mus_convertFac_type), intent(in) :: phyConvFac
       !> position of derived quantities in varsys
       type(mus_derVarPos_type), intent(in)  :: derVarPos(:)
-    end subroutine proc_addSrcToAuxField 
+    end subroutine proc_addSrcToAuxField
 
     !> Interface to update source variable which has dependency on auxField.
     !! Applied on all nSolve elements (nFluids+nGhostFromCoarser+nGhostFromFiner).
@@ -305,7 +305,7 @@ module mus_source_type_module
 
       !> Description of method to update source
       class(mus_source_op_type), intent(inout) :: fun
-      !> input auxField array on current level 
+      !> input auxField array on current level
       real(kind=rk), intent(in)          :: auxField(:)
       !> current level
       integer, intent(in) :: iLevel
@@ -490,7 +490,7 @@ contains
            &                        me%method(iSrc)%order
 
          ! Load additional information for absorblayer
-         select case (trim(me%varDict%val(iSrc)%key)) 
+         select case (trim(me%varDict%val(iSrc)%key))
          case ('turb_channel_force_accel')
            call load_turbChanForce( me     = me%method(iSrc)%turbChanForce, &
              &                      conf   = conf,                          &
@@ -524,7 +524,7 @@ contains
       end do
     else
       allocate(me%method(0))
-    end if  
+    end if
 
   end subroutine mus_load_source_var
   ! ***************************************************************************!
@@ -533,7 +533,7 @@ contains
   !> Load shape, bulk velocity and height for turbulent channel force
   subroutine load_turbChanForce(me, conf, key, parent)
     ! -------------------------------------------------------------------------!
-    !> Turbulent channel force 
+    !> Turbulent channel force
     type(mus_turbChannelForce_type), intent(out) :: me
     !> flu state
     type( flu_State ) :: conf
@@ -546,7 +546,7 @@ contains
     character(len=1) :: flow_direction
     ! -------------------------------------------------------------------------!
     ! -------------------------------------------------------------------------!
- 
+
     call aot_table_open( L       = conf,             &
       &                  parent  = parent,           &
       &                  thandle = turbForce_handle, &
@@ -600,12 +600,12 @@ contains
     ! load geometry
     call tem_load_shape( conf    = conf,             &
       &                  parent  = turbForce_handle, &
-      &                  key     = 'shape_utau',     & 
+      &                  key     = 'shape_utau',     &
       &                  me      = me%geom_utau(1)   )
 
     call tem_load_shape( conf    = conf,             &
       &                  parent  = turbForce_handle, &
-      &                  key     = 'shape_umean',    & 
+      &                  key     = 'shape_umean',    &
       &                  me      = me%geom_umean(1)  )
 
     if (.not. allocated(me%geom_utau(1)%canoND)) then
@@ -642,9 +642,9 @@ contains
     integer :: iSrc
     ! --------------------------------------------------------------------------
     ! KM: DO NOT DESTROY VARDICT IN SOURCE_TYPE AS IT CONTAINS CONFIG INFO
-    do iSrc = 1, me%varDict%nVals 
+    do iSrc = 1, me%varDict%nVals
       deallocate(me%method(iSrc)%elemLvl)
-    end do  
+    end do
   end subroutine mus_source_cleanup
   ! ************************************************************************** !
 
@@ -717,7 +717,7 @@ contains
     ! ------------------------------------------------------------------------ !
     !> Description of method to update source
     class(mus_source_op_type), intent(inout) :: fun
-    !> input auxField array on current level 
+    !> input auxField array on current level
     real(kind=rk), intent(in)          :: auxField(:)
     !> current level
     integer, intent(in) :: iLevel

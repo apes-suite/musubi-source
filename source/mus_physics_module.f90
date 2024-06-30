@@ -78,7 +78,7 @@ module mus_physics_module
 
   ! Faraday constant C/mol
   real(kind=rk), parameter, public :: faraday = 96485.3365_rk
-  
+
   ! Ideal gas constant N m / (mol K)
   real(kind=rk), parameter, public :: gasConst_R = 8.3144621_rk
 
@@ -135,7 +135,7 @@ module mus_physics_module
     real(kind=rk) :: diffusivity
     !> faraday (C/mol) = coulomb0/moleDens0/dx^3
     real(kind=rk) :: faraday
-    !> gas constant (J/mol/K) (N m/mol/K) (kg m^2/s^2/mol/K) 
+    !> gas constant (J/mol/K) (N m/mol/K) (kg m^2/s^2/mol/K)
     !! = rho0*dx^5/dt^2/mole0/temp0
     real(kind=rk) :: gasConst
     !> Potential (V) (kg m^2/(C*S^2))
@@ -153,7 +153,7 @@ module mus_physics_module
     !! SI unit - meter
     real(kind=rk) :: dx = -1.0_rk
     real(kind=rk), allocatable :: dxLvl(:)
-    !> reference time - time discretization for discretization size 
+    !> reference time - time discretization for discretization size
     !! of the coarsest level
     !! SI unit - seconds
     real(kind=rk) :: dt = -1.0_rk
@@ -173,7 +173,7 @@ module mus_physics_module
     !> reference fundamental electrical charge
     !! SI unit - Coulomb
     real(kind=rk) :: coulomb0 = -1.0_rk
-    !> mole is defined by inverse of Avogadro Constant 
+    !> mole is defined by inverse of Avogadro Constant
     !! Avogadro Constant = 6.02214129e23 [1/mol]
     real(kind=rk) :: mole0 = -1.0_rk
     !> reference mass in kg derived from density or moleweight
@@ -229,9 +229,9 @@ contains
     type( treelmesh_type), intent(in) :: tree
     !> scaling factor: diffusive -> 4; acoustic -> 2
     integer, intent(in) :: scaleFactor
-    !> reference time step if none 
+    !> reference time step if none
     real(kind=rk), optional, intent(in) :: dtRef
-    !> reference spacestep if none 
+    !> reference spacestep if none
     real(kind=rk), optional, intent(in) :: dxRef
     ! --------------------------------------------------------------------------
     integer :: thandle
@@ -372,7 +372,7 @@ contains
               &               //"in kg/mol"
             write(logUnit(1),*) "or reference mass 'mass0' in kg"
             call tem_abort()
-          else 
+          else
           ! reference mass is defined derive density and molWeight0
             me%rho0 = me%mass0/me%dx**3
             ! same as rho0/moleDens0

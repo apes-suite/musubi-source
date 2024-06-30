@@ -25,7 +25,7 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
 !> author: Kannan Masilamani
-!! This module provides the MUSUBI subroutines needed for the tracking 
+!! This module provides the MUSUBI subroutines needed for the tracking
 !! functionality.
 !!
 module mus_tracking_module
@@ -43,7 +43,7 @@ module mus_tracking_module
   use mus_tools_module,       only: mus_writeSolverSpecInfo
   use mus_time_module,        only: mus_timeControl_homogenize
 
-  ! include libharvester modules 
+  ! include libharvester modules
   use hvs_output_module, only: hvs_Internal
 
   implicit none
@@ -58,7 +58,7 @@ contains
 ! **************************************************************************** !
   !> This routine initialize tracking subTree to remove empty tracking objects.
   !! On active tracking objects: Homogenize time control, write solver speific
-  !! info for harvester output format and initialize output using 
+  !! info for harvester output format and initialize output using
   !! tem_init_tracker
   subroutine mus_init_tracker( scheme, geometry, params )
     ! --------------------------------------------------------------------------

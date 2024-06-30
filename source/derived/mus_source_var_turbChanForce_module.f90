@@ -23,12 +23,12 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! ***************************************************************************** !
 !> author: Kannan Masilamani
-!! Module containing subroutines for building MUSUBI specific source 
+!! Module containing subroutines for building MUSUBI specific source
 !! variables for turbulent channel flow. To avoid cyclic inclusions
 !!
 module mus_source_var_turbChanForce_module
     use, intrinsic :: iso_c_binding, only: c_f_pointer
-  
+
     ! include treelm modules
     use mpi
     use env_module,               only: rk, rk_mpi
@@ -37,30 +37,30 @@ module mus_source_var_turbChanForce_module
     use tem_varMap_module,        only: init, append, truncate
     use tem_stringKeyValuePair_module, only: init, truncate
     use tem_topology_module,      only: tem_levelOf
-  
+
     ! include musubi modules
     use mus_physics_module,       only: mus_convertFac_type
     use mus_derVarPos_module,     only: mus_derVarPos_type
     use mus_source_type_module,   only: mus_source_op_type
     use mus_varSys_module,        only: mus_varSys_data_type
-  
+
     implicit none
     private
-  
+
     ! update auxField dependent source variables
     public :: mus_updateSrcVar_turbChanForce
-  
+
     contains
-    
+
     ! ************************************************************************** !
-    !> Compute dynamic force term using auxField for turbulent channel 
+    !> Compute dynamic force term using auxField for turbulent channel
     !! force.
     subroutine mus_updateSrcVar_turbChanForce(fun, auxField, iLevel, varSys, &
       &                                       phyConvFac, derVarPos)
       ! ------------------------------------------------------------------------ !
       !> Description of method to update source
       class(mus_source_op_type), intent(inout) :: fun
-      !> input auxField array on current level 
+      !> input auxField array on current level
       real(kind=rk), intent(in)          :: auxField(:)
       !> current level
       integer, intent(in) :: iLevel
@@ -82,10 +82,10 @@ module mus_source_var_turbChanForce_module
       real(kind=rk) :: forceDyn, gradU(3,3,1)
       logical :: velTauFromBnd
       ! --------------------------------------------------------------------------
-  
+
       ! position of velocity field in auxField
       vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
-  
+
       ! First variable is always pdf so just use to access method_data
       call C_F_POINTER( varSys%method%val(1)%method_Data, fPtr )
       ! Calculate average bulk velocityX over defined shape.
@@ -106,7 +106,7 @@ module mus_source_var_turbChanForce_module
           vel_tau = 0.0_rk
           velTauFromBnd = .false.
           nElemsGlobal_uTau = 0
-    
+
           !> If wall model BC is applied than compute the friction velocity
           ! that is obtained directly from the wall model and perform the spatial
           ! averaging.
@@ -129,7 +129,7 @@ module mus_source_var_turbChanForce_module
               end if
             end select
           end do
-  
+
           !> If wall model BC is not used than compute the friction velocity from
           !! the single sided finite difference's and perform the spatial averaging.
           !! Friction velocity is computed only on elements intersected by
@@ -198,7 +198,7 @@ module mus_source_var_turbChanForce_module
               end do
             end select
           end if
-    
+
           !> Bulk mean velocity part of forcing is independent whether a wall
           ! modelBC is used or not
           select case(fun%turbChanForce%flow_direction)
@@ -239,19 +239,19 @@ module mus_source_var_turbChanForce_module
                 &                 * physics%fac(iLvlLoc)%vel
             end do
           end select
-  
+
           avgVel(1) = vel_tau
           avgVel(2) = vel_bulk
           ! Calculate total friction and bulk velocity
           call mpi_allreduce( avgVel, avgVelGlobal,                      &
             &                 2, rk_mpi, mpi_sum, tree%global%comm, iErr )
-  
+
           ! compute average friction velocity
           avgVelTau = avgVelGlobal(1) / nElemsGlobal_uTau
           ! compute average bulk velocity in physical unit
           avgVelBulk = avgVelGlobal(2) / fun%turbChanForce%nElemsGlobal_umean
-    
-    
+
+
           ! Dynamic force term for turbulent channel
           ! F_dyn = (refVelBulk-avgVelBulk) * refVelBulk / refHeight
           forceDyn = avgVelTau**2 / fun%turbChanForce%refHeight               &
@@ -262,7 +262,7 @@ module mus_source_var_turbChanForce_module
           !write(dbgunit(1), *) 'vel_tau: ', vel_tau
           !flush(dbgunit(1))
           !write(dbgunit(1), *) 'forceDyn_phy: ', forceDyn
-    
+
           select case(fun%turbChanForce%flow_direction)
           case(1) ! x-direction
             fun%turbChanForce%forceDyn(1) = forceDyn
@@ -273,9 +273,8 @@ module mus_source_var_turbChanForce_module
           end select
         end if
       end associate
-  
+
     end subroutine mus_updateSrcVar_turbChanForce
-  
+
   end module mus_source_var_turbChanForce_module
   ! **************************************************************************** !
-  

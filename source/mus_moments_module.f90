@@ -112,7 +112,7 @@ module mus_moments_module
     case default
       write(logUnit(1),*)'WARNING: Moments matrix is not defined for scheme ' &
         &              //'kind: '//trim(schemeHeader%kind)
-      momDefined = .false.  
+      momDefined = .false.
     end select
 
     ! Dump moments transformation matrix
@@ -121,8 +121,8 @@ module mus_moments_module
 ! **************************************************************************** !
 
 ! **************************************************************************** !
-  !> Initialize Moments transformation matrix for LBM compressible and 
-  !! incompressible fluid model. This matrix must be consistent with the 
+  !> Initialize Moments transformation matrix for LBM compressible and
+  !! incompressible fluid model. This matrix must be consistent with the
   !! relaxation matrix used in compute kernel and interpolation routines
   subroutine init_transformation_matrix_fluid( QQ, cxDir, label, me, toMoment, &
     &                                          toPdf )
@@ -153,27 +153,27 @@ module mus_moments_module
     cysqr = get_momentVector(QQ, cxDir, (/0,2,0/))
     czsqr = get_momentVector(QQ, cxDir, (/0,0,2/))
 
-    ! Set the moments one after another on the matrix. 
+    ! Set the moments one after another on the matrix.
     ! The moment description might come from some place else.
     ! Lua? -> check mus_scheme_type_module the type(mus_momentSpace_type)
     select case( trim(label) )
     case('d2q9')
       ! This moments are according to the paper
-      ! Chen, S., Peng, C., Teng, Y., Wang, L. P., & Zhang, K. (2016). 
-      ! Improving lattice Boltzmann simulation of moving particles in a 
-      ! viscous flow using local grid refinement. Computers and Fluids, 
+      ! Chen, S., Peng, C., Teng, Y., Wang, L. P., & Zhang, K. (2016).
+      ! Improving lattice Boltzmann simulation of moving particles in a
+      ! viscous flow using local grid refinement. Computers and Fluids,
       ! 136, 228–246. http://doi.org/10.1016/j.compfluid.2016.06.009
       !
       ! lattice velocity square
       csqr = cxsqr + cysqr
 
       me%momLabel(1) = 'density      '  ! rho = uV
-      toMoment( 1,:) = uV 
+      toMoment( 1,:) = uV
       me%momLabel(2) = 'energy       '  ! e = -4 + 3(cx^2+ cy^2)
       toMoment( 2,:) = -4._rk*uV + 3._rk*csqr
       me%momLabel(3) = 'energy_square'  ! e^2 = 4 - 21/2 (cx^2+cy^2)
                                         !         +  9/2 (cx^2+cy^2)^2
-      toMoment( 3,:) = 4._rk*uV - 10.5_rk*csqr + 4.5_rk*csqr**2 
+      toMoment( 3,:) = 4._rk*uV - 10.5_rk*csqr + 4.5_rk*csqr**2
       me%momLabel(4) = 'momX         '  ! j_x = cx
       toMoment( 4,:) = cx
       me%momLabel(5) = 'energy_fluxX '  ! q_x = (-5+3*(cx^2+cy^2))*cx
@@ -181,9 +181,9 @@ module mus_moments_module
       me%momLabel(6) = 'momY         '  ! j_y = cy
       toMoment( 6,:) = cy
       me%momLabel(7) = 'energy_fluxY '  ! q_y = (-5+3*(cx^2+cy^2))*cy
-      toMoment( 7,:) = (-5._rk*uV + 3._rk*csqr)*cy 
+      toMoment( 7,:) = (-5._rk*uV + 3._rk*csqr)*cy
       me%momLabel(8) = 'normal_stress'  ! p_xx = cx^2-cy^2
-      toMoment( 8,:) = cxsqr - cysqr 
+      toMoment( 8,:) = cxsqr - cysqr
       me%momLabel(9) = 'shear_stress '  ! p_xy = cx*cy
       toMoment( 9,:) = cx*cy ! p_xy
       ! set moments positions
@@ -201,17 +201,17 @@ module mus_moments_module
       toPDF = matmul(transMat, invMat)
 
     case('d3q15')
-      ! D’Humières, D., Ginzburg, I., Krafczyk, M., Lallemand, P., & Luo, L.-S. 
-      ! (2002). Multiple-relaxation-time lattice Boltzmann models in three 
-      ! dimensions. Philosophical Transactions. Series A, Mathematical, 
+      ! D’Humières, D., Ginzburg, I., Krafczyk, M., Lallemand, P., & Luo, L.-S.
+      ! (2002). Multiple-relaxation-time lattice Boltzmann models in three
+      ! dimensions. Philosophical Transactions. Series A, Mathematical,
       ! Physical, and Engineering Sciences, 360(1792), 437–51.
       ! lattice velocity square
       csqr = cxsqr + cysqr + czsqr
 
       me%momLabel(1)  = 'density        ' ! rho = 1.0_rk
       toMoment( 1,:)  =  uV
-      me%momLabel(2)  = 'energy         ' 
-      toMoment( 2,:)  = csqr - 2.0_rk*uV 
+      me%momLabel(2)  = 'energy         '
+      toMoment( 2,:)  = csqr - 2.0_rk*uV
       me%momLabel(3)  = 'enegry_square  '
       toMoment( 3,:)  = (15._rk*csqr**2 - 55._rk*csqr + 32._rk*uV)*0.5_rk
       me%momLabel(4)  = 'momX           '
@@ -223,7 +223,7 @@ module mus_moments_module
       me%momLabel(7)  = 'energy_fluxY   '
       toMoment( 7,:)  = (5._rk*csqr - 13._rk)*cy*0.5_rk
       me%momLabel(8)  = 'momZ           '
-      toMoment( 8,:)  = cz 
+      toMoment( 8,:)  = cz
       me%momLabel(9)  = 'energy_fluxZ'
       toMoment( 9,:)  = (5._rk*csqr - 13._rk)*cz*0.5_rk
       me%momLabel(10) = 'normal_stress_1'
@@ -255,8 +255,8 @@ module mus_moments_module
 
     case('d3q19')
       ! This moments are according to the paper
-      ! Tölke, J., Freudiger, S., & Krafczyk, M. (2006). 
-      ! An adaptive scheme using hierarchical grids for lattice Boltzmann 
+      ! Tölke, J., Freudiger, S., & Krafczyk, M. (2006).
+      ! An adaptive scheme using hierarchical grids for lattice Boltzmann
       ! multi-phase flow simulations. Computers & Fluids, 35(8–9), 820–830.
       toMoment = MMtrD3Q19
       toPDF = MMIvD3Q19
@@ -295,7 +295,7 @@ module mus_moments_module
       toMoment = WMMtrD3Q27
       toPDF = WMMIvD3Q27
       ! c2 = cx^2+cy^2+cz^2
-      ! density 
+      ! density
       me%momLabel(1)  = 'density        ' ! rho = uV
       ! momentum
       me%momLabel(2)  = 'momX           ' ! j_x = cx
@@ -309,7 +309,7 @@ module mus_moments_module
       me%momLabel(9)  = 'normal_stress_2' ! p_ww = cy^2-cz^2
       ! kinetic energy
       me%momLabel(10) = 'kinetic_energy ' ! e = c2-1
-      ! fluxes of energy 
+      ! fluxes of energy
       me%momLabel(11) = 'energy_flux_X  ' ! q_x = (3*c2-5)*cx
       me%momLabel(12) = 'energy_flux_Y  ' ! q_y = (3*c2-5)*cy
       me%momLabel(13) = 'energy_flux_Z  ' ! q_z = (3*c2-5)*cz
@@ -351,7 +351,7 @@ module mus_moments_module
 
 ! **************************************************************************** !
   !> Intialize the moment transformation matrix for multispecies.
-  !! This matrix must be consistent with relaxation matrix used for 
+  !! This matrix must be consistent with relaxation matrix used for
   !! multispecies MRT collision routines
   subroutine init_transformation_matrix_MS( QQ, cxDir, label, me, toMoment, &
     &                                       toPdf )
@@ -373,7 +373,7 @@ module mus_moments_module
     ! require moments for stencil
     requireMom = .true.
 
-    ! Set the moments one after another on the matrix. 
+    ! Set the moments one after another on the matrix.
     ! The moment description might come from some place else.
     ! Lua? -> check mus_scheme_type_module the type(mus_momentSpace_type)
     select case( trim(label) )
@@ -701,7 +701,7 @@ module mus_moments_module
     ! --------------------------------------------------------------------------
     write(outUnit, "(A)") ' toMoment: '
     call tem_matrix_dump(me%toMoments, outUnit)
-    write(outUnit,*) 
+    write(outUnit,*)
     write(outUnit, "(A)") ' toPDF: '
     call tem_matrix_dump(me%toPDF, outUnit)
 

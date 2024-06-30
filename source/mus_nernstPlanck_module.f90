@@ -128,7 +128,7 @@ contains
     end if
     me%temp = me%temp / physics%temp0
 
-    call aot_table_close( L=conf, thandle=NP_handle ) 
+    call aot_table_close( L=conf, thandle=NP_handle )
 
     write(logUnit(1),"(A)") 'Nernst_Planck properties:'
     write(logUnit(1),"(A)") '  mole_density of solvent: ' &

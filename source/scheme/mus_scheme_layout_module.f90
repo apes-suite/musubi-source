@@ -55,7 +55,7 @@
 !! In MUSUBI it is also possible to define a new layout in the lua file. This
 !! feature is implemented to test new layouts. In case one wants to run
 !! multiple simulations using this layout, it is highly recommended to
-!! implement a new kernel (the following files have to be extended: 
+!! implement a new kernel (the following files have to be extended:
 !! [[mus_flow_module]] and related modules in source/compute.
 !!
 !! Defining a new Layout
@@ -78,7 +78,7 @@
 !! scheme = {
 !!  label = 'test',
 !!  layout = 'new_stencil',
-!!  -- Initial condition 
+!!  -- Initial condition
 !!  initial_condition = {
 !!                       density = 1.0,
 !!                       velocityX = 0.0,
@@ -94,9 +94,9 @@
 !!    velocityX = 0.0, velocityY = 0.0, velocityZ = 0.0 }
 !!  },
 !!  fluid = { relaxation_scheme = 'BGK',
-!!            omega = 1.8, 
+!!            omega = 1.8,
 !!            rho0 = 1.0 },
-!!  -- Defining the new Stencil 
+!!  -- Defining the new Stencil
 !!  stencil = {
 !!             QQ = 19,
 !!             disc_vel = {
@@ -183,9 +183,9 @@ module mus_scheme_layout_module
   public :: mus_set_weights_d3q19
   public :: mus_set_weights_d3q27
 
-  !> data structure containing all information related to the 
+  !> data structure containing all information related to the
   !! compute stencil. Several stencils can be defined.
-  !! [[mus_moments_module]] Moments are directly related to the 
+  !! [[mus_moments_module]] Moments are directly related to the
   !! stencil layout and are therefore defined here
   type mus_scheme_layout_type
 
@@ -209,7 +209,7 @@ module mus_scheme_layout_module
     type( tem_stencilHeader_type ), allocatable :: stencil(:)
 
     !> dynamic array of labels created from stencil directions to create unique
-    !! growing array of grwStencil 
+    !! growing array of grwStencil
     type(dyn_labelArray_type) :: stencil_labels
 
     !> position of fluid stencil in grwStencil
@@ -276,7 +276,7 @@ contains
       call aot_table_open( L=conf, thandle=stencil_handle, key = 'stencil' )
     end if
 
-    ! If a new stencil is defined, the flag is set to true to 
+    ! If a new stencil is defined, the flag is set to true to
     ! differentiate between predefined and new stencil in initialization
     if (stencil_handle > 0) then
       me%new_stencil = .true.
@@ -304,7 +304,7 @@ contains
         &                  key     = 'weight' )
       nWeights = aot_table_length( L = conf, thandle = weight_handle )
       if ( nWeights == me%fStencil%QQ ) then
-        allocate( me%weight( nWeights )) 
+        allocate( me%weight( nWeights ))
 
         do iWeight = 1, nWeights
           call aot_get_val( L       = conf,                                    &
@@ -316,17 +316,17 @@ contains
         call aot_table_close( L=conf, thandle=weight_handle )
       else
         write(logUnit(1),*) 'The number of defined weights does not '//        &
-          &                 'match the number of discrete velocities.' 
+          &                 'match the number of discrete velocities.'
         write(logUnit(1),*) nWeights, ' vs. ', me%fStencil%QQ
         call tem_abort()
-      end if 
+      end if
       call aot_table_open( L       = conf,                                     &
         &                  parent  = stencil_handle,                           &
         &                  thandle = invDir_handle,                            &
         &                  key     = 'inv_dir' )
       nInvDirs = aot_table_length( L = conf, thandle = invDir_handle )
       if ( nInvDirs == me%fStencil%QQ ) then
-        allocate( me%fStencil%cxDirInv( nInvDirs )) 
+        allocate( me%fStencil%cxDirInv( nInvDirs ))
 
         do iInvDir = 1, nInvDirs
           call aot_get_val( L       = conf,                                    &
@@ -339,7 +339,7 @@ contains
       else
         call tem_identify_inverseDirections( me%fStencil%cxDirInv,           &
           &                                  me%fStencil%cxDir )
-      end if 
+      end if
 
       call aot_table_open( L       = conf,                                     &
         &                  parent  = stencil_handle,                           &
@@ -360,17 +360,17 @@ contains
               &               ErrCode = iError,                                &
               &               pos     = iPrevDirCoo )
           end do
-          call aot_table_close( L = conf, thandle = prevDirCoo_handle ) 
+          call aot_table_close( L = conf, thandle = prevDirCoo_handle )
         end do
         call aot_table_close( L=conf, thandle=prevDir_handle )
       else
         call tem_identify_prevailDirections( me%prevailDir,                    &
           &                                  me%fStencil%cxDir )
-      end if 
+      end if
 
       me%fStencil%restPosition = tem_stencil_zeroPos( me%fStencil )
 
-      write(logUnit(1),*) 'A new stencil has been defined successfully.' 
+      write(logUnit(1),*) 'A new stencil has been defined successfully.'
       if( me%fStencil%nDims <= 0 ) then
         write(logUnit(1),*)'Error: number of dimensions is not given for '//   &
           &            'the stencil'
@@ -482,7 +482,7 @@ contains
 
     if (proc%rank == proc%root) then
       ! total number of stencils
-      nStencils_total = sum(nStencils_all) 
+      nStencils_total = sum(nStencils_all)
       ! number of elements in each stencil in each process
       allocate( nElems_totalStencil(nStencils_total) )
       ! stencil labels
@@ -497,7 +497,7 @@ contains
       allocate( stencil_labels_total(0) )
     end if
 
-    ! gather number of elements per stencil on each process 
+    ! gather number of elements per stencil on each process
     call MPI_GATHERV( layout%stencil(:)%nElems, layout%nStencils, MPI_INTEGER, &
       & nElems_totalStencil, nStencils_all, offset, MPI_INTEGER, proc%root,    &
       & proc%comm, iErr )
@@ -523,7 +523,7 @@ contains
             call append( me  = nElems,                                         &
               &          val = int(nElems_totalStencil(offset(iProc)+iStencil),&
               &                    kind=long_k)                                )
-          else 
+          else
             nElems%val(stencilPos) = nElems%val(stencilPos) +                  &
               & int(nElems_totalStencil(offset(iProc)+iStencil), kind=long_k)
           end if
@@ -535,12 +535,12 @@ contains
         write(logUnit(5),'(a,i2,2a)') ' iStencil: ', iStencil, &
           & ', label: ', trim(stencil_labels%val(iStencil))
         write(logUnit(5),'(a,i0)') ' nElems: ', nElems%val(iStencil)
-      end do  
+      end do
       call destroy(stencil_labels)
       call destroy(nElems)
     end if
 
-  end subroutine mus_finalize_layout 
+  end subroutine mus_finalize_layout
 ! ****************************************************************************** !
 
 
@@ -579,10 +579,10 @@ contains
       call mus_define_d2q5( layout = layout, &
         &                   nElems = nElems  )
     case ( 'd3q19' )
-      call mus_define_d3q19( layout = layout, & 
+      call mus_define_d3q19( layout = layout, &
         &                    nElems = nElems  )
     case ( 'd3q13' )
-      call mus_define_d3q13( layout = layout, & 
+      call mus_define_d3q13( layout = layout, &
         &                    nElems = nElems  )
     case ( 'd3q27' )
       call mus_define_d3q27( layout = layout, &
@@ -970,7 +970,7 @@ contains
     ! ---------------------------------------------------------------------------
     c_sound = sqrt(sum( layout%fStencil%cxcx(1,:) * layout%weight(:) ))
 
-  end function mus_calculate_speed_of_sound  
+  end function mus_calculate_speed_of_sound
 ! ****************************************************************************** !
 
 end module mus_scheme_layout_module

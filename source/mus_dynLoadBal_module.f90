@@ -199,7 +199,7 @@ contains
     !           Reconstruct the levelDesc, reinitialize the simulation         !
     ! --------------------------------------------------------------------------
     !
-    ! Re-initialize growing array of stencil as it is destroyed in 
+    ! Re-initialize growing array of stencil as it is destroyed in
     ! mus_finialize_stencil and growing array stencil must be created
     ! for new list of boundary elements after load balancing
     ! Initialize layout growing array
@@ -282,7 +282,7 @@ contains
       if (scheme%nFields > 1) then
         call tem_abort('chosen scheme kind supports only one field')
       end if
-      ! initialize fluid viscosity relaxation paramters 
+      ! initialize fluid viscosity relaxation paramters
       call mus_init_fluid(                                &
         & me           = scheme%field(1)%fieldProp%fluid, &
         & physics      = params%physics,                  &
@@ -294,7 +294,7 @@ contains
         & stencil      = scheme%layout%fStencil,          &
         & general      = params%general,                  &
         & tNow         = params%general%simControl%now    )
-    end select  
+    end select
 
     ! Initialize gradient data. Required for LES tuburbulent and evaluating
     ! gradient of a variable
@@ -307,7 +307,7 @@ contains
         &                     nSize     = scheme%pdf(iLevel)%nSize,        &
         &                     nSolve    = scheme%pdf(iLevel)%nElems_solve, &
         &                     nScalars  = scheme%varSys%nScalars           )
-    end do    
+    end do
 
     ! create subTree for all spacetime function in the linked list of
     ! spacetime function
@@ -319,7 +319,7 @@ contains
 
     ! initialize the source terms for all fields and global source
     if ( all(scheme%field(:)%source%varDict%nVals /= 0) &
-      & .or. scheme%globSrc%varDict%nVals /= 0 ) then 
+      & .or. scheme%globSrc%varDict%nVals /= 0 ) then
       write(logUnit(0),*) 'Error: In dynamic load balancing while reinitialize '
       write(logUnit(0),*) 'source terms. Source terms must be deallocated first'
       call tem_abort()
@@ -344,7 +344,7 @@ contains
         &                          tree         = geometry%tree,              &
         &                          nElems_solve = scheme%pdf(:)%nElems_solve, &
         &                          levelDesc    = scheme%levelDesc       )
-    end if    
+    end if
 
     ! --------------------------------------------------------------------------
     !                      Reinitialize the global restart                     !
@@ -426,9 +426,9 @@ contains
       &                                  minLevel   = minLevel,       &
       &                                  maxLevel   = maxLevel        )
 
-    ! reinitialize auxiliary field variable from state for fluid and ghost 
-    ! elements. Since set boundary is applied before load balancing, the 
-    ! auxField for fluid and ghostFromCoarser must be computed state 
+    ! reinitialize auxiliary field variable from state for fluid and ghost
+    ! elements. Since set boundary is applied before load balancing, the
+    ! auxField for fluid and ghostFromCoarser must be computed state
     ! using FETCH and ghostFromFiner must be interpolated
     do iLevel = minLevel, maxLevel
       call mus_calcAuxFieldAndExchange(                      &

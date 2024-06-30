@@ -65,7 +65,7 @@ contains
         compute => mus_Poisson_advRel_d2q9
       case default
         compute => mus_Poisson_advRel_generic
-      end select   
+      end select
     case default
       write(logUnit(1),*) 'Relaxation '//trim(relaxation)//' is not supported!'
       call tem_abort()

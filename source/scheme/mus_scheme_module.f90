@@ -139,7 +139,7 @@ contains
     type( flu_State ) :: conf
     !> parent handle if scheme table is defined
     integer, intent(in), optional :: parent
-    !> Logic to not to load tracking and variable table if this routine 
+    !> Logic to not to load tracking and variable table if this routine
     !! is called from mus_hvs_config_load.
     !! Default is False
     logical, optional, intent(in) :: isMusHvs
@@ -189,7 +189,7 @@ contains
       &                           parent  = parent,     &
       &                           conf    = conf        )
 
-    ! Variable system must be initialized here so annouymous source and 
+    ! Variable system must be initialized here so annouymous source and
     ! boundary variables can be appended to variable system during
     ! loading
     write(logUnit(1),*) 'Initializing global variable system for scheme '&
@@ -256,8 +256,8 @@ contains
       &                   layout       = me%layout,                     &
       &                   isMusHvs     = isMusHvs                       )
 
-   
-    ! load tracking and variable from conf only if it is not called from 
+
+    ! load tracking and variable from conf only if it is not called from
     ! mus_hvs_config_load
     if (.not. isMusHvs_loc) then
 
@@ -302,7 +302,7 @@ contains
   !> Initialize single scheme stencil and variable system
   subroutine mus_init_scheme( me, tree, solverData )
     ! ---------------------------------------------------------------------------
-    !> single scheme to initialize 
+    !> single scheme to initialize
     type(mus_scheme_type), intent(inout) :: me
     !> global treelm mesh
     type(treelmesh_type), intent(in) :: tree
@@ -357,7 +357,7 @@ contains
         &                    globSrc      = me%globSrc,         &
         &                    poss_srcVar  = me%poss_srcVar,     &
         &                    st_funList   = me%st_funList       )
-    end if    
+    end if
 
     ! assign function pointer to compute auxFieldVar
     call mus_assign_calcAuxField_ptr(me%header, me%calcAuxField)
@@ -395,8 +395,8 @@ contains
     case ( 'new_stencil' )
       write(logUnit(1),*) 'WARNING: New stencil is not dumped in solver '//&
         &                 'specific unit. So cannot use mus_harvesting'
-    end select    
- 
+    end select
+
     ! Dump interpolation
     call mus_interpolate_out( me   = me%intp, &
       &                         conf = conf     )
@@ -407,7 +407,7 @@ contains
       &                   schemeHeader = me%header   )
 
     ! Dump field info
-    call mus_fields_out(me%field, conf, me%header) 
+    call mus_fields_out(me%field, conf, me%header)
 
   end subroutine mus_scheme_out
 ! ****************************************************************************** !
@@ -472,7 +472,7 @@ contains
     call mus_source_cleanup(me%globSrc)
 
     ! ... destroy space-time function in stFun_list
-    call tem_destroy_subTree_of_st_funList( me = me%st_funList ) 
+    call tem_destroy_subTree_of_st_funList( me = me%st_funList )
 
     write(dbgUnit(1),*) "Done!"
 

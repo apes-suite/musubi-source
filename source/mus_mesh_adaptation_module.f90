@@ -26,7 +26,7 @@
 ! **************************************************************************** !
 !! author: Kartik Jain
 !> This module contains the code responsible for adaptively refining the mesh
-!! during run time. 
+!! during run time.
 !!
 module mus_mesh_adaptation_module
 

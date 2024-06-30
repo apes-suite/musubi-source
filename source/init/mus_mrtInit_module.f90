@@ -24,7 +24,7 @@
 !> author: Gregorio Gerardo Spinelli
 !! This module provides the definitions of M and Minv for
 !! MRT advection relaxation scheme for all stencils.
-!! 
+!!
 !! The weighted MRT (D3Q27) is based on the following paper
 !! Abbas Fakhari, Diogo Bolster, Li-Shi Luo
 !! "A weighted multiple-relaxation-time lattice Boltzmann method for multiphase
@@ -45,11 +45,11 @@ module mus_mrtInit_module
     &                                 div1_48, div1_72, div1_216, div8_27, div4_9, &
     &                                 div1_27, div1_24, div1_8, div1_2, div1_3,    &
     &                                 div1_16
-    
+
   implicit none
 
   private
-  
+
   public :: check_mrt_matrix_d3q19
   public :: check_mrt_matrix_d3q27
 
@@ -65,43 +65,43 @@ module mus_mrtInit_module
   !  W      S     B     E     N     T     BS    TS   BN    TN    BW    BE    TW    TE    SW    NW    SE    NE     0
   real(kind=rk), dimension(19,19),parameter,public  :: MMtrD3Q19 = &
   reshape((/ &
-   1._rk,   1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk, & 
+   1._rk,   1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk, &
      & 1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk, &
-   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk, & 
+   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk, &
      & 1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk, -1._rk, &
-  -2._rk,  -2._rk, -2._rk, -2._rk, -2._rk, -2._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk, &   
+  -2._rk,  -2._rk, -2._rk, -2._rk, -2._rk, -2._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk, &
     & 1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk, &
-  -1._rk,   0._rk,  0._rk,  1._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, &   
+  -1._rk,   0._rk,  0._rk,  1._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, &
     & 1._rk, -1._rk,  1._rk, -1._rk, -1._rk,  1._rk,  1._rk,  0._rk, &
-   2._rk,   0._rk,  0._rk, -2._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, &   
+   2._rk,   0._rk,  0._rk, -2._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, &
      & 1._rk, -1._rk,  1._rk, -1._rk, -1._rk,  1._rk,  1._rk,  0._rk, &
-   0._rk,  -1._rk,  0._rk,  0._rk,  1._rk,  0._rk, -1._rk, -1._rk,  1._rk,  1._rk,  0._rk, &   
+   0._rk,  -1._rk,  0._rk,  0._rk,  1._rk,  0._rk, -1._rk, -1._rk,  1._rk,  1._rk,  0._rk, &
      & 0._rk,  0._rk,  0._rk, -1._rk,  1._rk, -1._rk,  1._rk,  0._rk, &
-   0._rk,   2._rk,  0._rk,  0._rk, -2._rk,  0._rk, -1._rk, -1._rk,  1._rk,  1._rk,  0._rk, &   
+   0._rk,   2._rk,  0._rk,  0._rk, -2._rk,  0._rk, -1._rk, -1._rk,  1._rk,  1._rk,  0._rk, &
      & 0._rk,  0._rk,  0._rk, -1._rk,  1._rk, -1._rk,  1._rk,  0._rk, &
-   0._rk,   0._rk, -1._rk,  0._rk,  0._rk,  1._rk, -1._rk,  1._rk, -1._rk,  1._rk, -1._rk, &   
+   0._rk,   0._rk, -1._rk,  0._rk,  0._rk,  1._rk, -1._rk,  1._rk, -1._rk,  1._rk, -1._rk, &
      &-1._rk,  1._rk,  1._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, &
-   0._rk,   0._rk,  2._rk,  0._rk,  0._rk, -2._rk, -1._rk,  1._rk, -1._rk,  1._rk, -1._rk, &   
+   0._rk,   0._rk,  2._rk,  0._rk,  0._rk, -2._rk, -1._rk,  1._rk, -1._rk,  1._rk, -1._rk, &
      &-1._rk,  1._rk,  1._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, &
-   2._rk,  -1._rk, -1._rk,  2._rk, -1._rk, -1._rk, -2._rk, -2._rk, -2._rk, -2._rk,  1._rk, &   
+   2._rk,  -1._rk, -1._rk,  2._rk, -1._rk, -1._rk, -2._rk, -2._rk, -2._rk, -2._rk,  1._rk, &
      & 1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  0._rk, &
-  -2._rk,   1._rk,  1._rk, -2._rk,  1._rk,  1._rk, -2._rk, -2._rk, -2._rk, -2._rk,  1._rk, &   
+  -2._rk,   1._rk,  1._rk, -2._rk,  1._rk,  1._rk, -2._rk, -2._rk, -2._rk, -2._rk,  1._rk, &
     & 1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  0._rk, &
-   0._rk,   1._rk, -1._rk,  0._rk,  1._rk, -1._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, &   
+   0._rk,   1._rk, -1._rk,  0._rk,  1._rk, -1._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, &
      &-1._rk, -1._rk, -1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  0._rk, &
-   0._rk,  -1._rk,  1._rk,  0._rk, -1._rk,  1._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, &   
+   0._rk,  -1._rk,  1._rk,  0._rk, -1._rk,  1._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, &
      &-1._rk, -1._rk, -1._rk,  1._rk,  1._rk,  1._rk,  1._rk,  0._rk, &
-   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, &   
+   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, &
      & 0._rk,  0._rk,  0._rk,  1._rk, -1._rk, -1._rk,  1._rk,  0._rk, &
-   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk, -1._rk, -1._rk,  1._rk,  0._rk, &   
+   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk, -1._rk, -1._rk,  1._rk,  0._rk, &
      & 0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, &
-   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk, &   
+   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk, &
      &-1._rk, -1._rk,  1._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk, &
-   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk, &   
+   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk, &
      &-1._rk,  1._rk, -1._rk, -1._rk, -1._rk,  1._rk,  1._rk,  0._rk, &
-   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, -1._rk,  1._rk,  1._rk,  0._rk, &   
+   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk, -1._rk, -1._rk,  1._rk,  1._rk,  0._rk, &
      & 0._rk,  0._rk,  0._rk,  1._rk, -1._rk,  1._rk, -1._rk,  0._rk, &
-   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk, -1._rk,  1._rk, -1._rk, -1._rk, &   
+   0._rk,   0._rk,  0._rk,  0._rk,  0._rk,  0._rk,  1._rk, -1._rk,  1._rk, -1._rk, -1._rk, &
      &-1._rk,  1._rk,  1._rk,  0._rk,  0._rk,  0._rk,  0._rk,  0._rk  &
   /),(/19,19/), order=(/ 2,1 /) )
 

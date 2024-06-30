@@ -84,7 +84,7 @@ module mus_species_module
     real(kind=rk) :: molWeigRatio
     !> coefficient of diffusivity  of the species (size of nspecies)
     real(kind=rk), allocatable :: diff_coeff(:)
-    !> coefficient of resisivity of species which is 
+    !> coefficient of resisivity of species which is
     !! reciprocal of diffusivity of the species
     real(kind=rk), allocatable :: resi_coeff(:)
     !! KM:@todo set diffusivity and resistivity for multilevel
@@ -96,7 +96,7 @@ module mus_species_module
     type(mrt_species_type) :: mrt(globalMaxLevels)
     !> bulk relaxation parameter
     !! omBulk_k = (2-phi_k)/3*bulkViscosity
-    real(kind=rk) :: omBulk   
+    real(kind=rk) :: omBulk
     !> bulk relaxation parameter for each level
     real(kind=rk) :: ombulkLvl(globalMaxLevels)
     !> relaxation paramete for Nernst-Planck equation
@@ -140,7 +140,7 @@ contains
       &                  parent = parent,                                      &
       &                  thandle = spc_handle,                                 &
       &                  key = 'species')
-    !> if species handle is not defined  
+    !> if species handle is not defined
     if ( spc_handle == 0 ) then
       write(logUnit(1),*)' No species table defined'
       call tem_abort()
@@ -148,7 +148,7 @@ contains
 
     call tem_horizontalSpacer(fUnit = logUnit(1))
     write(logUnit(1),*)' Loading species information'
- 
+
     !get molecular weight
     call aot_get_val( L       = conf,                                          &
       &               thandle = spc_handle,                                    &
@@ -161,7 +161,7 @@ contains
 
     if (btest(iError, aoterr_Fatal)) then
       write(logUnit(1),*) 'FATAL Error occured, while retrieving molecular '// &
-        &             'weight of species :' 
+        &             'weight of species :'
       if ( btest( iError, aotErr_NonExistent ))                                &
         & write(logUnit(1),*)'Variable not existent!'
       if (btest(iError, aoterr_WrongType))                                     &
@@ -175,7 +175,7 @@ contains
 
     if (btest(iError, aoterr_Fatal)) then
       write(logUnit(1),*) 'FATAL Error occured, while retrieving charge_nr '// &
-        &             'of species :' 
+        &             'of species :'
       if ( btest( iError, aotErr_NonExistent ))                                &
         & write(logUnit(1),*)'Variable not existent!'
       if (btest(iError, aoterr_WrongType))                                     &
@@ -208,15 +208,15 @@ contains
             &              val = me%resi_coeff(1), ErrCode = iError )
           if (btest(iError, aoterr_Fatal)) then
             write(logUnit(1),*) 'FATAL Error occured, while retrieving '//     &
-              &             'diff_coeff/resi_coeff of species :' 
+              &             'diff_coeff/resi_coeff of species :'
             if ( btest( iError, aotErr_NonExistent ))                          &
               & write(logUnit(1),*)'Variable not existent!'
             if (btest(iError, aoterr_WrongType))                               &
               & write(logUnit(1),*)'Variable has wrong type!'
             call tem_abort()
-          endif  
+          endif
           me%diff_coeff = 1._rk/me%resi_coeff
-        endif 
+        endif
         me%resi_coeff = 1._rk/me%diff_coeff
       else
         ! resisivity coeff is defined as table
@@ -233,10 +233,10 @@ contains
            write(logUnit(1),*) 'FATAL Error occured, while retrieving '//      &
               &            'resi_coeff table'
            call tem_abort()
-        endif   
+        endif
         allocate(me%diff_coeff(nCoeff))
         me%diff_coeff = 1._rk/me%resi_coeff
-      endif 
+      endif
       call aot_table_close( L = conf, thandle = sub_handle )
     else
     ! diff_coeff is defined as a table
@@ -251,9 +251,9 @@ contains
         &               ErrCode = vError )
       if ( any(btest(vError, errFatal)) ) then
          write(logUnit(1),*) 'FATAL Error occured, while retrieving '//        &
-            &                'diff_coeff table' 
+            &                'diff_coeff table'
          call tem_abort()
-      endif  
+      endif
       allocate(me%resi_coeff(nCoeff))
       me%resi_coeff = 1._rk/me%diff_coeff
     endif
@@ -291,10 +291,10 @@ contains
 
 ! **************************************************************************** !
   !> This routine computes the molecular weight ratio for all species
-  !! based asinari model 
+  !! based asinari model
   !!
   !! "Lattice Boltzmann scheme for mixture modeling: Analysis of the continuum
-  !! diffusion regimes recovering Maxwell-Stefan model and incompressible 
+  !! diffusion regimes recovering Maxwell-Stefan model and incompressible
   !! Navier-Stokes equations. Pietro Asinari(2009)"
   !! \f$ m_\sigma = \frac{min_\varsigma(m_\varsigma)}{m_\sigma} \le 1 \f$
   subroutine compute_molWeightRatio( molWeights, molWeigRatios )
@@ -308,7 +308,7 @@ contains
     write(logUnit(1),*)' Compute species molecular weight ratio'
     molWeigRatios(:) = minval(MolWeights)/molWeights(:)
 
-    write(logUnit(1),*)'  Molecular weight ratio:',real(molWeigRatios(:)) 
+    write(logUnit(1),*)'  Molecular weight ratio:',real(molWeigRatios(:))
     call tem_horizontalSpacer(fUnit = logUnit(1))
   end subroutine compute_molWeightRatio
 ! **************************************************************************** !
@@ -329,7 +329,7 @@ contains
     ! --------------------------------------------------------------------------
     integer :: iLevel
     ! --------------------------------------------------------------------------
-    species%omBulk = (2.0_rk - species%molWeigRatio) * cs2 / bulkvisc 
+    species%omBulk = (2.0_rk - species%molWeigRatio) * cs2 / bulkvisc
     write(logUnit(1),*) '   Bulk omega: ', real(species%omBulk)
 
     do iLevel = minLevel, maxLevel
@@ -363,7 +363,7 @@ contains
     call aot_out_val( put_conf = conf,                                         &
       &               vname    = 'charge_nr',                                  &
       &               val      = me%chargeNr )
-    call aot_out_close_table( put_conf = conf )  
+    call aot_out_close_table( put_conf = conf )
 
   end subroutine mus_species_out
 ! **************************************************************************** !

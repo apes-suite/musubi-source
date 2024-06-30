@@ -27,7 +27,7 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! ***************************************************************************** !
 !> author: Kannan Masilamani
-!! Module containing subroutines for building MUSUBI specific source 
+!! Module containing subroutines for building MUSUBI specific source
 !! variables
 !!
 module mus_source_var_module
@@ -57,7 +57,7 @@ module mus_source_var_module
   private
 
   ! update auxField dependent source variables
-  public :: mus_updateSrcVar_dynSponFld 
+  public :: mus_updateSrcVar_dynSponFld
   public :: mus_add_internal_source_var
 
   contains
@@ -69,7 +69,7 @@ module mus_source_var_module
     ! ------------------------------------------------------------------------ !
     !> Description of method to update source
     class(mus_source_op_type), intent(inout) :: fun
-    !> input auxField array on current level 
+    !> input auxField array on current level
     real(kind=rk), intent(in)          :: auxField(:)
     !> current level
     integer, intent(in) :: iLevel
@@ -128,7 +128,7 @@ module mus_source_var_module
         dens_ref = fun%absLayer%config%target_pressure * inv_rho_phy
         dynAvg%dens(:) = dens_ref
       end if
-  
+
       ! DO time average for velocity
       if (fun%absLayer%config%isVelDyn) then
         if (dynAvg%isInitVel) then
@@ -221,7 +221,7 @@ module mus_source_var_module
       allocate(me%method(me%varDict%nVals))
     else
       allocate(me%method(0))
-    end if  
+    end if
   end subroutine mus_add_internal_source_var
   ! ***************************************************************************!
 

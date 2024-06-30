@@ -28,7 +28,7 @@
 !> author: Simon Zimny
 !! author: Kannan Masilmani
 !! author: Khaled Ibrahim
-!! This module provides MUSUBI specific helper functions for extracting 
+!! This module provides MUSUBI specific helper functions for extracting
 !! information from the solver specific character.
 !!
 module mus_solSpecHelpers_module
@@ -60,7 +60,7 @@ module mus_solSpecHelpers_module
 
   interface getFieldVariable
     module procedure getFieldVariable_scalar
-    module procedure getFieldVariable_array 
+    module procedure getFieldVariable_array
   end interface getFieldVariable
 contains
 
@@ -85,10 +85,10 @@ contains
     character(len= labelLen) resChar
     ! ---------------------------------------------------------------------------
     ! aotus handle and error variable
-    integer :: identifyHandle 
+    integer :: identifyHandle
     integer :: iError
     ! ---------------------------------------------------------------------------
-  
+
     call aot_table_open( L = conf, thandle = identifyHandle, key = 'identify' )
     call aot_get_val( val     = resChar,                                       &
       &               ErrCode = iError,                                        &
@@ -175,7 +175,7 @@ contains
     ! counter for field loop
     integer :: iField
     ! aotus handles and error variables
-    integer :: prefixHandle 
+    integer :: prefixHandle
     integer :: iError
     ! ---------------------------------------------------------------------------
 
@@ -190,7 +190,7 @@ contains
         &               L       = conf,                                        &
         &               pos     = iField,                                      &
         &               thandle = prefixHandle,                                &
-        &               default = '' ) 
+        &               default = '' )
     end do
     call aot_table_close( L = conf, thandle = prefixHandle )
 
@@ -211,9 +211,9 @@ contains
     character(len=*), intent(in) :: varLabel
     !> pure variable name (e.g. density)
     character(len=*), intent(in) :: varName
-    !> required name of the field variable 
+    !> required name of the field variable
     character(len=*), intent(in) :: fieldVar
-    !> Which field type does the field variable belong to. 
+    !> Which field type does the field variable belong to.
     !! Example: 'fluid'/'species'
     character(len=*), intent(in) :: fieldProp
     !> val to be returned
@@ -265,9 +265,9 @@ contains
     character(len=*), intent(in) :: varLabel
     !> pure variable name (e.g. density)
     character(len=*), intent(in) :: varName
-    !> required name of the field variable 
+    !> required name of the field variable
     character(len=*), intent(in) :: fieldVar
-    !> Which field type does the field variable belong to. 
+    !> Which field type does the field variable belong to.
     !! Example: 'fluid'/'species'
     character(len=*), intent(in) :: fieldProp
     !> number of entries in the array to read out
@@ -311,7 +311,7 @@ contains
 
 
 ! ****************************************************************************** !
-  !> Get the the weights of a used stencil from a given solver specific 
+  !> Get the the weights of a used stencil from a given solver specific
   !! character handle.
   !!
   function getWeights( conf, stencil )                                         &
@@ -378,10 +378,10 @@ contains
 
     if ( minval( val ) < 0.0_rk ) then
       write(logUnit(1),*)'Requested conversion factor variable name: '//       &
-        &            trim(facName) 
+        &            trim(facName)
       write(logUnit(1),*)  'by tracking is not well defined'
       call tem_abort()
-    end if      
+    end if
   end function getConversionFac
 ! ****************************************************************************** !
 

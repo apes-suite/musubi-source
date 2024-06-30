@@ -460,7 +460,7 @@ contains
   ! ************************************************************************** !
 
   ! ************************************************************************** !
-  !> This routine returns normal distance to boundary calculated in 
+  !> This routine returns normal distance to boundary calculated in
   !! mus_init_turbWallFunc and stored in mus_turb_wallFunc_data_type routine.
   !!
   !! The interface has to comply to the abstract interface
@@ -534,8 +534,8 @@ contains
   ! ************************************************************************** !
 
   ! ************************************************************************** !
-  !> This routine returns turbulent viscosity computed in turbulent_wall bc 
-  !! according to RANS formulation and stored in mus_turb_wallFunc_data_type 
+  !> This routine returns turbulent viscosity computed in turbulent_wall bc
+  !! according to RANS formulation and stored in mus_turb_wallFunc_data_type
   !! routine.
   !!
   !! The interface has to comply to the abstract interface

@@ -30,7 +30,7 @@ module mus_initNernstPlanck_module
   use tem_logging_module, only: logUnit
 
   ! include musubi modules
-  use mus_compute_nernstPlanck_module,  only: mus_nernstPlanck_advRel_generic 
+  use mus_compute_nernstPlanck_module,  only: mus_nernstPlanck_advRel_generic
   use mus_scheme_type_module,           only: kernel
 
   implicit none
@@ -57,7 +57,7 @@ contains
       select case( trim(layout) )
       case default
         compute => mus_nernstPlanck_advRel_generic
-      end select   
+      end select
     case default
       write(logUnit(1),*) 'Relaxation '//trim(relaxation)//' is not supported!'
       call tem_abort()

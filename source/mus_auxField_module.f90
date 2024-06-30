@@ -22,10 +22,10 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
 !> author: Kannan Masilamani
-!! This module contains routine to retrieve auxiliary field variables for 
+!! This module contains routine to retrieve auxiliary field variables for
 !! getElement, getPoint, setupIndices and getValOfIndex.
 !! Auxilary field variables are:
-!!    * density and velocity for fluid 
+!!    * density and velocity for fluid
 !!    * species desity and velocity for multispecies
 !!    * potential for poisson
 !!
@@ -89,14 +89,14 @@ module mus_auxField_module
 
   abstract interface
     !> Interface to compute auxField vars i.e. conserved macroscopic moments
-    !! from pre-collision PDF for fluid and ghostFromCoarser. 
-    !! auxField on GhostFromFiner elements are interpolated and 
+    !! from pre-collision PDF for fluid and ghostFromCoarser.
+    !! auxField on GhostFromFiner elements are interpolated and
     !! halo elements are exchanged
     !! For Multicomponent models: in calcAuxField function, the velocity
     !! is computed on transformed PDF such that force term can be added to it
     !! in addSrcToAuxField routine. The auxField is updated with correct
-    !! velocity field in compute kernel 
-    !! i.e. velocity of original PDF is obtained by solving 
+    !! velocity field in compute kernel
+    !! i.e. velocity of original PDF is obtained by solving
     !! linear equation system  in compute kernel
     subroutine mus_proc_calcAuxField(auxField, state, neigh, nSize, nSolve, &
       & iLevel, stencil, varSys, derVarPos, quantities)
@@ -114,7 +114,7 @@ module mus_auxField_module
       integer, intent(in) :: nSolve
       !> current level
       integer, intent(in) :: iLevel
-      !> stencil header 
+      !> stencil header
       type(tem_stencilHeader_type), intent(in) :: stencil
       !> variable system definition
       type(tem_varSys_type), intent(in) :: varSys
@@ -122,13 +122,13 @@ module mus_auxField_module
       type(mus_derVarPos_type), intent(in) :: derVarPos(:)
       !> Class that contains pointers to the proper derived quantities functions
       type(mus_scheme_derived_quantities_type), intent(in) :: quantities
-    end subroutine mus_proc_calcAuxField  
+    end subroutine mus_proc_calcAuxField
 
   end interface
 
 
 
-contains  
+contains
 
   ! ************************************************************************* !
   !> This routine initialize auxField var val array and communication buffers
@@ -195,7 +195,7 @@ contains
       buffer_aux%nElemsProc = buffer_state%nElemsProc
 
       allocate(pos(maxval(buffer_aux%nElemsProc*nAuxScalars)))
-      
+
       do iProc = 1, buffer_aux%nProcs
         counter = 0
         do iElem = 1, buffer_aux%nElemsProc( iProc )
@@ -208,7 +208,7 @@ contains
         end do
         ! copy position array to me%pos, allocate me%val array
         call pattern%initBuf_real( buffer_aux%buf_real( iProc ), pos, counter )
-      end do 
+      end do
 
       deallocate(pos)
     end subroutine init_commBuffer
