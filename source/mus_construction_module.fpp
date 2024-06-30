@@ -162,13 +162,13 @@ contains
   ! !! For boundaries which require information from neighbor elements, these
   ! !! required [[tem_topology_module]] "treeIDs" are collected into the
   ! !! [[mus_bc_header_module]] "boundary element type"
-  ! !! 
+  ! !!
   ! !! - All required elements are created in the
   ! !! [[tem_construction_module:tem_createleveldescriptor]]
   ! !! "Level Descriptor creation routine"
   ! !!
   ! !! # Additional Tasks
-  ! !! 
+  ! !!
   ! !! - receive [[tem_construction_module:tem_buildhorizontaldependencies]]
   ! !! "horizontal"
   ! !! (within a level for the element updates)
@@ -306,7 +306,7 @@ contains
     ! two layers of ghost elements
 
     ! The level descriptor is created from the below routine.
-    ! the neigh array is created using the LD and communication buffers are filled up. 
+    ! the neigh array is created using the LD and communication buffers are filled up.
     ! to properly evaluate gradients we need levels of nesting + 1 for fine ghosts
     call tem_find_allElements(                                         &
       &                  tree            = geometry%tree,              &
@@ -442,7 +442,7 @@ contains
         &  stencil   = scheme%layout%fStencil              )
 
       ! dumps global nElems in intpFromCoarser, intpFromFiner,
-      ! sourcesFromCoarser ans sourcesFromFiner 
+      ! sourcesFromCoarser ans sourcesFromFiner
       call mus_dump_levelDescIntp_nElems(                   &
         &  intp      = scheme%intp,                         &
         &  levelDesc = scheme%levelDesc(minLevel:maxLevel), &
@@ -570,12 +570,12 @@ contains
           & layout       = scheme%layout,              &
           & varSys       = scheme%varSys,              &
           & stateVarMap  = scheme%stateVarMap,         &
-          & nBCs         = geometry%boundary%nBCtypes, & 
+          & nBCs         = geometry%boundary%nBCtypes, &
           & globBC       = scheme%globBC,              &
           & nSymBCs      = nSymBCs,                    &
-          & symmetricBCs = symmetricBCs(1:nSymBCs)     ) 
-      end if   
-    end do  
+          & symmetricBCs = symmetricBCs(1:nSymBCs)     )
+      end if
+    end do
 
 
 ?? IF( .not. SOA) then
@@ -820,7 +820,7 @@ contains
     ! ************************************************************************ !
       !> Initialize myHalos and remoteHalos bitmasks.
       !! myHalos bitmask are from my halo elements which are to be
-      !! received from remote process and remoteHalos bitmask are 
+      !! received from remote process and remoteHalos bitmask are
       !! remote process halos which are requested by remote process.
       subroutine init_bitmask( halos, comm, nScalars )
         ! ---------------------------------------------------------------------
@@ -1230,7 +1230,7 @@ contains
             includeInComm = .true.
           end if
 
-          ! If current neighbor is a ghosthalo or boundary halo, 
+          ! If current neighbor is a ghosthalo or boundary halo,
           ! then communicate all
           if( nghElem > halo_offset ) then
             if( haloRequired( nghElem  - halo_offset )) then
@@ -1643,7 +1643,7 @@ contains
     end do ! iField
 
     ! KM: 20220421 Abort if neighbor is ghost from finer and does
-    ! not have valid neighbor. It happens when children of 
+    ! not have valid neighbor. It happens when children of
     ! ghostFromFiner is distributed.
     ! These elements cannot be treated if they try to FETCH for Pull
     ! and SAVE for Push.
@@ -1731,8 +1731,8 @@ contains
 
 
 ! **************************************************************************** !
-  !> This routine sets field BC neigh array with position of 
-  !! neighbor element in the inward normal direction of boundary 
+  !> This routine sets field BC neigh array with position of
+  !! neighbor element in the inward normal direction of boundary
   !! in the levelwise list.
   !! if valid 1st neighbor does not exist return current element position.
   !! if valid higher order neighbor does not exist return last valid
@@ -1958,7 +1958,7 @@ contains
         do iField = 1, size(field)
           globBC(iBnd)%treat_corner = field(iField)%bc(iBnd)%treat_corner
           if (globBC(iBnd)%treat_corner) exit
-        end do  
+        end do
         if (globBC(iBnd)%treat_corner) then
           allocate( globBC(iBnd)%cornerBC%nElems(   minLevel:maxLevel ) )
           allocate( globBC(iBnd)%cornerBC%elemLvl(  minLevel:maxLevel ) )
@@ -2112,7 +2112,7 @@ contains
       if (globBC(iBnd)%treat_corner) then
         globBC( iBnd )%cornerBC%nElems(minLevel:maxLevel) = &
           &                  nCornerBnds(minLevel:maxLevel, iBnd )
-      end if    
+      end if
     end do ! iBnd
 
     ! calculate total number of boundary elements in all levels and processes
@@ -2175,9 +2175,9 @@ contains
           call mus_init_bc_elems(                             &
             & me      = globBC(iBC)%cornerBC%elemLvl(iLevel), &
             & nElems  = globBC(iBC)%cornerBC%nElems(iLevel),  &
-            & QQN     = QQN,                                  & 
+            & QQN     = QQN,                                  &
             & hasQVal = .false.                               )
-  
+
           if ( globBC(iBC)%cornerBC%nElems(iLevel) > 0 ) then
             write(logUnit(6),"(A,A,I2,A,I0)") ' BC: '//trim(globBC(iBC)%label),&
               &  ', level: ', iLevel, &
@@ -2186,7 +2186,7 @@ contains
             globBC(iBC)%cornerBC%elemLvl( iLevel )%bitmask%val = .false.
             globBC(iBC)%cornerBC%elemLvl( iLevel )%normal%val  = 0
           end if
-        end if  
+        end if
 
       end do !iLevel
     end do !iBnd
@@ -2410,7 +2410,7 @@ contains
         end if
         if ( field(iField)%bc(iBnd)%curved ) then
           curved(iBnd) = .true.
-        end if 
+        end if
       end do
     end do
 
@@ -2491,14 +2491,14 @@ contains
         end if
       end do
 
-      ! For straight boundaries use angle from bc_normal to check_angle  
+      ! For straight boundaries use angle from bc_normal to check_angle
       if (.not. curved(iBnd)) angleMax = angle
 
       write(logUnit(5),'(A,I0,A,3I3,A,I0)') 'BC: '//trim(globBC(iBnd)%label) &
         & //', iBnd: ', iBnd, ', normal: ',  bc_globNormal, ', Ind: ',       &
         & globBC(iBnd)%normalInd
 
-      ! Normal direction is required only to create stencil for 
+      ! Normal direction is required only to create stencil for
       ! boundary elements which requires neighbors so check for
       ! angle only if any field bc has nNeigh > 0
       if ( check_angle(iBnd)  ) then
@@ -2507,7 +2507,7 @@ contains
         ! if angle is > 1 deg then print warning message
         if (angleMax > 1.0_rk) then
           write(logUnit(6),'(a,i0,a)') ' WARNING: Normal direction of ',&
-            &  counter, ' elements of "'// trim(globBC(iBnd)%label)//'" boundary' 
+            &  counter, ' elements of "'// trim(globBC(iBnd)%label)//'" boundary'
           write(logUnit(6),*) 'deviates from stencil discrete vectors.'
           write(logUnit(6),'(a,f5.2)') ' Max. angle between bnd normal and '//&
             & 'discrete vector is:', angleMax
@@ -2972,7 +2972,7 @@ write(dbgUnit(1),*) 'wasAdded ', wasAdded, ' stencilPos ', stencilPos
                 &                 // 'ghost elements. Might cause problems for ' &
                 &                 // 'higher order wall boundaries'
             end if
- 
+
             if ( .not. added(bID) ) then
               ! storem elemPos in globBc
               call append( me  = globBC( bID )%elemLvl( iLevel )%elem, &
@@ -3026,7 +3026,7 @@ write(dbgUnit(1),*) 'wasAdded ', wasAdded, ' stencilPos ', stencilPos
               ! since we check the bitmask and only take the qVal for
               ! bitmask == true, there is no problem with that.
               globBC(bID)%elemLvl(iLevel)%qVal%val(iDir, ElemPos( bID ) ) &
-               & = 0.5_rk 
+               & = 0.5_rk
             end if ! hasQVal
           end if ! isWall
         end if ! BC

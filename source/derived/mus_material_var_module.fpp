@@ -113,22 +113,22 @@ contains
       ! this variable will be only used for tracking
       get_point => mus_deriveVar_forPoint
       ! for other function pointers assign dummy routines
-      setup_indices => tem_varSys_setupIndices_dummy 
+      setup_indices => tem_varSys_setupIndices_dummy
       get_valOfIndex => tem_varSys_getValOfIndex_dummy
       set_params => tem_varSys_setParams_dummy
       get_params => tem_varSys_getParams_dummy
 
       select case (trim(adjustl(derVarName_loc(iVar))))
       case ('kine_viscosity')
-        get_element => access_kineVisc_forElement 
+        get_element => access_kineVisc_forElement
         nComponents = 1
-      case ('omega')  
-        get_element => access_kineOmega_forElement 
+      case ('omega')
+        get_element => access_kineOmega_forElement
         nComponents = 1
       case default
           call tem_abort( 'Error: Unknown material variable')
       end select
-  
+
       ! append variable to varSys
       call tem_varSys_append_derVar(                            &
         &  me             = varSys,                             &
@@ -149,7 +149,7 @@ contains
       else if (addedpos < 1) then
         write(logUnit(0),*) 'Error: variable '//trim(derVarName_loc(iVar)) &
           &         // ' is not added to variable system'
-        call tem_abort()  
+        call tem_abort()
       end if
 
     end do
@@ -158,7 +158,7 @@ contains
   ! ************************************************************************** !
 
   ! ************************************************************************** !
-  !> This routine returns the kinematic viscosity 
+  !> This routine returns the kinematic viscosity
   !!
   !! The interface has to comply to the abstract interface
   !! [[tem_varSys_module:tem_varSys_proc_element]].
@@ -220,7 +220,7 @@ contains
   ! ************************************************************************** !
 
   ! ************************************************************************** !
-  !> This routine returns the omega 
+  !> This routine returns the omega
   !!
   !! The interface has to comply to the abstract interface
   !! [[tem_varSys_module:tem_varSys_proc_element]].

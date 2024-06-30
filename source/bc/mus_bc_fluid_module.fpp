@@ -2355,7 +2355,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
 
 ! ****************************************************************************** !
   !> author: Kannan Masilamani
-  !! Characteristic-based non-reflective inlet boundary conditions for 
+  !! Characteristic-based non-reflective inlet boundary conditions for
   !! incompressible flows
   !! @todo: add explaination of these steps
   !!
@@ -2460,7 +2460,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
     vel_b = vel_b * inv_vel
 
     do iElem = 1, globBC%nElems( iLevel )
- 
+
       ! Dirichlet velocity of current element
       vel_bE(:) = vel_b((iElem-1)*3+1:iElem*3)
 
@@ -2504,9 +2504,9 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
         ! Outgoioming wave L1 Eq (9)
         L1 = (uLodi(1) - swap * cs) &
           & * (cs2 * drhodx - swap * cs * rho0 * dudx)
-        ! incoming wave amplitudes L2, L3, L4 and L5 is approached with a 
+        ! incoming wave amplitudes L2, L3, L4 and L5 is approached with a
         ! linear relaxation model Eq (22)
-        L2 = - (vel_bE(2)-uLodi(2)) 
+        L2 = - (vel_bE(2)-uLodi(2))
         L3 = - (vel_bE(3)-uLodi(3))
         ! L5 is valid only if cs = sqrt(kappa*p/rho)
         L4 = 0.0_rk
@@ -2535,7 +2535,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
         L1 = (uLodi(2) - swap * cs) &
           & * (cs2 * drhodx - swap * cs * rho0 * dvdx)
         ! Outgoing wave amplitudes L2, L3, L4 and L5 are calculated from Eq (6)
-        L2 = - ( vel_bE(1) - uLodi(1) ) 
+        L2 = - ( vel_bE(1) - uLodi(1) )
         L3 = - ( vel_bE(3) - uLodi(3) )
         L4 = 0.0_rk
         L5 = L1 - 2.0_rk*rho0*swap*cs*(vel_bE(2)-uLodi(2))
@@ -2562,9 +2562,9 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
         ! Outgoioming wave L1 Eq (9)
         L1 = (uLodi(3) - swap * cs) &
           & * (cs2 * drhodx - swap * cs * rho0 * dwdx)
-        ! Outgoing wave amplitudes L2, L3, L4 and L5 is approached with a 
+        ! Outgoing wave amplitudes L2, L3, L4 and L5 is approached with a
         ! linear relaxation model Eq (22)
-        L2 = - ( vel_bE(1) - uLodi(1) ) 
+        L2 = - ( vel_bE(1) - uLodi(1) )
         L3 = - ( vel_bE(2) - uLodi(2) )
         L4 = 0.0_rk
         L5 = L1 - 2.0_rk*rho0*swap*cs*(vel_bE(3)-uLodi(3))
@@ -2619,7 +2619,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
 
       do iDir = 1, layout%fStencil%QQN
         if( globBC%elemLvl(iLevel)%bitmask%val(iDir, iElem )) then
-          
+
           ! According to the bounce back rule,
           ! Subtract the equlibrium if its computed from alpha-(inverse of
           ! bitmask) or add the equlibrium if its computed in the direction of
@@ -2638,7 +2638,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
     end do ! iElem
 
 
-  end subroutine inlet_nrbc_incomp 
+  end subroutine inlet_nrbc_incomp
 ! **************************************************************************** !
 
 ! ****************************************************************************** !
@@ -2747,7 +2747,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
     vel_b = vel_b * inv_vel
 
     do iElem = 1, globBC%nElems( iLevel )
- 
+
       ! Dirichlet velocity of current element
       vel_bE(:) = vel_b((iElem-1)*3+1:iElem*3)
 
@@ -2791,9 +2791,9 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
         ! Outgoioming wave L1 Eq (9)
         L1 = (uLodi(1) - swap * cs) &
           & * (cs2 * drhodx - swap * cs * rhoLodi * dudx)
-        ! incoming wave amplitudes L2, L3, L4 and L5 is approached with a 
+        ! incoming wave amplitudes L2, L3, L4 and L5 is approached with a
         ! linear relaxation model Eq (22)
-        L2 = - (vel_bE(2)-uLodi(2)) 
+        L2 = - (vel_bE(2)-uLodi(2))
         L3 = - (vel_bE(3)-uLodi(3))
         ! L5 is valid only if cs = sqrt(kappa*p/rho)
         L4 = 0.0_rk
@@ -2822,7 +2822,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
         L1 = (uLodi(2) - swap * cs) &
           & * (cs2 * drhodx - swap * cs * rhoLodi * dvdx)
         ! Outgoing wave amplitudes L2, L3, L4 and L5 are calculated from Eq (6)
-        L2 = - ( vel_bE(1) - uLodi(1) ) 
+        L2 = - ( vel_bE(1) - uLodi(1) )
         L3 = - ( vel_bE(3) - uLodi(3) )
         L4 = 0.0_rk
         L5 = L1 - 2.0_rk*rhoLodi*swap*cs*(vel_bE(2)-uLodi(2))
@@ -2849,9 +2849,9 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
         ! Outgoioming wave L1 Eq (9)
         L1 = (uLodi(3) - swap * cs) &
           & * (cs2 * drhodx - swap * cs * rhoLodi * dwdx)
-        ! Outgoing wave amplitudes L2, L3, L4 and L5 is approached with a 
+        ! Outgoing wave amplitudes L2, L3, L4 and L5 is approached with a
         ! linear relaxation model Eq (22)
-        L2 = - ( vel_bE(1) - uLodi(1) ) 
+        L2 = - ( vel_bE(1) - uLodi(1) )
         L3 = - ( vel_bE(2) - uLodi(2) )
         L4 = 0.0_rk
         L5 = L1 - 2.0_rk*rhoLodi*swap*cs*(vel_bE(3)-uLodi(3))
@@ -2905,7 +2905,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
 
       do iDir = 1, layout%fStencil%QQN
         if( globBC%elemLvl(iLevel)%bitmask%val(iDir, iElem )) then
-          
+
           ! According to the bounce back rule,
           ! Subtract the equlibrium if its computed from alpha-(inverse of
           ! bitmask) or add the equlibrium if its computed in the direction of
@@ -2924,7 +2924,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
     end do ! iElem
 
 
-  end subroutine inlet_nrbc 
+  end subroutine inlet_nrbc
 ! **************************************************************************** !
 
 
@@ -3253,7 +3253,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
           ! antibounceback term
           ! We need to get post-collision pdf in direction
           ! alpha-, which is the inverse direction of bitmask
-          ! For PULL this means, get the outgoing one, as this is the one 
+          ! For PULL this means, get the outgoing one, as this is the one
           ! which will be bounced back
           ! For PUSH this means, get the already bounced back pdf back, so take the incoming
     &   - fTmp( (iElem-1)*nScalars + invDir ) &
@@ -3594,7 +3594,7 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
           ! antibounceback term
           ! We need to get post-collision pdf in direction
           ! alpha-, which is the inverse direction of bitmask
-          ! For PULL this means, get the outgoing one, as this is the one 
+          ! For PULL this means, get the outgoing one, as this is the one
           ! which will be bounced back
           ! For PUSH this means, get the already bounced back pdf back, so take the incoming
     &   - fTmp( (iElem-1)*nScalars + invDir ) &

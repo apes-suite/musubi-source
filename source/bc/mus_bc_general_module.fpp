@@ -546,7 +546,7 @@ contains
 
         ! allocate turbulent viscosity on boundary elements,
         ! and friction velocity and normal distance to boundary on first neigbor
-        ! of boundary elements. 
+        ! of boundary elements.
         ! Initialize friction velocity from stream-wise
         ! velocity component computed on first neighbor and normal distance to
         ! to boundary.
@@ -817,7 +817,7 @@ contains
             call tem_abort('velocity_noneq_expol is not supported for trt!')
           end if
           bc( iBnd )%fnct => pressure_nonEqExpol
-          
+
         end select
 
       ! cases which use the nernst_planck
@@ -1475,9 +1475,9 @@ contains
     ! -------------------------------------------------------------------- !
     !> Field bc which contains turbwallFunc type and neighbor info
     type(boundary_type), intent(inout) :: bc
-    !> global bc of current boundary with elemPos and normal info 
+    !> global bc of current boundary with elemPos and normal info
     type(glob_boundary_type), intent(inout) :: globBC
-    !> auxField array 
+    !> auxField array
     real(kind=rk), intent(in) :: auxField(:)
     !> Kinematic viscosity
     type(mus_viscosity_type) :: viscKine
@@ -1487,7 +1487,7 @@ contains
     type( tem_varSys_type ), intent(in) :: varSys
     !> stencil info
     type(tem_stencilHeader_type), intent(in) :: stencil
-    !> current level 
+    !> current level
     integer, intent(in) :: iLevel
     ! -------------------------------------------------------------------- !
     integer :: iElem, neighPos, elemOff, elemPos, normalInd_inv, vel_pos(3)
@@ -1742,7 +1742,7 @@ field(iField)%bc(iBnd)%neigh(iLevel)%computeNeighBuf( (iElem-1)*QQ+iDir ) =    &
 
     ! write(dbgUnit(10), "(A)") ' Fill bcBuffer. '
 
-    ! Loop over fields 
+    ! Loop over fields
     do iField = 1, nFields
       !NEC$ ivdep
       !dir$ ivdep

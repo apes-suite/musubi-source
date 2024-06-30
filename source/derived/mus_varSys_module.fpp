@@ -327,7 +327,7 @@ contains
     res = 0.0_rk
     do iPnt = 1, nPnts
       srcRes = 0.0_rk
-      ! get position of source element position in global tree for 
+      ! get position of source element position in global tree for
       ! interpolation.
       ! Also calculate weights for interpolation using distance between the
       ! point and source element barycenter
@@ -576,7 +576,7 @@ contains
 
 
   ! ************************************************************************** !
-  !> This routine creates srcElemInTree in pointData. It is called all in 
+  !> This routine creates srcElemInTree in pointData. It is called all in
   !! getPoint routine when first time the get point routine in called.
   subroutine mus_createSrcElemInTreeForGetPoint(pntDataMaptoTree, posInPntData,&
     &                                           point, nPnts, stencil, tree,   &
@@ -624,7 +624,7 @@ contains
         &         wasAdded       = wasAdded              )
 
       if (wasAdded) then
-        ! get position of source element position in global tree for 
+        ! get position of source element position in global tree for
         ! interpolation.
         ! Also calculate weights for interpolation using distance between the
         ! point and source element barycenter

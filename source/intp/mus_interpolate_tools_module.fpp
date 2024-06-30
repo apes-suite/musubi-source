@@ -54,7 +54,7 @@ module mus_interpolate_tools_module
   use tem_varSys_module,       only: tem_varSys_type
   use tem_property_module,      only: prp_fluid
   !use tem_construction_module,  only: tem_levelDesc_type
-  use tem_debug_module, only: dbgUnit 
+  use tem_debug_module, only: dbgUnit
 
   ! include musubi modules
   use mus_interpolate_header_module, only: mus_interpolation_type

@@ -239,7 +239,7 @@ contains
 
     !> Class that contains pointers to the proper derived quantities functions
     type(mus_scheme_derived_quantities_type), intent(in) :: quantities
-    
+
     !> Output of this routine
     !! Size: nElems*nAuxScalars
     real(kind=rk), intent(inout) :: auxField(:)

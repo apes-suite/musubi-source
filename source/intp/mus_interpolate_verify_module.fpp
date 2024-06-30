@@ -67,7 +67,7 @@ module mus_interpolate_verify_module
   use mus_scheme_layout_module,      only: mus_scheme_layout_type
   use mus_scheme_type_module,        only: mus_scheme_type
   use mus_moments_module,            only: set_momentIndices
-  use mus_derVarPos_module,          only: mus_derVarPos_type  
+  use mus_derVarPos_module,          only: mus_derVarPos_type
   use mus_physics_module,            only: mus_convertFac_type
 
   implicit none
@@ -83,7 +83,7 @@ module mus_interpolate_verify_module
   !! the ghost elements. Compare against the analytical solution, which is
   !! given in terms of the initial conditions.
   !! Call this routine after the initial values are set and the ghost elements
-  !! have been filled once, but no computation was started 
+  !! have been filled once, but no computation was started
   !! -> after fillHelperElements in the mus_aux_module
   !!
   subroutine mus_testInterpolation( scheme, tree, general, fac, iLevel, minLevel,&
@@ -180,7 +180,7 @@ module mus_interpolate_verify_module
   subroutine mus_intp_error( pdf, level, tree, general, fac, scheme, layout,   &
     &                        intp, ind, varSys, derVarPos, eType )
     ! ---------------------------------------------------------------------------
-    !> global fluid parameters 
+    !> global fluid parameters
     type( pdf_data_type ), intent(in) :: pdf
     !>
     type(tem_general_type), intent(in) :: general
@@ -295,7 +295,7 @@ module mus_interpolate_verify_module
         ! Read the target element treeId
         targetElem = iElem + scheme%levelDesc( level )%offset( 1, eType )
         targetID   = scheme%levelDesc( level )%total( targetElem )
-        ! get the target coordinates 
+        ! get the target coordinates
         xc(1,:) = tem_baryOfId( tree, targetID )
 
         ! initialize the lower and upper bound
@@ -393,11 +393,11 @@ module mus_interpolate_verify_module
         ! Determine min and max error and where it occurred
         do iVal = 1, size( error )
           errorNorm( iVal ) = errorNorm( iVal ) + error( iVal )**2
-          if( abs(error( iVal ))> maxError( iVal)) then 
+          if( abs(error( iVal ))> maxError( iVal)) then
             maxError( iVal ) = abs(error( iVal ))
             maxErrorID( iVal ) = targetID
           end if
-          if( abs(error( iVal)) < minError( iVal)) then 
+          if( abs(error( iVal)) < minError( iVal)) then
             minError( iVal ) = abs(error( iVal ))
             minErrorID( iVal ) = targetID
           end if
@@ -476,7 +476,7 @@ module mus_interpolate_verify_module
 
       inquire(file=filename,exist=file_exists)
       fUnit = newunit()
-      open(unit=fUnit,file=trim(filename),position='append' ) 
+      open(unit=fUnit,file=trim(filename),position='append' )
       if( .not. file_exists ) then
          write(fUnit,'(a)') trim(header)
       end if

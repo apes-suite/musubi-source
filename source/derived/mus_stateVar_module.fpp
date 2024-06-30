@@ -122,7 +122,7 @@ contains
     integer :: nSize, iFld, QQ, nScalars
     ! -------------------------------------------------------------------- !
     call C_F_POINTER( fun%method_Data, fPtr )
-    ! myPos can be only used to access state variable since state variables are 
+    ! myPos can be only used to access state variable since state variables are
     ! added to varSys first.
     iFld = fun%myPos
     QQ = fPtr%solverData%scheme%layout%fStencil%QQ
@@ -351,7 +351,7 @@ contains
     ! -------------------------------------------------------------------- !
     call C_F_POINTER( fun%method_Data, fPtr )
     scheme => fPtr%solverData%scheme
-    ! myPos can be only used to access state variable since state variables are 
+    ! myPos can be only used to access state variable since state variables are
     ! added to varSys first.
     iFld = fun%myPos
     nScalars = varSys%nScalars
@@ -365,7 +365,7 @@ contains
     do iPnt = 1, nPnts
       srcRes = 0.0_rk
 
-      ! get position of source element position in global tree for 
+      ! get position of source element position in global tree for
       ! interpolation.
       ! Also calculate weights for interpolation using distance between the
       ! point and source element barycenter
@@ -610,7 +610,7 @@ contains
 
     call C_F_POINTER( fun%method_Data, fPtr )
     scheme => fPtr%solverData%scheme
-    ! myPos can be only used to access state variable since state variables are 
+    ! myPos can be only used to access state variable since state variables are
     ! added to varSys first.
     iFld = fun%myPos
     nScalars = varSys%nScalars

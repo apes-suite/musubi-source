@@ -642,7 +642,7 @@ contains
 ! ****************************************************************************** !
   !> Calculate the mach number of a given set of elements (sum up all links).
   !!
-  !! Mach number calculation according to 
+  !! Mach number calculation according to
   !! \( Ma = vel / c_s \)
   !! with the calculation of velicty as in deriveVelMag
   !!
@@ -1951,15 +1951,15 @@ contains
           HRRVar = iVar
         end if
       end do
-      if (HRRVar == -1) then 
+      if (HRRVar == -1) then
         call tem_abort ('Source variable HRR_Correction not found')
       end if
-    
+
       ! Get position of density and velocity in auxField to determine them later
       denspos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
       velpos(1:2) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:2)
     end associate
-  
+
     res = 0.0_rk
     QQ = fun%nComponents
     do iElem = 1, nElems
@@ -1982,7 +1982,7 @@ contains
           &   nDims        = 2,                  &
           &   nSolve       = 1,                  &
           &   elemOffset   = statePos-1          )
-              
+
         ! Calculate correction
         call HRR_Correction_d2q9 (                    &
           &    QQ        = QQ,                        &
@@ -1995,7 +1995,7 @@ contains
         res( (iElem-1)*QQ+1:(iElem-1)*QQ+QQ ) = S_Corr(:)
 
       end associate
-      
+
     end do !iElem
 
 
@@ -2064,15 +2064,15 @@ contains
           HRRVar = iVar
         end if
       end do
-      if (HRRVar == -1) then 
+      if (HRRVar == -1) then
         call tem_abort ('Source variable HRR_Correction not found')
       end if
-    
+
       ! Get position of density and velocity in auxField to determine them later
       denspos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
       velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
     end associate
-  
+
     res = 0.0_rk
     QQ = fun%nComponents
     do iElem = 1, nElems
@@ -2106,11 +2106,11 @@ contains
           &   nDims        = 3,                  &
           &   nSolve       = 1,                  &
           &   elemOffset   = iElem-1             )
-              
+
         ! Calculate correction
         call HRR_Correction_d3q19 (            &
           &    QQ         = QQ,                &
-          &    weight     = weight,            &       
+          &    weight     = weight,            &
           &    gradRHOU3  = gradRHOU3(:, 1),   &
           &    gradRHOUVZ = gradRHOUVZ(:, 1),  &
           &    phi        = S_corr(:),         &
@@ -2120,7 +2120,7 @@ contains
         res( (iElem-1)*QQ+1:(iElem-1)*QQ+QQ ) = S_Corr(:)
 
       end associate
-      
+
     end do !iElem
 
   end subroutine derive_HRRCorrection_d3q19
@@ -2186,15 +2186,15 @@ contains
           HRRVar = iVar
         end if
       end do
-      if (HRRVar == -1) then 
+      if (HRRVar == -1) then
         call tem_abort ('Source variable HRR_Correction not found')
       end if
-    
+
       ! Get position of density and velocity in auxField to determine them later
       denspos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
       velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
     end associate
-  
+
     res = 0.0_rk
     QQ = fun%nComponents
     do iElem = 1, nElems
@@ -2217,7 +2217,7 @@ contains
           &   nDims        = 3,                  &
           &   nSolve       = 1,                  &
           &   elemOffset   = statePos-1          )
-              
+
         ! Calculate correction
         call HRR_Correction_d3q27 (                   &
           &    QQ        = QQ,                        &
@@ -2230,7 +2230,7 @@ contains
         res( (iElem-1)*QQ+1:(iElem-1)*QQ+QQ ) = S_Corr(:)
 
       end associate
-      
+
     end do !iElem
 
   end subroutine derive_HRRCorrection_d3q27
@@ -4837,11 +4837,11 @@ contains
       end do
       ! element offset
       elemoff = (iElem-1)*varSys%nAuxScalars
-  
+
       ! density
       rho = sum( pdf )
       auxField(elemOff+dens_pos) = rho
-  
+
       ! velocity
       vel = quantities%vel_from_pdf_ptr(pdf = pdf, dens = rho, cxDirRK = stencil%cxDirRK)
       auxField(elemOff+vel_pos(1)) = vel(1)
@@ -5158,10 +5158,10 @@ contains
       &    nPnts  = nPnts,                       &
       &    res    = vel_res                      )
 
-    
+
     call C_F_POINTER( fun%method_Data, fPtr )
     associate( quantities => fPtr%solverData%scheme%layout%quantities )
-      ! compute kinetic energy 
+      ! compute kinetic energy
       do iPnt = 1, nPnts
         vel(1) = vel_res((iPnt-1)*3 + 1)
         vel(2) = vel_res((iPnt-1)*3 + 2)
@@ -5669,7 +5669,7 @@ contains
       &     res    = vel_res(:)                       )
 
     associate( quantities => fPtr%solverData%scheme%layout%quantities )
-      ! compute kinetic energy 
+      ! compute kinetic energy
       do iVal = 1, nVals
         vel(1) = vel_res((iVal-1)*3 + 1)
         vel(2) = vel_res((iVal-1)*3 + 2)

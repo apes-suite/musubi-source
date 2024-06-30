@@ -77,11 +77,11 @@ module mus_d3q19_module
   public :: mus_advRel_kFluidIncomp_rTRT_vStd_lD3Q19
   public :: mus_advRel_kFluid_rBGK_vBlock_lD3Q19
   public :: bgk_Regularized_d3q19
-  public :: bgk_RecursiveRegularized_d3q19 
-  public :: bgk_HybridRecursiveRegularized_d3q19 
+  public :: bgk_RecursiveRegularized_d3q19
+  public :: bgk_HybridRecursiveRegularized_d3q19
   public :: bgk_ProjectedRecursiveRegularized_d3q19
   public :: bgk_HybridRecursiveRegularizedCorr_d3q19
-  public :: bgk_DualRelaxationTime_RR_d3q19 
+  public :: bgk_DualRelaxationTime_RR_d3q19
 
   ! ============================================================================
   ! D3Q19 flow model
@@ -499,16 +499,16 @@ contains
       u_x = auxField(elemOff + vel_pos(1))
       u_y = auxField(elemOff + vel_pos(2))
       u_z = auxField(elemOff + vel_pos(3))
-      
+
 ?? if (DEBUG) then
       ! check only for fluid cell
       if ( iElem <= nElems_fluid ) then
-        
+
         rho_pre = 0._rk
         do ii = 1, QQ
           rho_pre = rho_pre + inState(?FETCH?( ii, 1, iElem, QQ, nScalars, nElems,neigh ))
         end do
-        
+
         if (abs(rho_pre - rho) >= 1e-8) then
           write (*,*) 'ERROR! >>> |rho_pre - rho_AUX| = ', abs(rho_pre - rho)
           write (*,*) 'Level = ', Level
@@ -627,14 +627,14 @@ contains
       outState(?SAVE?(q00N, 1, iElem, QQ, nScalars, nElems, neigh)) &
         & = f00N * cmpl_o - sum9_1 + sum9_2
 
-?? if( DEBUG ) then  
+?? if( DEBUG ) then
       ! check only for fluid cell
       if ( iElem <= nElems_fluid ) then
         rho_post = 0._rk
         do ii = 1, QQ
           rho_post = rho_post + outState( ?SAVE?( ii, 1, iElem, QQ, QQ, nElems, neigh ) )
         end do
-        
+
         if (abs(rho_pre - rho_post) >= 1e-7) then
           write (*,*) 'ERROR! >>> |rho_pre - rho_post| = ', abs(rho_pre - rho_post)
           write (*,*) 'Level = ', Level
@@ -2120,10 +2120,10 @@ contains
 
 
 ! ****************************************************************************** !
-  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution 
+  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution
   ! functions, Jonas Latt and Bastien Chopard 2005
 pure subroutine f_f_eq_regularized_2nd_ord_d3q19 ( weight, rho, u_x, u_y, u_z, feq, &
-  &  f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz ) 
+  &  f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
     ! -------------------------------------------------------------------- !
     !> weights of the stencil
     real(kind=rk), intent(in) :: weight(QQ)
@@ -2141,141 +2141,141 @@ pure subroutine f_f_eq_regularized_2nd_ord_d3q19 ( weight, rho, u_x, u_y, u_z, f
     real(kind=rk) :: u_x_sqr, u_y_sqr, u_z_sqr, u_x_u_y, u_x_u_z, u_y_u_z
     real(kind=rk) :: f00, f01, f02, f12
     ! ---------------------------------------------------------------------------
-    
+
       u_x_sqr = u_x**2
       u_y_sqr = u_y**2
       u_z_sqr = u_z**2
       u_x_u_y = u_x * u_y
       u_x_u_z = u_x * u_z
       u_y_u_z = u_y * u_z
-      
-      f00 = 1.0_rk     
-      
+
+      f00 = 1.0_rk
+
       !iDir = 1
       f01 = -cs2inv*u_x
       f02 = div1_6*cs4inv*(2._rk*u_x_sqr - (u_y_sqr + u_z_sqr))
       feq(1) = weight(1) * rho * (f00 + f01 + f02)
       f12 = div1_6*cs4inv*(2._rk*a12xx - (a12yy + a12zz))
       f1(1) = weight(1) * f12
-        
+
       !iDir = 4
       f01 = -f01
       feq(4) = weight(4) * rho * (f00 + f01 + f02)
       f1(4) = weight(4) * f12
-        
+
       !iDir = 2
       f01 = -cs2inv*u_y
       f02 = div1_6*cs4inv*(-(u_x_sqr + u_z_sqr) + 2._rk*u_y_sqr)
       feq(2) = weight(2) * rho * (f00 + f01 + f02)
       f12 = div1_6*cs4inv*(-(a12xx + a12zz) + 2._rk*a12yy)
       f1(2) = weight(2) * f12
-        
+
       !iDir = 5
       f01 = -f01
       feq(5) = weight(5) * rho * (f00 + f01 + f02)
-      f1(5) = weight(5) * f12 
-      
+      f1(5) = weight(5) * f12
+
       !iDir = 3
       f01 = -cs2inv*u_z
       f02 = div1_6*cs4inv*(-(u_x_sqr + u_y_sqr) + 2._rk*u_z_sqr)
       feq(3) = weight(3) * rho * (f00 + f01 + f02)
       f12 = div1_6*cs4inv*(-(a12xx + a12yy) + 2._rk*a12zz)
-      f1(3) = weight(3) * f12 
-        
+      f1(3) = weight(3) * f12
+
       !iDir = 6
       f01 = -f01
       feq(6) = weight(6) * rho * (f00 + f01 + f02)
       f1(6) = weight(6) * f12
-        
+
       !iDir = 7
       f01 = cs2inv*(-u_y - u_z)
       f02 = f02 + 0.5_rk*cs4inv*(u_y_sqr + 2._rk*u_y_u_z)
       feq(7) = weight(7) * rho * (f00 + f01 + f02)
       f12 = f12 + 0.5_rk*cs4inv*(a12yy + 2.0_rk*a12yz)
       f1(7) = weight(7) * f12
-          
+
       !iDir = 10
-      f01 = -f01 
-      feq(10) = weight(10) * rho * (f00 + f01 + f02)   
+      f01 = -f01
+      feq(10) = weight(10) * rho * (f00 + f01 + f02)
       f1(10) = weight(10) * f12
-          
+
       !iDir = 8
       f01 = cs2inv*(-u_y + u_z)
       f02 = f02 - 2._rk*cs4inv*(u_y_u_z)
       feq(8) = weight(8) * rho * (f00 + f01 + f02)
       f12 = f12 - 2._rk*cs4inv*(a12yz)
       f1(8) = weight(8) * f12
-          
+
       !iDir = 9
-      f01 = -f01 
+      f01 = -f01
       feq(9) = weight(9) * rho * (f00 + f01 + f02)
       f1(9) = weight(9) * f12
-            
+
       !iDir = 11
       f01 = cs2inv*(-u_x - u_z)
       f02 = div1_6*cs4inv*(2._rk*(u_x_sqr + u_z_sqr) - u_y_sqr + 6._rk*u_x_u_z)
       feq(11) = weight(11) * rho * (f00 + f01 + f02)
       f12 = div1_6*cs4inv*(2._rk*(a12xx + a12zz) - a12yy + 6.0_rk*a12xz)
-      f1(11) = weight(11) * f12 
-        
+      f1(11) = weight(11) * f12
+
       !iDir = 14
       f01 = -f01
       feq(14) = weight(14) * rho * (f00 + f01 + f02)
       f1(14) = weight(14) * f12
-        
+
       !iDir = 12
       f01 = cs2inv*(u_x - u_z)
       f02 = f02 - 2._rk*cs4inv*(u_x_u_z)
       feq(12) = weight(12) * rho * (f00 + f01 + f02)
       f12 = f12 - 2._rk*cs4inv*(a12xz)
       f1(12) = weight(12) * f12
-        
+
       !iDir = 13
-      f01 = -f01 
+      f01 = -f01
       feq(13) = weight(13) * rho * (f00 + f01 + f02)
       f1(13) = weight(13) * f12
-        
+
       !iDir = 15
       f01 = cs2inv*(-u_x - u_y)
       f02 = div1_6*cs4inv*(2._rk*(u_x_sqr + u_y_sqr) - u_z_sqr + 6._rk*u_x_u_y)
       feq(15) = weight(15) * rho * (f00 + f01 + f02)
       f12 = div1_6*cs4inv*(2._rk*(a12xx + a12yy) - a12zz + 6.0_rk*a12xy)
       f1(15) = weight(15) * f12
-        
+
       !iDir = 18
-      f01 = -f01 
+      f01 = -f01
       feq(18) = weight(18) * rho * (f00 + f01 + f02)
       f1(18) = weight(18) * f12
-        
+
       !iDir = 16
       f01 = cs2inv*(-u_x + u_y)
       f02 = f02 - 2._rk*cs4inv*(u_x_u_y)
       feq(16) = weight(16) * rho * (f00 + f01 + f02)
       f12 = f12 - 2._rk*cs4inv*(a12xy)
       f1(16) = weight(16) * f12
-        
+
       !iDir = 17
-      f01 = -f01 
+      f01 = -f01
       feq(17) = weight(17) * rho * (f00 + f01 + f02)
       f1(17) = weight(17) * f12
-      
+
       !iDir = 19
       !f01 = 0._rk
       f02 = -div1_6*cs4inv*(u_x_sqr + u_y_sqr + u_z_sqr)
       feq(19) = weight(19) * rho * (f00 + f02)
       f12 = -div1_6*cs4inv*(a12xx + a12yy + a12zz)
-      f1(19) = weight(19) * f12   
+      f1(19) = weight(19) * f12
 
   end subroutine f_f_eq_regularized_2nd_ord_d3q19
 ! ****************************************************************************** !
 
 ! ****************************************************************************** !
-  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution 
+  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution
   ! functions, Jonas Latt and Bastien Chopard 2005
-  ! with correction from Guo et al., "An efficient lattice Boltzmann method for 
+  ! with correction from Guo et al., "An efficient lattice Boltzmann method for
   ! compressible aerodynamics on D3Q19 lattice", JCP, 2020
 pure subroutine f_f_eq_regularized_4th_ord_d3q19 ( weight, rho, u_x, u_y, u_z, &
-&  feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz ) 
+&  feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
   ! -------------------------------------------------------------------- !
   !> weights of the stencil
   real(kind=rk), intent(in) :: weight(QQ)
@@ -2294,10 +2294,10 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q19 ( weight, rho, u_x, u_y, u_z, &
   real(kind=rk) :: u_x_sqr, u_y_sqr, u_z_sqr, u_x_sqr_u_z, u_y_sqr_u_z
   real(kind=rk) :: a13xyy, a13xxy, a13xxz, a13xzz, a13yzz, a13yyz, f13
   ! ---------------------------------------------------------------------------
-  
+
     call f_f_eq_regularized_2nd_ord_d3q19 ( weight, rho, u_x, u_y, u_z, feq, f1, &
       &    a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
-  
+
     u_x_sqr = u_x**2
     u_y_sqr = u_y**2
     u_z_sqr = u_z**2
@@ -2307,7 +2307,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q19 ( weight, rho, u_x, u_y, u_z, &
     u_y_sqr_u_z = u_y_sqr * u_z
     u_z_sqr_u_x = u_z_sqr * u_x
     u_z_sqr_u_y = u_z_sqr * u_y
-    
+
     a13xxy = 2.0_rk * u_x * a12xy + u_y * a12xx
     a13xxz = 2.0_rk * u_x * a12xz + u_z * a12xx
     a13xyy = u_x * a12yy + 2.0_rk * u_y * a12xy
@@ -2317,37 +2317,37 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q19 ( weight, rho, u_x, u_y, u_z, &
 
     !iDir = 1
     f03 = div1_3*cs6inv*( (u_z_sqr_u_x + u_y_sqr_u_x) )
-    feq(1) = feq(1) + weight(1) * rho * (f03) 
+    feq(1) = feq(1) + weight(1) * rho * (f03)
     f13 = div1_3*cs6inv*( (a13xzz + a13xyy) )
     f1(1) = f1(1) + weight(1) * f13
-    
+
     !iDir = 4
-    f03 = -f03 
-    feq(4) = feq(4) + weight(4) * rho * (f03)  
-    f13 = -f13 
+    f03 = -f03
+    feq(4) = feq(4) + weight(4) * rho * (f03)
+    f13 = -f13
     f1(4) = f1(4) + weight(4) * f13
 
     !iDir = 2
     f03 = div1_3*cs6inv*( (u_x_sqr_u_y + u_z_sqr_u_y) )
-    feq(2) = feq(2) + weight(2) * rho * (f03) 
+    feq(2) = feq(2) + weight(2) * rho * (f03)
     f13 = div1_3*cs6inv*( (a13xxy + a13yzz) )
     f1(2) = f1(2) + weight(2) * f13
 
     !iDir = 5
-    f03 = -f03 
-    feq(5) = feq(5) + weight(5) * rho * (f03) 
-    f13 = -f13 
+    f03 = -f03
+    feq(5) = feq(5) + weight(5) * rho * (f03)
+    f13 = -f13
     f1(5) = f1(5) + weight(5) * f13
 
     !iDir = 3
     f03 = div1_3*cs6inv*( (u_x_sqr_u_z + u_y_sqr_u_z))
-    feq(3) = feq(3) + weight(3) * rho * (f03) 
+    feq(3) = feq(3) + weight(3) * rho * (f03)
     f13 = div1_3*cs6inv*( (a13xxz + a13yyz) )
     f1(3) = f1(3) + weight(3) * f13
-    
+
     !iDir = 6
-    f03 = -f03 
-    feq(6) = feq(6) + weight(6) * rho * (f03) 
+    f03 = -f03
+    feq(6) = feq(6) + weight(6) * rho * (f03)
     f13 = -f13
     f1(6) = f1(6) + weight(6) * f13
 
@@ -2355,88 +2355,88 @@ pure subroutine f_f_eq_regularized_4th_ord_d3q19 ( weight, rho, u_x, u_y, u_z, &
     !f03 = div1_6*cs6inv*( -(u_x_sqr_u_y + u_z_sqr_u_y) + (u_x_sqr_u_y - u_z_sqr_u_y) &
     !  &      - (u_y_sqr_u_z + u_x_sqr_u_z) - (u_y_sqr_u_z - u_x_sqr_u_z) )
     f03 = div1_3*cs6inv*( - (u_z_sqr_u_y + u_y_sqr_u_z) )
-    feq(7) = feq(7) + weight(7) * rho * (f03) 
+    feq(7) = feq(7) + weight(7) * rho * (f03)
     f13 = div1_3*cs6inv*( - (a13yzz + a13yyz) )
     f1(7) = f1(7) + weight(7) * f13
-      
+
     !iDir = 10
-    f03 = -f03 
-    feq(10) = feq(10) + weight(10) * rho * (f03) 
+    f03 = -f03
+    feq(10) = feq(10) + weight(10) * rho * (f03)
     f13 = -f13
     f1(10) = f1(10) + weight(10) * f13
-      
+
     !iDir = 8
     !f03 = div1_6*cs6inv*( -(u_x_sqr_u_y + u_z_sqr_u_y) + (u_x_sqr_u_y - u_z_sqr_u_y) &
     !  &      + (u_y_sqr_u_z + u_x_sqr_u_z) + (u_y_sqr_u_z - u_x_sqr_u_z) )
     f03 = div1_3*cs6inv*( (-u_z_sqr_u_y + u_y_sqr_u_z) )
-    feq(8) = feq(8) + weight(8) * rho * (f03) 
+    feq(8) = feq(8) + weight(8) * rho * (f03)
     f13 = div1_3*cs6inv*( (-a13yzz + a13yyz) )
     f1(8) = f1(8) + weight(8) * f13
-      
+
     !iDir = 9
-    f03 = -f03 
-    feq(9) = feq(9) + weight(9) * rho * (f03) 
+    f03 = -f03
+    feq(9) = feq(9) + weight(9) * rho * (f03)
     f13 = -f13
     f1(9) = f1(9) + weight(9) * f13
-      
+
     !iDir = 11
     !f03 = div1_6*cs6inv*( -(u_z_sqr_u_x + u_y_sqr_u_x) - (u_z_sqr_u_x - u_y_sqr_u_x) &
     !  &      - (u_y_sqr_u_z + u_x_sqr_u_z) + (u_y_sqr_u_z - u_x_sqr_u_z) )
     f03 = div1_3*cs6inv*( -(u_z_sqr_u_x + u_x_sqr_u_z ) )
-    feq(11) = feq(11) + weight(11) * rho * (f03) 
+    feq(11) = feq(11) + weight(11) * rho * (f03)
     f13 = div1_3*cs6inv*( -(a13xxz + a13xzz) )
     f1(11) = f1(11) + weight(11) * f13
-    
+
     !iDir = 14
-    f03 = -f03 
-    feq(14) = feq(14) + weight(14) * rho * (f03) 
-    f13 = -f13 
+    f03 = -f03
+    feq(14) = feq(14) + weight(14) * rho * (f03)
+    f13 = -f13
     f1(14) = f1(14) + weight(14) * f13
-      
+
     !iDir = 12
     !f03 = div1_6*cs6inv*( (u_z_sqr_u_x + u_y_sqr_u_x) + (u_z_sqr_u_x - u_y_sqr_u_x) &
     !  &      - (u_y_sqr_u_z + u_x_sqr_u_z) + (u_y_sqr_u_z - u_x_sqr_u_z) )
     f03 = div1_3*cs6inv*( (u_z_sqr_u_x - u_x_sqr_u_z) )
-    feq(12) = feq(12) + weight(12) * rho * (f03) 
+    feq(12) = feq(12) + weight(12) * rho * (f03)
     f13 =  div1_3*cs6inv*( (-a13xxz + a13xzz) )
     f1(12) = f1(12) + weight(12) * ( f13 )
-      
+
     !iDir = 13
-    f03 = -f03 
+    f03 = -f03
     feq(13) = feq(13) + weight(13) * rho * (f03)
-    f13 = -f13 
+    f13 = -f13
     f1(13) = f1(13) + weight(13) * f13
-      
+
     !iDir = 15
     !f03 = div1_6*cs6inv*( -(u_x_sqr_u_y + u_z_sqr_u_y) - (u_x_sqr_u_y - u_z_sqr_u_y) &
     !  &      - (u_z_sqr_u_x + u_y_sqr_u_x) + (u_z_sqr_u_x - u_y_sqr_u_x) )
     f03 = div1_3*cs6inv*( -(u_x_sqr_u_y + u_y_sqr_u_x) )
-    feq(15) = feq(15) + weight(15) * rho * (f03) 
+    feq(15) = feq(15) + weight(15) * rho * (f03)
     f13 = div1_3*cs6inv*( -(a13xxy + a13xyy) )
     f1(15) = f1(15) + weight(15) * f13
-      
-    !iDir = 18    
-    f03 = -f03 
-    feq(18) = feq(18) + weight(18) * rho * (f03) 
-    f13 = -f13 
+
+    !iDir = 18
+    f03 = -f03
+    feq(18) = feq(18) + weight(18) * rho * (f03)
+    f13 = -f13
     f1(18) = f1(18) + weight(18) * f13
-      
+
     !iDir = 16
     !f03 = div1_6*cs6inv*( (u_x_sqr_u_y + u_z_sqr_u_y) + (u_x_sqr_u_y - u_z_sqr_u_y) &
-    !  &      - (u_z_sqr_u_x + u_y_sqr_u_x) + (u_z_sqr_u_x - u_y_sqr_u_x) )    
+    !  &      - (u_z_sqr_u_x + u_y_sqr_u_x) + (u_z_sqr_u_x - u_y_sqr_u_x) )
     f03 = div1_3*cs6inv*( (u_x_sqr_u_y - u_y_sqr_u_x) )
-    feq(16) = feq(16) + weight(16) * rho * (f03) 
+    feq(16) = feq(16) + weight(16) * rho * (f03)
     f13 = div1_3*cs6inv*( (a13xxy - a13xyy) )
     f1(16) = f1(16) + weight(16) * (f13)
-      
-    !iDir = 17     
-    f03 = -f03 
-    feq(17) = feq(17) + weight(17) * rho * (f03) 
-    f13 = -f13 
+
+    !iDir = 17
+    f03 = -f03
+    feq(17) = feq(17) + weight(17) * rho * (f03)
+    f13 = -f13
     f1(17) = f1(17) + weight(17) * ( f13 )
-    
+
     !iDir = 19
-    !f03 = 0._rk 
+    !f03 = 0._rk
     !feq(19) = feq(19) + 0._rk
     !f13 = 0._rk
     !f1(19) = f1(19) + 0._rk
@@ -2445,9 +2445,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
 ! **************************************************************************** !
   !> Regularized relaxation routine for the D3Q19 and 27 model with BGK.
-  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution 
+  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution
   ! functions, Jonas Latt and Bastien Chopard 2005
-  
+
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
@@ -2490,27 +2490,27 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     real(kind=rk) :: omega, cmpl_o, feq(QQ), f1(QQ)
     integer :: denspos, velpos(3), elemOff, nScalars
     ! ---------------------------------------------------------------------------
-    
+
 ?? IF (SOA) THEN
 ?? copy :: dir_vector
 ?? ELSE
 ?? copy :: dir_novec
 ?? END IF
-    
+
     denspos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     nScalars = varSys%nScalars
-    
+
 !$omp do schedule(static)
     !NEC$ ivdep
     !DIR$ NOVECTOR
     nodeloop: do iElem = 1, nSolve
-    
+
       do iDir = 1, QQ
         f(iDir) = inState( ?FETCH?( iDir, 1, iElem, QQ, nScalars, nElems,neigh))
       enddo
-      
+
       ! element offset for auxField array
       elemOff = (iElem-1)*varSys%nAuxScalars
       ! local density
@@ -2519,7 +2519,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_x = auxField(elemOff + velpos(1))
       u_y = auxField(elemOff + velpos(2))
       u_z = auxField(elemOff + velpos(3))
-            
+
       ! non equilibrium second-order moments
       ! SOM_neq = SOM - SOM_eq
       ! SOM = Second order moments
@@ -2531,23 +2531,23 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       SOM_neq(4) = SOM(4) - rho * u_x * u_y
       SOM_neq(5) = SOM(5) - rho * u_y * u_z
       SOM_neq(6) = SOM(6) - rho * u_x * u_z
-      
+
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
       cmpl_o = 1.0_rk - omega
-      a12xx = SOM_neq(1) 
-      a12yy = SOM_neq(2) 
-      a12zz = SOM_neq(3) 
-      a12xy = SOM_neq(4) 
-      a12yz = SOM_neq(5) 
-      a12xz = SOM_neq(6) 
+      a12xx = SOM_neq(1)
+      a12yy = SOM_neq(2)
+      a12zz = SOM_neq(3)
+      a12xy = SOM_neq(4)
+      a12yz = SOM_neq(5)
+      a12xz = SOM_neq(6)
 
       call f_f_eq_regularized_2nd_ord_d3q19( layout%weight(:), rho, u_x, u_y, u_z, feq, &
-        &                                   f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz ) 
-      
+        &                                   f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
+
       do iDir = 1, QQ
         outState( ?SAVE?( iDir,1, iElem, QQ, nScalars, nElems,neigh )) = feq(iDir) &
-          &                                                      + cmpl_o*f1(iDir) 
+          &                                                      + cmpl_o*f1(iDir)
       enddo
 
     enddo nodeloop
@@ -2559,9 +2559,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
 ! **************************************************************************** !
   !> Recursive Regularized relaxation routine for the D3Q19
-  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution 
+  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution
   ! functions, Jonas Latt and Bastien Chopard 2005
-  
+
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
@@ -2604,27 +2604,27 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     real(kind=rk) :: omega, cmpl_o, feq(QQ), f1(QQ)
     integer :: denspos, velpos(3), elemOff, nScalars
     ! ---------------------------------------------------------------------------
-    
+
 ?? IF (SOA) THEN
 ?? copy :: dir_vector
 ?? ELSE
 ?? copy :: dir_novec
 ?? END IF
-    
+
     denspos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     nScalars = varSys%nScalars
-    
+
 !$omp do schedule(static)
     !NEC$ ivdep
     !DIR$ NOVECTOR
     nodeloop: do iElem = 1, nSolve
-    
+
       do iDir = 1, QQ
         f(iDir) = inState( ?FETCH?( iDir, 1, iElem, QQ, nScalars, nElems,neigh))
       enddo
-      
+
       ! element offset for auxField array
       elemOff = (iElem-1)*varSys%nAuxScalars
       ! local density
@@ -2633,7 +2633,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_x = auxField(elemOff + velpos(1))
       u_y = auxField(elemOff + velpos(2))
       u_z = auxField(elemOff + velpos(3))
-            
+
       ! non equilibrium second-order moments
       ! SOM_neq = SOM - SOM_eq
       ! SOM = Second order moments
@@ -2645,23 +2645,23 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       SOM_neq(4) = SOM(4) - rho * u_x * u_y
       SOM_neq(5) = SOM(5) - rho * u_y * u_z
       SOM_neq(6) = SOM(6) - rho * u_x * u_z
-      
+
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
       cmpl_o = 1.0_rk - omega
-      a12xx = SOM_neq(1) 
-      a12yy = SOM_neq(2) 
-      a12zz = SOM_neq(3) 
-      a12xy = SOM_neq(4) 
-      a12yz = SOM_neq(5) 
-      a12xz = SOM_neq(6) 
-      
+      a12xx = SOM_neq(1)
+      a12yy = SOM_neq(2)
+      a12zz = SOM_neq(3)
+      a12xy = SOM_neq(4)
+      a12yz = SOM_neq(5)
+      a12xz = SOM_neq(6)
+
       call f_f_eq_regularized_4th_ord_d3q19( layout%weight(:), rho, u_x, u_y, u_z, &
-        &                        feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz ) 
-      
+        &                        feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
+
       do iDir = 1, QQ
         outState( ?SAVE?( iDir,1, iElem, QQ, nScalars, nElems,neigh )) = feq(iDir) &
-          &                                                      + cmpl_o*f1(iDir) 
+          &                                                      + cmpl_o*f1(iDir)
       enddo
 
     enddo nodeloop
@@ -2674,10 +2674,10 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
 ! **************************************************************************** !
   !> Projected Recursive Regularized relaxation routine for the D3Q19
-  ! based on High-order extension of the recursive regularized lattice 
+  ! based on High-order extension of the recursive regularized lattice
   ! Boltzmann method, PhD Thesis, COREIXAS 2018
   ! comemnted terms are not well approximated by d3q19 discretization model
-  
+
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
@@ -2724,34 +2724,34 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     real(kind=rk) :: omega, taup, cmpl_o, feq(QQ), f1(QQ)
     integer :: denspos, velpos(3), elemOff, nScalars
     ! ---------------------------------------------------------------------------
-    
+
 ?? IF (SOA) THEN
 ?? copy :: dir_vector
 ?? ELSE
 ?? copy :: dir_novec
 ?? END IF
-    
+
     denspos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     nScalars = varSys%nScalars
-    
+
     ! access gradData
     ! convert c pointer to solver type fortran pointer
     call c_f_pointer( varSys%method%val( 1 )%method_data, &
       &               fPtr )
     scheme => fPtr%solverData%scheme
     gradData => scheme%gradData(level)
-    
+
 !$omp do schedule(static)
     !NEC$ ivdep
     !DIR$ NOVECTOR
     nodeloop: do iElem = 1, nSolve
-    
+
       do iDir = 1, QQ
         f(iDir) = inState( ?FETCH?( iDir, 1, iElem, QQ, nScalars, nElems,neigh))
       enddo
-      
+
       ! element offset for auxField array
       elemOff = (iElem-1)*varSys%nAuxScalars
       ! local density
@@ -2760,7 +2760,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_x = auxField(elemOff + velpos(1))
       u_y = auxField(elemOff + velpos(2))
       u_z = auxField(elemOff + velpos(3))
-    
+
       ! Stress tensor components
       gradU(:,:,1:1) = scheme%Grad%U_ptr(         &
            &   auxField     = auxField,           &
@@ -2770,7 +2770,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
            &   nDims        = 3,                  &
            &   nSolve       = 1,                  &
            &   elemOffset   = iElem -1            )
-      
+
       ! symmetric strain rate tensors
       ! transformed inro RHS of a1 FD equation
       ! the trace is needed only for energy conservation, which is not
@@ -2782,7 +2782,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       SR(4) = gradU(1, 2, 1)+gradU(2, 1, 1)  !S_XY
       SR(5) = gradU(2, 3, 1)+gradU(3, 2, 1)  !S_YZ
       SR(6) = gradU(1, 3, 1)+gradU(3, 1, 1)  !S_XZ
-            
+
       ! non equilibrium second-order moments
       ! SOM_neq = SOM - SOM_eq
       ! SOM = Second order moments
@@ -2794,7 +2794,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       !SOM_neq(4) = SOM(4) - rho * u_x * u_y
       !SOM_neq(5) = SOM(5) - rho * u_y * u_z
       !SOM_neq(6) = SOM(6) - rho * u_x * u_z
-      
+
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
       cmpl_o = 1.0_rk - omega
@@ -2805,13 +2805,13 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       a12xy = -taup * SR(4)
       a12yz = -taup * SR(5)
       a12xz = -taup * SR(6)
-      
+
       call f_f_eq_regularized_4th_ord_d3q19( layout%weight(:), rho, u_x, u_y, u_z, &
-        &                        feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz ) 
-        
-      do iDir = 1, QQ      
+        &                        feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
+
+      do iDir = 1, QQ
         outState( ?SAVE?( iDir,1, iElem, QQ, nScalars, nElems,neigh )) = feq(iDir) &
-          &                                                      + cmpl_o*f1(iDir) 
+          &                                                      + cmpl_o*f1(iDir)
       enddo
 
     enddo nodeloop
@@ -2822,10 +2822,10 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
 ! **************************************************************************** !
   !> Projected Recursive Regularized relaxation routine for the D3Q19
-  ! based on High-order extension of the recursive regularized lattice 
+  ! based on High-order extension of the recursive regularized lattice
   ! Boltzmann method, PhD Thesis, COREIXAS 2018
   ! comemnted terms are not well approximated by d3q19 discretization model
-  
+
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
@@ -2873,20 +2873,20 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     real(kind=rk) :: sigma
     integer :: denspos, velpos(3), elemOff, nScalars
     ! ---------------------------------------------------------------------------
-    
+
 ?? IF (SOA) THEN
 ?? copy :: dir_vector
 ?? ELSE
 ?? copy :: dir_novec
 ?? END IF
-    
+
     denspos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     nScalars = varSys%nScalars
-    
-    !call getHermitepolynomials_D3Q19( layout ) 
-    
+
+    !call getHermitepolynomials_D3Q19( layout )
+
     ! access gradData
     ! convert c pointer to solver type fortran pointer
     call c_f_pointer( varSys%method%val( 1 )%method_data, &
@@ -2896,16 +2896,16 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
     ! sigma value, ideally read from input
     sigma = fieldProp(1)%fluid%HRR_sigma ! if sigma == 1 --> no HRR
-    
+
 !$omp do schedule(static)
     !NEC$ ivdep
     !DIR$ NOVECTOR
     nodeloop: do iElem = 1, nSolve
-    
+
       do iDir = 1, QQ
         f(iDir) = inState( ?FETCH?( iDir, 1, iElem, QQ, nScalars, nElems,neigh))
       enddo
-      
+
       ! element offset for auxField array
       elemOff = (iElem-1)*varSys%nAuxScalars
       ! local density
@@ -2914,7 +2914,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_x = auxField(elemOff + velpos(1))
       u_y = auxField(elemOff + velpos(2))
       u_z = auxField(elemOff + velpos(3))
-    
+
       ! Stress tensor components
       gradU(:,:,1:1) = scheme%Grad%U_ptr(         &
            &   auxField     = auxField,           &
@@ -2924,7 +2924,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
            &   nDims        = 3,                  &
            &   nSolve       = 1,                  &
            &   elemOffset   = iElem -1            )
-      
+
       ! symmetric strain rate tensors
       ! transformed inro RHS of a1 FD equation
       ! the trace is needed only for energy conservation, which is not
@@ -2936,7 +2936,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       SR(4) = gradU(1, 2, 1)+gradU(2, 1, 1)  !S_XY
       SR(5) = gradU(2, 3, 1)+gradU(3, 2, 1)  !S_YZ
       SR(6) = gradU(1, 3, 1)+gradU(3, 1, 1)  !S_XZ
-            
+
       ! non equilibrium second-order moments
       ! SOM_neq = SOM - SOM_eq
       ! SOM = Second order moments
@@ -2948,7 +2948,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       SOM_neq(4) = SOM(4) - rho * u_x * u_y
       SOM_neq(5) = SOM(5) - rho * u_y * u_z
       SOM_neq(6) = SOM(6) - rho * u_x * u_z
-      
+
       ! Hermitian coefficients
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
       cmpl_o = 1.0_rk - omega
@@ -2959,13 +2959,13 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       a12xy = SOM_neq(4) * sigma + (1.0_rk - sigma) * (-taup * SR(4))
       a12yz = SOM_neq(5) * sigma + (1.0_rk - sigma) * (-taup * SR(5))
       a12xz = SOM_neq(6) * sigma + (1.0_rk - sigma) * (-taup * SR(6))
-      
+
       call f_f_eq_regularized_4th_ord_d3q19( layout%weight(:), rho, u_x, u_y, u_z, &
-        &                        feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )  
-      
+        &                        feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
+
       do iDir = 1, QQ
         outState( ?SAVE?( iDir,1, iElem, QQ, nScalars, nElems,neigh )) = feq(iDir) &
-          &                                                      + cmpl_o*f1(iDir) 
+          &                                                      + cmpl_o*f1(iDir)
       enddo
 
     enddo nodeloop
@@ -2976,10 +2976,10 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
 ! **************************************************************************** !
   !> Projected Recursive Regularized relaxation routine for the D3Q19
-  ! based on High-order extension of the recursive regularized lattice 
+  ! based on High-order extension of the recursive regularized lattice
   ! Boltzmann method, PhD Thesis, COREIXAS 2018
   ! commented terms are not well approximated by d3q19 discretization model
-  
+
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
@@ -3027,18 +3027,18 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     real(kind=rk) :: sigma, gradRhoU3(3,1), S_Corr(QQ), gradRhoUVZ(3,1)
     integer :: denspos, velpos(3), elemOff, nScalars, iSrc
     ! ---------------------------------------------------------------------------
-    
+
 ?? IF (SOA) THEN
 ?? copy :: dir_vector
 ?? ELSE
 ?? copy :: dir_novec
 ?? END IF
-    
+
     denspos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     nScalars = varSys%nScalars
-    
+
     ! access gradData
     ! convert c pointer to solver type fortran pointer
     call c_f_pointer( varSys%method%val( 1 )%method_data, &
@@ -3054,18 +3054,18 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     do iSrc = 1, scheme%field(1)%internalSource%varDict%nVals
       if ( trim(scheme%field(1)%internalSource%varDict%val(iSrc)%key) == 'hrr_correction' ) exit
     end do
-  
-    associate( HRR_Corr => scheme%field(1)%internalSource%method(iSrc)%elemLvl(Level)%HRR_Corr  )   
-    
+
+    associate( HRR_Corr => scheme%field(1)%internalSource%method(iSrc)%elemLvl(Level)%HRR_Corr  )
+
 !$omp do schedule(static)
       !NEC$ ivdep
       !DIR$ NOVECTOR
       nodeloop: do iElem = 1, nSolve
-      
+
         do iDir = 1, QQ
           f(iDir) = inState( ?FETCH?( iDir, 1, iElem, QQ, nScalars, nElems,neigh))
         enddo
-        
+
         ! element offset for auxField array
         elemOff = (iElem-1)*varSys%nAuxScalars
         ! local density
@@ -3074,7 +3074,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         u_x = auxField(elemOff + velpos(1))
         u_y = auxField(elemOff + velpos(2))
         u_z = auxField(elemOff + velpos(3))
-      
+
         ! Stress tensor components
         gradU(:,:,1:1) = scheme%Grad%U_ptr(      &
           &   auxField     = auxField,           &
@@ -3083,7 +3083,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           &   nAuxScalars  = varSys%nAuxScalars, &
           &   nDims        = 3,                  &
           &   nSolve       = 1,                  &
-          &   elemOffset   = iElem -1            ) 
+          &   elemOffset   = iElem -1            )
 
         ! 1 = x, 2 = y, 3 = z, no xy returned
         gradRhoU3(:,1:1) = scheme%Grad%RhoU3_ptr( &
@@ -3106,7 +3106,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           &   nDims        = 3,                     &
           &   nSolve       = 1,                     &
           &   elemOffset   = iElem-1                )
-            
+
         ! Calculate correction
         call HRR_Correction_d3q19 (               &
           &    QQ         = QQ,                   &
@@ -3116,7 +3116,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           &    phi        = S_corr(:),            &
           &    dens       = HRR_Corr%dens(iElem), &
           &    vel        = HRR_Corr%vel(iElem,:) )
-        
+
         ! symmetric strain rate tensors
         ! transformed inro RHS of a1 FD equation
         ! the trace is needed only for energy conservation, which is not
@@ -3128,7 +3128,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         SR(4) = gradU(1, 2, 1)+gradU(2, 1, 1)  !S_XY
         SR(5) = gradU(2, 3, 1)+gradU(3, 2, 1)  !S_YZ
         SR(6) = gradU(1, 3, 1)+gradU(3, 1, 1)  !S_XZ
-              
+
         ! non equilibrium second-order moments
         ! SOM_neq = SOM - SOM_eq
         ! Apply correction
@@ -3142,7 +3142,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         SOM_neq(4) = SOM(4) - rho * u_x * u_y
         SOM_neq(5) = SOM(5) - rho * u_y * u_z
         SOM_neq(6) = SOM(6) - rho * u_x * u_z
-        
+
         ! Hermitian coefficients
         omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
         cmpl_o = 1.0_rk - omega
@@ -3153,15 +3153,15 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         a12xy = SOM_neq(4) * sigma + (1.0_rk - sigma) * (-taup * SR(4))
         a12yz = SOM_neq(5) * sigma + (1.0_rk - sigma) * (-taup * SR(5))
         a12xz = SOM_neq(6) * sigma + (1.0_rk - sigma) * (-taup * SR(6))
-        
+
         call f_f_eq_regularized_4th_ord_d3q19( layout%weight(:), rho, u_x, u_y, u_z, &
-          &                        feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )  
-        
+          &                        feq, f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
+
         do iDir = 1, QQ
           outState( ?SAVE?( iDir,1, iElem, QQ, nScalars, nElems,neigh )) = feq(iDir) &
             &                              + cmpl_o*f1(iDir) + 0.5_rk * S_corr(iDir)
         enddo
-  
+
       enddo nodeloop
 !$omp end do nowait
 
@@ -3172,9 +3172,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
 ! **************************************************************************** !
   !> Recursive Regularized relaxation routine for the D3Q19
-  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution 
+  ! based on Lattice Boltzmann Method with regularized non-equilibrium distribution
   ! functions, Jonas Latt and Bastien Chopard 2005
-  
+
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
@@ -3217,29 +3217,29 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     real(kind=rk) :: omega, tau, tauN, CoefTauNTau
     integer :: denspos, velpos(3), elemOff, nScalars
     ! ---------------------------------------------------------------------------
-    
+
 ?? IF (SOA) THEN
 ?? copy :: dir_vector
 ?? ELSE
 ?? copy :: dir_novec
 ?? END IF
-    
+
     denspos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     nScalars = varSys%nScalars
-    
+
     tauN = fieldProp(1)%fluid%DRT_tauN
-    
+
 !$omp do schedule(static)
     !NEC$ ivdep
     !DIR$ NOVECTOR
     nodeloop: do iElem = 1, nSolve
-    
+
       do iDir = 1, QQ
         f(iDir) = inState( ?FETCH?( iDir, 1, iElem, QQ, nScalars, nElems,neigh))
       enddo
-      
+
       ! element offset for auxField array
       elemOff = (iElem-1)*varSys%nAuxScalars
       ! local density
@@ -3248,7 +3248,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_x = auxField(elemOff + velpos(1))
       u_y = auxField(elemOff + velpos(2))
       u_z = auxField(elemOff + velpos(3))
-            
+
       ! non equilibrium second-order moments
       ! SOM_neq = SOM - SOM_eq
       ! SOM = Second order moments
@@ -3260,24 +3260,24 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       SOM_neq(4) = SOM(4) - rho * u_x * u_y
       SOM_neq(5) = SOM(5) - rho * u_y * u_z
       SOM_neq(6) = SOM(6) - rho * u_x * u_z
-      
+
       ! Hermitian coefficients
-      omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem) 
+      omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
       tau = 1.0_rk / omega
       CoefTauNTau = ( tau - tauN ) / ( tau * tauN )
-      a12xx = SOM_neq(1) 
-      a12yy = SOM_neq(2) 
-      a12zz = SOM_neq(3) 
-      a12xy = SOM_neq(4) 
+      a12xx = SOM_neq(1)
+      a12yy = SOM_neq(2)
+      a12zz = SOM_neq(3)
+      a12xy = SOM_neq(4)
       a12yz = SOM_neq(5)
       a12xz = SOM_neq(6)
-      
+
       call f_f_eq_regularized_2nd_ord_d3q19( layout%weight(:), rho, u_x, u_y, u_z, feq, &
-        &                                   f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )  
-      
+        &                                   f1, a12xx, a12yy, a12zz, a12xy, a12xz, a12yz )
+
       do iDir = 1, QQ
         f_temp = f(iDir) - 1.0_rk/tauN * ( f(iDir) - feq(iDir) )
-        
+
         outState( ?SAVE?( iDir,1, iElem, QQ, nScalars, nElems,neigh )) = &
           & f_temp + CoefTauNTau * f1(iDir)
       enddo

@@ -129,7 +129,7 @@ contains
         &                               layout     = scheme%header%layout,     &
         &                               compute    = scheme%compute            )
     case ('multispecies_gas')
-      call mus_init_advRel_multispecies_gas(        & 
+      call mus_init_advRel_multispecies_gas(        &
         &    relaxation = scheme%header%relaxation, &
         &    layout     = scheme%header%layout,     &
         &    nFields    = scheme%nFields,           &
@@ -334,7 +334,7 @@ contains
             &    field        = scheme%field(iField)             )
         end do
       case ('passive_scalar')
-        ! \todo KM: 20161206 Implement compute kernel for multifield 
+        ! \todo KM: 20161206 Implement compute kernel for multifield
         !                    passive scalar
         do iField = 1, scheme%nFields
           call mus_init_passiveScalar(                          &
@@ -350,7 +350,7 @@ contains
             &    iField = iField,                               &
             &    iLevel = iLevel,                               &
             &    field  = scheme%field(iField)                  )
-        end do  
+        end do
       case ('multispecies_liquid')
         call mus_init_MSLiquid(                                 &
           &    me      = scheme,                                &
@@ -374,7 +374,7 @@ contains
           &    state  = scheme%state(iLevel)%                  &
           &             val(:,scheme%pdf(iLevel)%nNext ),      &
           &    neigh  = scheme%pdf(iLevel)%neigh(:),           &
-          &    iLevel = iLevel,                                & 
+          &    iLevel = iLevel,                                &
           &    field  = scheme%field                           )
       case ('isotherm_acEq')
         do iField = 1, scheme%nFields
@@ -383,7 +383,7 @@ contains
             &    fac    = fac(iLevel),                           &
             &    nElems = nElems,                                &
             &    nSize  = nSize,                                 &
-            &    state  = scheme%state(iLevel)%                  & 
+            &    state  = scheme%state(iLevel)%                  &
             &             val(:,scheme%pdf(iLevel)%nNext ),      &
             &    neigh  = scheme%pdf(iLevel)%neigh(:),           &
             &    iField = iField,                                &
@@ -394,7 +394,7 @@ contains
         write(logUnit(1),"(A)") ' Scheme kind '//trim(scheme%header%kind)&
           &                     //'is wrong! Can NOT do IC!'
         call tem_abort()
-      end select 
+      end select
     end do !iLevel
 
   end subroutine mus_init_byIC
@@ -481,7 +481,7 @@ contains
         &                                   n     = nChunkElems             )
       vel(1,1:nChunkElems) = tem_spatial_for( me    = field%ic%ini_state(2), &
         &                                     coord = xc(1:nChunkElems,1:3), &
-        &                                     n     = nChunkElems            ) 
+        &                                     n     = nChunkElems            )
       vel(2,1:nChunkElems) = tem_spatial_for( me    = field%ic%ini_state(3), &
         &                                     coord = xc(1:nChunkElems,1:3), &
         &                                     n     = nChunkElems            )
@@ -663,7 +663,7 @@ contains
         &                                   n     = nChunkElems             )
       vel(1,1:nChunkElems) = tem_spatial_for( me    = field%ic%ini_state(2), &
         &                                     coord = xc(1:nChunkElems,1:3), &
-        &                                     n     = nChunkElems            ) 
+        &                                     n     = nChunkElems            )
       vel(2,1:nChunkElems) = tem_spatial_for( me    = field%ic%ini_state(3), &
         &                                     coord = xc(1:nChunkElems,1:3), &
         &                                     n     = nChunkElems            )
@@ -690,7 +690,7 @@ contains
         &    res      = fEq                     )
 
       ! fNeq = zero for passive_scalar
-      ! assign pdf = fEq 
+      ! assign pdf = fEq
       do iElem = 1, nChunkElems
         elemPos = elemOff + iElem
         offset = (iElem-1)*QQ
@@ -896,7 +896,7 @@ contains
       end do
 
       ! fNeq = zero for passive_scalar
-      ! assign pdf = fEq 
+      ! assign pdf = fEq
       do iElem = 1, nChunkElems
         elemPos = elemOff + iElem
         offset = (iElem-1)*QQ
@@ -1043,10 +1043,10 @@ contains
           & > eps_single_k ) then
           write(logUnit(1),*)'Error: Initial sum(molefraction) of all fields is'
           write(logUnit(1),*)'       not equal to 1 for iElem', iElem
-          write(logUnit(1),*)' totMolFrac:', sum(moleFrac(:,iElem)) 
-          write(logUnit(1),*)' MoleFracs: ', moleFrac(:,iElem) 
+          write(logUnit(1),*)' totMolFrac:', sum(moleFrac(:,iElem))
+          write(logUnit(1),*)' MoleFracs: ', moleFrac(:,iElem)
           call tem_abort()
-        end if 
+        end if
         !mixMolWeight = sum( chi_i * m_i )
         !mixMolWeight = sum( moleFrac(:, iElem)                                &
         !  &        * field(:)%fieldProp%species%molWeight )
@@ -1308,7 +1308,7 @@ contains
       end do
 
       !partial pressure
-      do iField = 1, nFields 
+      do iField = 1, nFields
         !p_sigma = r_sigma * cs2 * phi_sigma
         !rho = press * cs2inv / phi
         rho(iField, :) = ( rho(iField, :) * cs2inv / phi(iField) ) &
@@ -1324,7 +1324,7 @@ contains
       do iElem = 1, nChunkElems
         do iField = 1, nFields
           ! MH: Fix for the intel compiler:
-          ! entries have to be assigned one by one instead of 
+          ! entries have to be assigned one by one instead of
           ! assigning them as an array of (/ux, uy, uz/)
           offset = (iElem-1)*nFields + iField
           rhoAll(offset) = rho(iField, iElem)
@@ -1445,7 +1445,7 @@ contains
         &                                   n     = nChunkElems             )
       vel(1,1:nChunkElems) = tem_spatial_for( me    = field%ic%ini_state(2), &
         &                                     coord = xc(1:nChunkElems,1:3), &
-        &                                     n     = nChunkElems            ) 
+        &                                     n     = nChunkElems            )
       vel(2,1:nChunkElems) = tem_spatial_for( me    = field%ic%ini_state(3), &
         &                                     coord = xc(1:nChunkElems,1:3), &
         &                                     n     = nChunkElems            )
@@ -1496,7 +1496,7 @@ contains
 ! **************************************************************************** !
   !> Recursively fill all the helper elements (i.e. ghost, halo) with valid
   !! information from the fluid elements.
-  !! 
+  !!
   !! This step is required before each run of the simulation. It would be
   !! possible to fill also the helper elements with the initial conditions.
   !! However, we are only able to fill the fluid elements with valid data
@@ -1569,7 +1569,7 @@ write(dbgUnit(5), "(A,I0)") 'nNext: ', scheme%pdf( iLevel )%nNext
       &    state   = scheme%state( iLevel )%val( :, tNext ), &
       &    message_flag   = iLevel,                          &
       &    comm    = general%proc%comm )
- 
+
 write(dbgUnit(5), *) '---- Leave fillHelperElementsFineToCoarse --------------'
 write(dbgUnit(5), *) ''
 
@@ -1580,10 +1580,10 @@ write(dbgUnit(5), *) ''
 ! **************************************************************************** !
   !> Recursively fill all the helper elements (i.e. ghost, halo) with valid
   !! information from the fluid elements.
-  !! 
+  !!
   !! This step is required before each run of the simulation. It would be
   !! possible to fill also the helper elements with the initial conditions.
-  !! However, we are only able to fill the fluid elements with valid data 
+  !! However, we are only able to fill the fluid elements with valid data
   !! (restart files have no information about the helper elements)
   !!
   recursive subroutine fillHelperElementsCoarseToFine( scheme, general,   &
@@ -1627,7 +1627,7 @@ write(dbgUnit(5), "(A,I0)") 'nNext: ', scheme%pdf( iLevel )%nNext
       tNext = scheme%pdf( iLevel+1 )%nNext
 
       do iOrder = 0, scheme%intp%config%order
-        ! interpolate state variable 
+        ! interpolate state variable
         call scheme%intp%fillFinerFromMe(iOrder)%do_intp(               &
           &    fieldProp   = scheme%field(:)%fieldProp,                 &
           &    sState      = scheme%state(iLevel)%val(:,sNext),         &
@@ -1663,7 +1663,7 @@ write(dbgUnit(5), *) ''
 
   ! ************************************************************************** !
   !> This routine initialize auxField variable from PDF values initialized by
-  !! initial condition. AuxField is computed from state using SAVE access for 
+  !! initial condition. AuxField is computed from state using SAVE access for
   !! fluid elements and interpolated for ghost elements
   subroutine mus_initAuxField(scheme, general, minLevel, maxLevel)
     !---------------------------------------------------------------------------
@@ -1695,7 +1695,7 @@ write(dbgUnit(5), *) ''
         & quantities = scheme%layout%quantities          )
     end do
 
-    ! Initilialize auxField ghostFromFiner and ghostFromCoarser with 
+    ! Initilialize auxField ghostFromFiner and ghostFromCoarser with
     ! interpolation for init with PDF
     do iLevel = maxLevel-1, minLevel,-1
       call mus_intpAuxFieldCoarserAndExchange(     &

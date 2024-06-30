@@ -348,8 +348,8 @@ contains
     ! pdf to reconstruct from
     real(kind=rk) :: f( layout%fStencil%QQ )
     ! pdf to interpolate
-    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
-    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ )
+    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ )
     ! source elements' pdf
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
@@ -366,7 +366,7 @@ contains
     write(dbgUnit(4),*) "iteration = ", time%iter
     flush(dbgUnit(4))
 ?? endif
-    
+
     vel = 0._rk
     fluid => fieldProp(1)%fluid
     QQ = layout%fStencil%QQ
@@ -374,15 +374,15 @@ contains
 
     sourceLevel = level
     targetLevel = level + 1
-    
+
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
-    
+
 ?? if( DEBUG ) then
     write(dbgUnit(4),*) "Fill fine ghost from coarse fluid"
     flush(dbgUnit(4))
 ?? endif
-     
+
     ! Treat all fine target elements:
     do indElem = 1, nTargets
 
@@ -417,7 +417,7 @@ contains
         write(dbgUnit(5),*) "Source: rho = ", rho, "; u = ", vel(1), "; v = ", vel(2)
         write(dbgUnit(5),*) "        w = ", vel(3)
         write(dbgUnit(5),*) "Source: pdfs = ", f
-        flush(dbgUnit(5))        
+        flush(dbgUnit(5))
 ?? endif
 
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho, &
@@ -453,7 +453,7 @@ contains
       fOmegaKine = mus_calcOmegaFromVisc(fVisc)
       cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
-      !evaluate scaling factor 
+      !evaluate scaling factor
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
@@ -462,8 +462,8 @@ contains
         f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
-      enddo      
-      
+      enddo
+
 ?? if( DEBUG ) then
 
       ! local density
@@ -554,8 +554,8 @@ contains
     ! pdf to reconstruct from
     real(kind=rk) :: f( layout%fStencil%QQ )
     ! pdf to interpolate
-    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
-    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ )
+    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ )
     real(kind=rk) :: sTurbVisc(layout%fStencil%QQ)
     ! source elements' pdf
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
@@ -574,7 +574,7 @@ contains
     write(dbgUnit(4),*) "iteration = ", time%iter
     flush(dbgUnit(4))
 ?? endif
-    
+
     vel = 0._rk
     fluid => fieldProp(1)%fluid
     QQ = layout%fStencil%QQ
@@ -582,7 +582,7 @@ contains
 
     sourceLevel = level
     targetLevel = level + 1
-    
+
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -590,7 +590,7 @@ contains
     write(dbgUnit(4),*) "Fill fine ghost from coarse fluid"
     flush(dbgUnit(4))
 ?? endif
-     
+
     ! Treat all fine target elements:
     do indElem = 1, nTargets
 
@@ -625,13 +625,13 @@ contains
         write(dbgUnit(5),*) "Source: rho = ", rho, "; u = ", vel(1), "; v = ", vel(2)
         write(dbgUnit(5),*) "        w = ", vel(3)
         write(dbgUnit(5),*) "Source: pdfs = ", f
-        flush(dbgUnit(5))        
+        flush(dbgUnit(5))
 ?? endif
 
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho, &
           &                                   vel = vel,               &
           &                                   QQ = QQ                  )
-        
+
         f_neq(:, iSourceElem) = f(:) - f_eq(:, iSourceElem)
 
         ! get turbulent viscosity
@@ -677,7 +677,7 @@ contains
       fOmegaKine = mus_calcOmegaFromVisc(fVisc + fluid%turbulence%fac_c2f*tTurbVisc(1))
       cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc + tTurbVisc(1))
 
-      !evaluate scaling factor 
+      !evaluate scaling factor
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
@@ -686,8 +686,8 @@ contains
         f(iDir) = t_f_neq(iDir) + t_f_eq(iDir)
         ! Now write the resulting pdf in the current direction to the target
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
-      enddo      
-      
+      enddo
+
 ?? if( DEBUG ) then
 
       ! local density
@@ -778,8 +778,8 @@ contains
     ! pdf to reconstruct from
     real(kind=rk) :: f( layout%fStencil%QQ )
     ! pdf to interpolate
-    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ ) 
-    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ ) 
+    real(kind=rk) :: f_neq( layout%fStencil%QQ, layout%fStencil%QQ )
+    real(kind=rk) :: f_eq( layout%fStencil%QQ, layout%fStencil%QQ )
     ! source elements' pdf
     real(kind=rk) :: t_f_eq( layout%fStencil%QQ )  ! temp pdf calculation
     real(kind=rk) :: t_f_neq( layout%fStencil%QQ )  ! temp pdf calculation
@@ -796,7 +796,7 @@ contains
     write(dbgUnit(4),*) "iteration = ", time%iter
     flush(dbgUnit(4))
 ?? endif
-    
+
     vel = 0._rk
     fluid => fieldProp(1)%fluid
     QQ = layout%fStencil%QQ
@@ -804,7 +804,7 @@ contains
 
     sourceLevel = level
     targetLevel = level + 1
-    
+
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
@@ -812,7 +812,7 @@ contains
     write(dbgUnit(4),*) "Fill fine ghost from coarse fluid"
     flush(dbgUnit(4))
 ?? endif
-     
+
     ! Treat all fine target elements:
     do indElem = 1, nTargets
 
@@ -845,13 +845,13 @@ contains
 ?? if( DEBUG ) then
         write(dbgUnit(5),*) "Source: rho = ", rho, "; u = ", vel(1), "; v = ", vel(2)
         write(dbgUnit(5),*) "Source: pdfs = ", f
-        flush(dbgUnit(5))        
+        flush(dbgUnit(5))
 ?? endif
 
         f_eq(:, iSourceElem) = layout%quantities%pdfEq_ptr( rho = rho, &
           &                                   vel = vel,               &
           &                                   QQ = QQ                  )
-        
+
         f_neq(:, iSourceElem) = f(:) - f_eq(:, iSourceElem)
 
       enddo
@@ -881,7 +881,7 @@ contains
       fOmegaKine = mus_calcOmegaFromVisc(fVisc)
       cOmegaKine = mus_calcOmegaFromVisc(0.5_rk*fVisc)
 
-      !evaluate scaling factor 
+      !evaluate scaling factor
       fac = getNonEqFac_intp_coarse_to_fine( cOmegaKine, fOmegaKine )
 
       ! Rescale the non eq pdfs
@@ -892,13 +892,13 @@ contains
         tState( ?SAVE?( iDir, 1, targetElem, QQ, nScalars, tnSize, tNeigh )) = f(iDir)
       enddo
 
-?? if( DEBUG ) then      
+?? if( DEBUG ) then
 
       ! local density
       rho = sum(f)
       ! local x-, y-velocity
       vel = layout%quantities%vel_from_pdf_ptr(pdf = f, dens = rho)
-      
+
       write(dbgUnit(5),*) "Target: rho = ", rho, "; u = ", vel(1), "; v = ", vel(2)
       write(dbgUnit(5),*) "Target: pdfs = ", f
       flush(dbgUnit(5))

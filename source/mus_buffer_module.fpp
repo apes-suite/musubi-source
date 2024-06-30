@@ -32,7 +32,7 @@
 !! Module containing subroutines to prepare buffers for transformation of
 !! quantities (tracking) and the restart/tracking IO.
 !!
-!! To save memory, the transformation of quantities and the IO-functionality of 
+!! To save memory, the transformation of quantities and the IO-functionality of
 !! MUSUBI is done in linear chunks. The size of the chunk can be defined in the
 !! lua input file and is defined by the function [[tem_load_env_params]].
 !! The default size is set to be 8MB.
@@ -96,7 +96,7 @@ contains
     integer :: nComp   ! max number of components
     integer :: nScalars, varPos, nSize, QQ, elemPos
     ! ------------------------------------------------------------------------ !
- 
+
     ! Global counter for all words put into the buffer.
     iIndex = 0
     ! Run over all variable systems.
@@ -163,7 +163,7 @@ contains
     ! For all variable systems...
     iIndex = 0
 
-    ! Actually this loop over the elems should be moved into and an 
+    ! Actually this loop over the elems should be moved into and an
     ! array of treeIDs should be passed to the derive subroutine
     QQ = scheme%layout%fStencil%QQ
     nScalars = varMap%nScalars
@@ -183,11 +183,11 @@ contains
         !NEC$ ivdep
         !IBM* INDEPENDENT
         !DIR$ IVDEP
-        do iComp = 1, nComp 
+        do iComp = 1, nComp
           iIndex = iIndex + 1
             ! MH: Only set nNext (is being switched to nNow before the compute
             ! kernel, which reads from nNow)
-          scheme%state(iLevel)%val(                                  & 
+          scheme%state(iLevel)%val(                                  &
 & ?SAVE?(iComp, iVar, elemPos, QQ, nScalars, nSize, scheme%pdf(iLevel)%neigh), &
             & scheme%pdf(iLevel)%nNext ) = buffer(iIndex)
 

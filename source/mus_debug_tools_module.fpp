@@ -66,8 +66,8 @@ contains
     logical, optional, intent(in)   :: dumpHalos
     character(len=*) :: text
     integer, intent(in), optional :: iTime      !< Level counter variable
-    integer, intent(in) :: nFields !< number of fields 
-    integer, intent(in) :: nScalars !< total number of scalars in state array 
+    integer, intent(in) :: nFields !< number of fields
+    integer, intent(in) :: nScalars !< total number of scalars in state array
     ! --------------------------------------------------------------------------
     integer :: iElem, elemPos, iType, nElems, iDir, iTLayer, iField
     integer :: nTypes
@@ -96,10 +96,10 @@ contains
       select case( iType )
       case( eT_fluid )
         nElems = pdf%nElems_Fluid
-        write(dbgUnit(1),*) 'FLUID' 
+        write(dbgUnit(1),*) 'FLUID'
       case( eT_ghostFromCoarser)
         nElems = pdf%nElems_ghostFromCoarser
-        write(dbgUnit(1),*) 'GHOSTFROMCOARSER' 
+        write(dbgUnit(1),*) 'GHOSTFROMCOARSER'
       case( eT_ghostFromFiner)
         nElems = pdf%nElems_ghostFromFiner
         write(dbgUnit(1),*) 'GHOSTFROMFINER'

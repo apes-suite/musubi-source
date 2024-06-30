@@ -21,7 +21,7 @@
 ! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
-!> This module contains routines to bnd_force type and routines to initialize 
+!> This module contains routines to bnd_force type and routines to initialize
 !! bndForce array and compute bndForce on all boundary elements
 !!
 !! author: Kannan Masilamani
@@ -95,14 +95,14 @@ contains
           & 'turbulent_wall_eq')
           bc(iBnd)%calcBndForce => mus_calcBndForce_turbWall
         case default
-          bc(iBnd)%calcBndForce => mus_calcBndForce_dummy 
+          bc(iBnd)%calcBndForce => mus_calcBndForce_dummy
         end select
       end do
     case default
       write(logUnit(1),'(A)') 'WARNING: BndForce calculation is not supported' &
         &                    //' for '//trim(schemeHeader%kind)
       do iBnd = 1, bc_prop%nBCtypes
-        bc(iBnd)%calcBndForce => mus_calcBndForce_dummy 
+        bc(iBnd)%calcBndForce => mus_calcBndForce_dummy
       end do
     end select
 

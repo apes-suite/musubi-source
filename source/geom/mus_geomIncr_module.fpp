@@ -33,14 +33,14 @@
 ! ****************************************************************************** !
 !> author: Kartik Jain
 !! author: Jiaxing Qi
-!! This module provides functionality to perform geometry change  
+!! This module provides functionality to perform geometry change
 !! depending on the flow properties. Fluidify/Solidify, proximity
 !! condition variable are supplied in the lua
-!! file. Checks are performed against those parameters and geometry is 
+!! file. Checks are performed against those parameters and geometry is
 !! accordingly changed (an element solidified or fluidified)
 !!
 !> Geometry Increment module
-!! 
+!!
 module mus_geomIncr_module
 
   ! include treelm modules
@@ -63,7 +63,7 @@ module mus_geomIncr_module
   use mus_geom_module,         only: mus_geom_type
   use mus_scheme_type_module,  only: mus_scheme_type
   use mus_time_module,         only: mus_timeControl_homogenize
-      
+
 
 
   implicit none
@@ -103,10 +103,10 @@ contains
 
       me(iGInc)%cond_varPos = PositionOfVal(me  = varSys%varname,             &
         &                                   val = trim(me(iGInc)%cond_varName))
-      if (me(iGInc)%cond_varPos < 1) then 
+      if (me(iGInc)%cond_varPos < 1) then
         write(logUnit(1),*) 'Error: variable '//trim(me(iGInc)%cond_varName) &
           &              // ' is not added to variable system'
-        call tem_abort()  
+        call tem_abort()
       end if
 
     end do
@@ -117,8 +117,8 @@ contains
 
 ! ******************************************************************************!
   !> This subroutine checks for various conditions defined in the geomIncr table
-  !! within the lua file, calculates the requested macroscpoic variables and 
-  !! then compares them against the specified threshold. 
+  !! within the lua file, calculates the requested macroscpoic variables and
+  !! then compares them against the specified threshold.
   !! Accordingly then solidification or fluidification of elements is performed.
   !!
   subroutine mus_geomIncr( geometry, scheme, commPattern, general)
@@ -207,7 +207,7 @@ contains
           res_size = nComp*nChunkElems
           allocate( chunk_res(res_size) )
 
-          ! Use the function pointers to calculate variables identified 
+          ! Use the function pointers to calculate variables identified
           ! from Lua results are placed in array chunk_res.
           ! Variable returns 1 if condition satisfies else 0
           call scheme%varSys%method%val(varpos)%get_element(         &
@@ -219,7 +219,7 @@ contains
             &               nDofs   = 1,                             &
             &               res     = chunk_res(1:res_size)          )
 
-          ! Prepare the list of target elements and set the property bits 
+          ! Prepare the list of target elements and set the property bits
           ! of these elements
           call prepare_target_elem_list(                    &
             & nComp             = nComp,                    &
@@ -258,9 +258,9 @@ contains
             &  message_flag = iLevel,                                &
             &  comm         = general%proc%comm                    )
 
-          ! Invoke the update connectivity routine which updates the 
-          ! neighbor array of target elements and the neighbor array of 
-          ! their neighbors. 
+          ! Invoke the update connectivity routine which updates the
+          ! neighbor array of target elements and the neighbor array of
+          ! their neighbors.
           call update_connectivity( scheme, iLevel)
         end do
       end if ! Timing check
@@ -274,11 +274,11 @@ contains
 
 
 ! ****************************************************************************** !
-  !> A subroutine which checks the proximity condition and generates a new 
+  !> A subroutine which checks the proximity condition and generates a new
   !! treeID list of potential target elements which can then be checked against
   !! various thresholds as defined in the lua configuration file.
   !!
-  !! Proximity condition means that an element can be solidified only if it has 
+  !! Proximity condition means that an element can be solidified only if it has
   !! at least one wall as a neighboring element.
   !! In biological clotting models it ensures that no isolated clot is produced
   !! in the fluid domain.
@@ -303,7 +303,7 @@ contains
     ! ---------------------------------------------------------------------------
     ! local variables
     integer :: iElem, iLevel, iField, iDir
-    integer :: neighPos, elemPos 
+    integer :: neighPos, elemPos
     integer :: QQN, QQ, neighbor, nScalars
     integer(kind=long_k) :: elemProp
     ! ---------------------------------------------------------------------------
@@ -324,7 +324,7 @@ contains
             iLevel = tem_levelOf( geometry%tree%treeID( iElem ))
             elemPos = geometry%levelPointer( iElem )
             do iDir = 1, QQN
-              ! Get the neighbor 
+              ! Get the neighbor
               neighbor = scheme%pdf( iLevel )%neigh(               &
                 & ?NGPOS?(iDir, elemPos, scheme%pdf(iLevel)%nSize) )
               ! position in total list
@@ -362,7 +362,7 @@ contains
 
 ! ****************************************************************************** !
   !> This routine compares the macroscopic quantity obtained for an element
-  !! against specified threshold and populates the list of target elements 
+  !! against specified threshold and populates the list of target elements
   !! which participate in geometry change. In addition it sets the property
   !! bit(s) of target elements to fluidify in case of solidification and clears
   !! this bit in case of fluidification
@@ -385,15 +385,15 @@ contains
     !> number of final elements
     integer, intent(inout) :: nElems_gi
     !> element position in global treeID list tree%treeID
-    integer, intent(in)    :: pntTreeID(:) 
+    integer, intent(in)    :: pntTreeID(:)
     !> target element list for second iGInc to reduce computation effort
-    integer, intent(inout) :: target_ielem_list(:) 
+    integer, intent(inout) :: target_ielem_list(:)
     !> scheme information
     type(mus_scheme_type), intent(inout)  :: scheme
     !> fluid tree from mesh, element property bits are set to solidify
     !! if condition variable is 1
     type( treelmesh_type ), intent(inout)  :: tree
-    !> current geometry increment 
+    !> current geometry increment
     type( mus_geomIncrHead_type ), intent(inout) :: geomIncr
     ! ---------------------------------------------------------------------------
     ! local variables
@@ -404,7 +404,7 @@ contains
     ! ---------------------------------------------------------------------------
 
     ! Loop over all elements in chunks for the condition variable in var system
-    ! For solidify (solidify=true), fluid elements will be solidified if the 
+    ! For solidify (solidify=true), fluid elements will be solidified if the
     ! condition is satisfied and for fluidify (fluidify=true) solid elements
     ! will be fluidified.
       local_elem = 0
@@ -413,10 +413,10 @@ contains
         elemPos = LPlist( iElem ) ! elem position in total list
         iLevel = tem_LevelOf( tree%treeID( elemPos ))
         if( geomIncr%solidify ) then
-          ! if condition variable is a vector then all index must be satisfied 
+          ! if condition variable is a vector then all index must be satisfied
           cond = all(res( (local_elem-1)*nComp + 1 : local_elem*nComp) > 0.0_rk)
           if ( cond ) then
-            ! Update the property bit 
+            ! Update the property bit
             call mus_setProp( property = scheme%levelDesc(iLevel) &
               &                          %property(elemPos),      &
               &               geomIncr = geomIncr                 )
@@ -427,7 +427,7 @@ contains
             nElems_gi = nElems_gi + 1
           end if ! condition satisfies
         elseif ( geomIncr%fluidify ) then
-          ! if condition variable is a vector then all index must be satisfied 
+          ! if condition variable is a vector then all index must be satisfied
           cond = all(res( (local_elem-1)*nComp + 1 : local_elem*nComp) > 0.0_rk)
           if ( cond ) then
             ! Get the direct neighbor elements for fluidification
@@ -439,12 +439,12 @@ contains
                 ! neighPos < 0 means boundary in that direction
                 if ( neighPos > 0 ) then
                   neighProp = scheme%levelDesc(iLevel)%property( neighPos )
-                  
+
                   isSolid = btest( neighProp, prp_Solid )
 
                   ! Only need to fluidify if neighbor is solid
                   if( isSolid ) then
-                    ! Update the property bit 
+                    ! Update the property bit
                     call mus_setProp( property = scheme%levelDesc(iLevel) &
                       &                          %property(neighPos),     &
                       &               geomIncr = geomIncr                 )
@@ -453,7 +453,7 @@ contains
                       &                          (neighPos),            &
                       &               geomIncr = geomIncr               )
                     nElems_gi = nElems_gi + 1
-                    ! As soon as one solid neighbor is fluidifed 
+                    ! As soon as one solid neighbor is fluidifed
                     ! dir-loop is terminated. This will keep a balance
                     ! between soldification and fluidification.
           !!          EXIT
@@ -466,13 +466,13 @@ contains
       end do ! iElem
 
 ! DF: Following code is only used to improve performance.
-!     Still needs a couple of changes to run with 
+!     Still needs a couple of changes to run with
 !     solidification AND fluidification.
 
 !!    else ! iVar != 1 or iDepend != 1
-!!      ! loop over the tree ID list which was found for the first geomIncr loop. 
-!!      ! Doing this we ensure the AND condition among 
-!!      ! different variables within a depend table and as the number of target 
+!!      ! loop over the tree ID list which was found for the first geomIncr loop.
+!!      ! Doing this we ensure the AND condition among
+!!      ! different variables within a depend table and as the number of target
 !!      ! elements is hardly 5% of the total geometry, it improves computational
 !!      ! efficiency of the code.
 !!      local_elem = 0
@@ -483,10 +483,10 @@ contains
 !!        elemProp = levelDesc( iLevel )%property( elemPos )
 !!        isSolid = btest( elemProp, prp_fluidify )
 !!        if( isSolid .neqv. geomIncr%solidify ) then
-!!          ! if condition variable is a vector then all index must be satisfied 
+!!          ! if condition variable is a vector then all index must be satisfied
 !!          cond = all(res( (target_ielem_list(iElem)-1)*nComp + 1 &
 !!            &            : target_ielem_list(iElem)*nComp) > 0.0_rk)
-!!          
+!!
 !!          ! Update the local tree ID list
 !!          if ( cond ) then
 !!            ! Update the property bit
@@ -501,7 +501,7 @@ contains
 !!            ! geometry%tree%global%meshChange = .true.
 !!            local_elem = local_elem + 1
 !!            target_ielem_list(local_elem) = target_ielem_list(iElem)
-!!          end if ! condition satisfies 
+!!          end if ! condition satisfies
 !!        end if ! is my target
 !!      end do ! iElem
 !!      ! number of target elements is updated
@@ -518,12 +518,12 @@ contains
   !! the bounce back rules have to be applied here
   !!
   subroutine update_connectivity( scheme, iLevel)
-    ! -------------------------------------------------------------------------- 
+    ! --------------------------------------------------------------------------
     !> scheme information
     type( mus_scheme_type ), intent(inout) :: scheme
     !> current level
     integer, intent(in)     :: iLevel
-    ! -------------------------------------------------------------------------- 
+    ! --------------------------------------------------------------------------
     ! defining local variables
     integer :: iElem  ! element counter for current element in treeID list
     integer :: iField ! field counter
@@ -531,9 +531,9 @@ contains
     integer :: QQ
     integer :: iDir ! counter for current direction in iElem
     integer :: invDir ! inverse direction for iDir
-    ! result: from which direction to take pdf from (inverse for bounceback) 
+    ! result: from which direction to take pdf from (inverse for bounceback)
     integer :: GetFromDir
-    ! result: from which element to take the pdf from (local for bounceback) 
+    ! result: from which element to take the pdf from (local for bounceback)
     integer :: GetFromPos
     integer :: neighPos      ! position of current neighElem in treeID list
     integer(kind=long_k)  :: neighProp, elemProp
@@ -572,15 +572,15 @@ contains
             invDir = scheme%layout%fStencil%cxDirInv( iDir )
             GetFromDir = invDir
             GetFromPos = iElem
-            ! I set the source to the target link for halo cells 
-            ! with no neighbor in that direction 
+            ! I set the source to the target link for halo cells
+            ! with no neighbor in that direction
           else
             ! neighElem = scheme%levelDesc( iLevel )%total( neighPos )
-            GetFromDir = iDir 
+            GetFromDir = iDir
             GetFromPos = neighPos
           endif ! has no boundary -> regular treatment
         endif ! not the 0 velocity
- 
+
         scheme%pdf( iLevel )%neigh( ?NGPOS?( iDir, iElem, nElems )) =    &
           &  ?IDX?( GetFromDir, GetFromPos, scheme%varSys%nScalars, nSize )
 

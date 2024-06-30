@@ -840,7 +840,7 @@ contains
 
 ! ****************************************************************************** !
   ! > Regularizes f anf feq up to 2nd order
-  ! 
+  !
   ! Based on:
   ! Latt, J. and Chopard, B. (2005) 'Lattice Boltzmann Method with regularized
   ! non-equilibrium distribution functions'
@@ -1014,7 +1014,7 @@ pure subroutine f_f_eq_regularized_4th_ord_d2q9 ( weight, rho, u_x, u_y, feq, &
 
       !iDir = 9
       !f03 = 0._rk
-      f04 = div1_4*f04 
+      f04 = div1_4*f04
       feq(9) = feq(9) + weight(9) * rho * (f04) !f03 +
       !f13 = 0._rk
       f14 = div1_4*f14
@@ -1319,8 +1319,8 @@ subroutine bgk_ProjectedRecursiveRegularized_d2q9 ( fieldProp, inState, outState
       ! the trace is needed only for energy conservation, which is not
       ! done in Musubi at the moment.
       !TODO::tr_SR = (gradU(1, 1, 1) + gradU(2, 2, 1)) ! * 2 / D = 1
-      SR(1) = 2._rk * gradU(1, 1, 1)            !S_XX  !TODO:: - tr_SR 
-      SR(2) = 2._rk * gradU(2, 2, 1)            !S_YY  !TODO:: - tr_SR   
+      SR(1) = 2._rk * gradU(1, 1, 1)            !S_XX  !TODO:: - tr_SR
+      SR(2) = 2._rk * gradU(2, 2, 1)            !S_YY  !TODO:: - tr_SR
       SR(3) = gradU(1, 2, 1) + gradU(2, 1, 1)   !S_XY
 
       ! Hermitian coefficients
@@ -1433,7 +1433,7 @@ subroutine bgk_HybridRecursiveRegularized_d2q9( fieldProp, inState, outState,  &
     gradData => fPtr%solverData%scheme%gradData(level)
 
     ! Sigma value
-    sigma = fieldProp(1)%fluid%HRR_sigma 
+    sigma = fieldProp(1)%fluid%HRR_sigma
 
 !$omp do schedule(static)
     !NEC$ ivdep
@@ -1458,7 +1458,7 @@ subroutine bgk_HybridRecursiveRegularized_d2q9( fieldProp, inState, outState,  &
 
       ! Calculate velocity gradient using central or forward difference, latter
       ! one if element has a boundary as neighbor
-      gradU(:,:,1:1) = fPtr%solverData%scheme%Grad%U_ptr(           & 
+      gradU(:,:,1:1) = fPtr%solverData%scheme%Grad%U_ptr(           &
         &                        auxField     = auxField,           &
         &                        gradData     = gradData,           &
         &                        velPos       = velPos,             &
@@ -1471,8 +1471,8 @@ subroutine bgk_HybridRecursiveRegularized_d2q9( fieldProp, inState, outState,  &
       ! the trace is needed only for energy conservation, which is not
       ! done in Musubi at the moment
       !TODO::tr_SR = (gradU(1, 1, 1) + gradU(2, 2, 1)) ! * 2 / D = 1
-      SR(1) = 2._rk * gradU(1, 1, 1)            !S_XX  !TODO:: - tr_SR 
-      SR(2) = 2._rk * gradU(2, 2, 1)            !S_YY  !TODO:: - tr_SR   
+      SR(1) = 2._rk * gradU(1, 1, 1)            !S_XX  !TODO:: - tr_SR
+      SR(2) = 2._rk * gradU(2, 2, 1)            !S_YY  !TODO:: - tr_SR
       SR(3) = gradU(1, 2, 1) + gradU(2, 1, 1)   !S_XY
 
       ! Determine the non-equilibrium second-order moments via
@@ -1603,7 +1603,7 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
 
   ! Sigma value, read from input
   ! standard value is 0.98
-  sigma = fieldProp(1)%fluid%HRR_sigma 
+  sigma = fieldProp(1)%fluid%HRR_sigma
 
   ! allocate internalSource element array
   do iSrc = 1, scheme%field(1)%internalSource%varDict%nVals
@@ -1616,7 +1616,7 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
     !NEC$ ivdep
     !DIR$ NOVECTOR
     nodeloop: do iElem = 1, nSolve
-  
+
       ! Set pdf for all QQ-directions
       !> Generic fetching step:
       !! Streaming for pull
@@ -1624,7 +1624,7 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
       do iDir = 1, QQ
         pdfTmp(iDir) = inState( ?FETCH?( iDir, 1, iElem, QQ, nScalars, nElems,neigh))
       enddo
-  
+
       ! Calculate element offset for auxField array
       elemOff = (iElem-1)*varSys%nAuxScalars
       ! Set local density
@@ -1632,7 +1632,7 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
       ! Set local x- and y-velocity
       u_x = auxField(elemOff + velpos(1))
       u_y = auxField(elemOff + velpos(2))
-  
+
       ! Calculate velocity gradient using central or forward difference, latter
       ! one if element has a boundary as neighbor
       gradU(:,:,1:1) = scheme%Grad%U_ptr( auxField     = auxField,           &
@@ -1642,7 +1642,7 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
         &                                 nDims        = 2,                  &
         &                                 nSolve       = 1,                  &
         &                                 elemOffset   = iElem-1             )
-  
+
       ! 1 = x, 2 = y, 3 = z, no xy returned
       gradRhoU3(:,1:1) = scheme%Grad%RhoU3_ptr( &
         &   auxField     = auxField,            &
@@ -1653,7 +1653,7 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
         &   nDims        = 2,                   &
         &   nSolve       = 1,                   &
         &   elemOffset   = iElem-1              )
-            
+
       ! Calculate correction
       call HRR_Correction_d2q9 (               &
         &    QQ        = QQ,                   &
@@ -1662,15 +1662,15 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
         &    phi       = S_corr(:),            &
         &    dens      = HRR_Corr%dens(iElem), &
         &    vel       = HRR_Corr%vel(iElem,:) )
-  
+
       ! Calculate symmetric strain rate tensor (SR) and it's trace (tr)
       ! the trace is needed only for energy conservation, which is not
       ! done in Musubi at the moment
       !TODO::tr_SR = (gradU(1, 1, 1) + gradU(2, 2, 1)) ! * 2 / D = 1
-      SR(1) = 2._rk * gradU(1, 1, 1)            !S_XX  !TODO:: - tr_SR 
-      SR(2) = 2._rk * gradU(2, 2, 1)            !S_YY  !TODO:: - tr_SR   
+      SR(1) = 2._rk * gradU(1, 1, 1)            !S_XX  !TODO:: - tr_SR
+      SR(2) = 2._rk * gradU(2, 2, 1)            !S_YY  !TODO:: - tr_SR
       SR(3) = gradU(1, 2, 1) + gradU(2, 1, 1)   !S_XY
-  
+
       ! Determine the non-equilibrium second-order moments via
       ! SOM_neq = SOM - SOM_eq
       ! Apply correction
@@ -1681,7 +1681,7 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
       SOM_neq(1) = SOM(1) - rho * (cs2 + (u_x * u_x))
       SOM_neq(2) = SOM(2) - rho * (cs2 + (u_y * u_y))
       SOM_neq(3) = SOM(3) - rho * u_x * u_y
-  
+
       ! Hermitian coefficients
       ! Relaxation parameter
       omega  = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
@@ -1695,17 +1695,17 @@ subroutine bgk_HybridRecursiveRegularizedCorr_d2q9( fieldProp, inState, outState
       a12xx = SOM_neq(1) * sigma + cmpl_sgm * (-taup * SR(1))
       a12yy = SOM_neq(2) * sigma + cmpl_sgm * (-taup * SR(2))
       a12xy = SOM_neq(3) * sigma + cmpl_sgm * (-taup * SR(3))
-  
+
       ! regularization of f and feq up to 4th order
       call f_f_eq_regularized_4th_ord_d2q9( layout%weight(:), rho, u_x, u_y, &
         &                                   feq, f1, a12xx, a12yy, a12xy     )
-  
+
       ! Relaxation
       do iDir = 1, QQ
         outState( ?SAVE?( iDir,1, iElem, QQ, nScalars,nElems,neigh )) = &
           & feq(iDir) + cmpl_o * f1(iDir) + 0.5_rk * S_corr(iDir)
       enddo
-  
+
     enddo nodeloop
 !$omp end do nowait
 
@@ -1717,7 +1717,7 @@ end subroutine bgk_HybridRecursiveRegularizedCorr_d2q9
 ! ****************************************************************************** !
   subroutine bgk_DualRelaxationTime_RR_d2q9 ( fieldProp, inState, outState, auxField, &
   &                                           neigh, nElems, nSolve, level, layout,   &
-  &                                           params, varSys, derVarPos) 
+  &                                           params, varSys, derVarPos)
   ! -------------------------------------------------------------------- !
   !> Array of field properties (fluid or species)
   type(mus_field_prop_type), intent(in) :: fieldProp(:)
