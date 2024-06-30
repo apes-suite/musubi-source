@@ -40,7 +40,7 @@
 !! `sim_control` table is:
 !!
 !!```lua
-!!    abort_criteria = { 
+!!    abort_criteria = {
 !!      stop_file = 'stop',
 !!      velocity_lat_max = 0.15 -- Maximum lattice velocity for Musubi
 !!    }
@@ -71,7 +71,6 @@ module mus_abortCriteria_module
 
 
 contains
-
 
 
   ! ------------------------------------------------------------------------ !
