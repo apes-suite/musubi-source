@@ -1,5 +1,5 @@
 ! Copyright (c) 2011-2013 Manuel Hasert <m.hasert@grs-sim.de>
-! Copyright (c) 2011-2012,2020-2021 Harald Klimach <harald.klimach@uni-siegen.de>
+! Copyright (c) 2011-2012,2020-2021,2024 Harald Klimach <harald.klimach@dlr.de>
 ! Copyright (c) 2011-2014 Simon Zimny <s.zimny@grs-sim.de>
 ! Copyright (c) 2011 Konstantin Kleinheinz <k.kleinheinz@grs-sim.de>
 ! Copyright (c) 2011-2016, 2019-2021 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
