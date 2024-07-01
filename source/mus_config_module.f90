@@ -82,14 +82,14 @@ module mus_config_module
 contains
 
 
-! **************************************************************************** !
+  ! ************************************************************************** !
   !> Read in LUA parameter file
   !! See http://www.lua.org for a reference on how to use
   !! Lua is a scripting language in itself which allows
   !! more complex parameter files including comments
   !! And load / create the mesh depending on the configuration
   subroutine mus_load_config( scheme, solverData, geometry, params, adapt )
-    ! --------------------------------------------------------------------------
+    ! ---------------------------------------------------------------------- !
     !> scheme type
     type( mus_scheme_type ), target :: scheme
     !> contains pointer to scheme, physics types
@@ -100,10 +100,10 @@ contains
     type( mus_param_type ), target, intent(inout) :: params
     !> mesh adaptation
     type(tem_adapt_type), intent(inout) :: adapt
-    ! --------------------------------------------------------------------------
+    ! ---------------------------------------------------------------------- !
     character(len=PathLen) :: filename
     integer :: minLevel, maxLevel
-    ! --------------------------------------------------------------------------
+    ! ---------------------------------------------------------------------- !
 
     call tem_startTimer( timerHandle = mus_timerHandles%loadMesh )
 
@@ -177,7 +177,7 @@ contains
 
     ! Set lattice dx and dt according scaling type
     call mus_init_latticeUnit(params%lattice, minLevel, maxLevel, &
-      &                       params%scaleFactor)
+      &                       params%scaleFactor                  )
 
     ! load physics table for unit converstion
     call mus_load_physics( me          = params%physics,                &
@@ -205,24 +205,24 @@ contains
     call tem_stopTimer( timerHandle = mus_timerHandles%loadMesh )
 
   end subroutine mus_load_config
-! **************************************************************************** !
+  ! ************************************************************************** !
 
 
-! **************************************************************************** !
+  ! ************************************************************************** !
   !> This routine loads musubi specific lua function from string and musubi
   !! input configuration file
   subroutine mus_open_config( conf, filename, proc )
-    ! --------------------------------------------------------------------------
+    ! ---------------------------------------------------------------------- !
     !> lua state to be stored
     type(flu_State), allocatable :: conf(:)
     !> name of the config file to be opened
     character(len=*), intent(in) :: filename
     !> process description to use
     type(tem_comm_env_type), intent(in) :: proc
-    ! --------------------------------------------------------------------------
+    ! ---------------------------------------------------------------------- !
     character(len=2048) :: fun_str !contains function to be used in musubi
     integer :: iThread
-    ! --------------------------------------------------------------------------
+    ! ---------------------------------------------------------------------- !
 
     ! allocate the array of lua states
     allocate( conf( proc%nThreads ))
@@ -236,12 +236,12 @@ contains
     end do
 
     ! Open the lua config
-    call tem_open_distconf_array( L        = conf,                             &
-      &                           filename = trim(filename),                   &
-      &                           proc     = proc )
+    call tem_open_distconf_array( L        = conf,           &
+      &                           filename = trim(filename), &
+      &                           proc     = proc            )
 
   end subroutine mus_open_config
-! **************************************************************************** !
+  ! ************************************************************************** !
 
 end module mus_config_module
 ! **************************************************************************** !
