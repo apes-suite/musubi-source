@@ -33,8 +33,10 @@ module mus_initLBMPS_module
   use tem_logging_module, only: logUnit
 
   ! include musubi modules
-  use mus_bgk_module,         only: bgk_advrel_flekkoy,                        &
-    &                               bgk_advrel_flekkoy_noFluid
+  use mus_bgk_module,         only: mus_advRel_kPS_rBGK_v1st,                  &
+    &                               bgk_advrel_flekkoy_noFluid,                &
+    &                               mus_advRel_kPS_rBGK_v2nd,                  &
+    &                               mus_advRel_kPS_rTRT_vStdNoOpt
   use mus_scheme_type_module, only: kernel
 
   implicit none
@@ -47,10 +49,11 @@ contains
 
 ! ****************************************************************************** !
   !> Initialize the relaxation model for lbm passive scalar scheme kind
-  subroutine mus_init_advRel_lbm_ps( relaxation, layout, compute )
+  subroutine mus_init_advRel_lbm_ps( relaxation, layout, relaxation_variant, compute )
     ! ---------------------------------------------------------------------------
     character(len=labelLen), intent(in) :: relaxation
     character(len=labelLen), intent(in) :: layout
+    character(len=labelLen), intent(in) :: relaxation_variant
     procedure( kernel ), pointer, intent(out) :: compute
     ! ---------------------------------------------------------------------------
 
@@ -59,13 +62,19 @@ contains
 
     select case( trim(relaxation) )
     case( 'bgk' )
-      select case( trim(layout) )
-      case( 'flekkoy' )
-        compute => bgk_advRel_flekkoy
+      select case( trim(relaxation_variant) )
+      case( 'first' )
+        compute => mus_advRel_kPS_rBGK_v1st
+      case( 'second' )
+        compute => mus_advRel_kPS_rBGK_v2nd
       case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
+        write(logUnit(1),*) 'relaxation_variant '//trim(relaxation_variant)//   &
+          &                 ' is not supported yet!'
         call tem_abort()
       end select
+    case( 'trt' )
+      write(logUnit(1), *) 'Using trt_advRel scheme.'
+      compute => mus_advRel_kPS_rTRT_vStdNoOpt
     case( 'bgk_noFluid' )
       select case( trim(layout) )
       case( 'flekkoy' )

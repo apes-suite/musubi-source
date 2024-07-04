@@ -33,6 +33,7 @@ module mus_scheme_derived_quantities_module
     &                                   div1_18, div2_27, div1_54, div1_216,   &
     &                                   div8_27, cs2inv, cs4inv, rho0Inv
   use tem_compileconf_module,     only: vlen
+  use tem_logging_module,   only: logUnit
 
   implicit none
   private
@@ -203,8 +204,8 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
     getQuantities%kineticEnergy_from_vel_dens_ptr => get_kineticEnergy_from_vel_dens_incompressible
     getQuantities%rho0Inv_ptr => get_rho0Inv_incompressible
   else
-    write(*,*) 'fluid type = "', trim(label_fluid), '"'
-    call tem_abort("get_pdfEq_iDir not set for fluid type")
+    write(logUnit(1),*) 'fluid type = "', trim(label_fluid), '"'
+    write(logUnit(1),*) "Warning: get_pdfEq_iDir not set for fluid type"
   end if
 
   select case (trim(label_stencil))
@@ -218,9 +219,9 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d2q9_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d2q9_vectorized_incompressible
     else
-      write(*,*) 'stencil label = "', trim(label_stencil), '"'
-      write(*,*) 'fluid type = "', trim(label_fluid), '"'
-      call tem_abort("get_pdfEq not set for fluid type")
+      write(logUnit(1),*) 'stencil label = "', trim(label_stencil), '"'
+      write(logUnit(1),*) 'fluid type = "', trim(label_fluid), '"'
+      write(logUnit(1),*) "Warning: get_pdfEq not set for fluid type"
     end if
   case ('d3q19')
     if (trim(label_fluid) == 'fluid') then
@@ -232,9 +233,9 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d3q19_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d3q19_vectorized_incompressible
     else
-      write(*,*) 'stencil label = "', trim(label_stencil), '"'
-      write(*,*) 'fluid type = "', trim(label_fluid), '"'
-      call tem_abort("get_pdfEq not set for fluid type")
+      write(logUnit(1),*) 'stencil label = "', trim(label_stencil), '"'
+      write(logUnit(1),*) 'fluid type = "', trim(label_fluid), '"'
+      write(logUnit(1),*) "Warning: get_pdfEq not set for fluid type"
     end if
   case ('d3q27')
     if (trim(label_fluid) == 'fluid') then
@@ -246,9 +247,9 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d3q27_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d3q27_vectorized_incompressible
     else
-      write(*,*) 'stencil label = "', trim(label_stencil), '"'
-      write(*,*) 'fluid type = "', trim(label_fluid), '"'
-      call tem_abort("get_pdfEq not set for fluid type")
+      write(logUnit(1),*) 'stencil label = "', trim(label_stencil), '"'
+      write(logUnit(1),*) 'fluid type = "', trim(label_fluid), '"'
+      write(logUnit(1),*) "Warning: get_pdfEq not set for fluid type"
     end if
   case default
     if (trim(label_fluid) == 'fluid') then
@@ -260,9 +261,9 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_incompressible_vectorized
     else
-      write(*,*) 'stencil label = "', trim(label_stencil), '"'
-      write(*,*) 'fluid type = "', trim(label_fluid), '"'
-      call tem_abort("get_pdfEq not set for fluid type")
+      write(logUnit(1),*) 'stencil label = "', trim(label_stencil), '"'
+      write(logUnit(1),*) 'fluid type = "', trim(label_fluid), '"'
+      write(logUnit(1),*) "Warning: get_pdfEq not set for fluid type"
     end if
   end select
 

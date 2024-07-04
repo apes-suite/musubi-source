@@ -324,7 +324,7 @@ function mus_assign_GradCalculation_ptr(label) result(Grad)
     Grad%XXU_ptr => getGradXXU_2D
     Grad%RhoU3_ptr => getGradRhoU3_2D
     Grad%U_ptr => getGradU_2D
-  case ('d3q15', 'd3q19', 'd3q27')
+  case ('d3q6', 'd3q15', 'd3q19', 'd3q27')
     Grad%XXU_ptr => getGradXXU_3D
     Grad%RhoU3_ptr => getGradRhoU3_3D
     Grad%RhoUVZ_ptr => getGradRhoUVZ_3D
