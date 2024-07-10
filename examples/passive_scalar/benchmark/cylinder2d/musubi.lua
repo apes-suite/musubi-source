@@ -1,10 +1,10 @@
--- Diffusion process inside a 2D cylinder. The concentration profile is compared 
--- to the analytical solution. In this simulation, anti-bounce back boundary 
+-- Diffusion process inside a 2D cylinder. The concentration profile is compared
+-- to the analytical solution. In this simulation, anti-bounce back boundary
 -- condition is used.
 
 require 'args'
 -------------------------------------------------------------------------------
-mesh               = './mesh/'  
+mesh               = './mesh/'
 cs2 = 1./3.
 c_init = 1.
 maxN = 150.0
@@ -43,7 +43,7 @@ function concentration_real(x, y, z, t)
   for i = 1, #mu do
     sum = sum + 2 / (mu[i] * bessel(mu[i], 1)) * math.exp(-mu[i] ^ 2
       * diff * t / nelem ^ 2) * bessel(mu[i] * r / nelem, 0)
-    -- if x == 13 and y == 11 then  
+    -- if x == 13 and y == 11 then
     --   print("mu[i] = " .. mu[i])
     --   print("bessel(mu[i], 1) = " .. bessel(mu[i], 1))
     -- end
@@ -52,7 +52,7 @@ function concentration_real(x, y, z, t)
   local c = c_init * (1 - sum)
   if c < 0.001 then
     return 0.001 * cs2
-  end 
+  end
   return c*cs2
 end
 
@@ -76,9 +76,9 @@ sim_control        = {
 }
 -------------------------------------------------------------------------------
 identify  = {
-  label = 'species', 
-  kind = 'passive_scalar', 
-  relaxation='trt', 
+  label = 'species',
+  kind = 'passive_scalar',
+  relaxation='trt',
   layout='d2q9',
   variant = 'second'
 }
@@ -110,7 +110,7 @@ variable = {
     },
   }
 }
-tracking  = { 
+tracking  = {
   { label     = 'spc1',
     variable  = {'spc1_density', 'concentration_real'},
     shape = {
@@ -124,23 +124,23 @@ tracking  = {
       }
     },
     folder    = 'tracking/',
-    output    = {format = 'asciispatial'},  
-    time_control     = { 
+    output    = {format = 'asciispatial'},
+    time_control     = {
       min = { iter = 0 }, max = { iter = t_total }, interval = { iter = interval } }
   }
 }
 
-field = { 
+field = {
   label   = 'spc1',
   species = {diff_coeff = {(tau-0.5)/3} },
   initial_condition = { pressure  = initial_concentration,
                         velocityX = 0.0,
                         velocityY = 0.0,
-                        velocityZ = 0.0 
+                        velocityZ = 0.0
                       },
-  boundary_condition = { 
-                        { 
-                          label = 'circle', 
+  boundary_condition = {
+                        {
+                          label = 'circle',
                           -- anti-bounce back boundary condition is assigned
                           kind = 'pressure_antibounceback',
                           pressure = c_init * cs2,

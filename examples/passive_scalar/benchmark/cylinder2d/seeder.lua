@@ -14,7 +14,7 @@ length_bnd = length_usr
 bounding_cube = { origin = bc_origin,
                   length = length_bnd }
 
-ebug = {debugMode = true, debugFiles = false, debugMesh='debug/' }
+NOdebug = {debugMode = true, debugFiles = false, debugMesh='debug/' }
 spatial_object = {
   {
     attribute   = {
@@ -23,10 +23,10 @@ spatial_object = {
       level     = minlevel,
       calc_dist = true,
     },
-    geometry  = { 
+    geometry  = {
       kind    = 'stl',
       object  = {
-          filename = 'cylinder40.stl'
+          filename = stl_path..'cylinder40.stl'
         },
      },
   },
@@ -34,18 +34,18 @@ spatial_object = {
     attribute   = {
       kind      = 'periodic'
     },
-    geometry  = { 
+    geometry  = {
       kind = 'periodic',
       object  = {
         plane1 = {
           origin = { -1.5, -1.5, 4.25},
-          vec = { {length_bnd-10, 0.0, 0.0}, 
+          vec = { {length_bnd-10, 0.0, 0.0},
                 {0.0, length_bnd-10, 0.0}
           },
         },
         plane2 = {
           origin = { -1.5, -1.5, 5.75},
-          vec = { {length_bnd-10, 0.0, 0.0}, 
+          vec = { {length_bnd-10, 0.0, 0.0},
                 {0.0, length_bnd-10, 0.0}
           },
         },
@@ -53,13 +53,13 @@ spatial_object = {
     },
   },
   {
-    attribute = { 
+    attribute = {
       kind    = 'seed',
       label   = 'seed',
     },
     geometry  = {
-      kind    = 'canoND', 
+      kind    = 'canoND',
       object  = { origin = {nelem,nelem,5.} }
-    }                
+    }
   }
 }
