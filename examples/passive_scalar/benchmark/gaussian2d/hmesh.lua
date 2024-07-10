@@ -1,8 +1,8 @@
 mesh      = 'mesh/'
 
-tracking  = { 
-  label     = 'all', 
-  output    = { format = 'vtk'}, 
+tracking  = {
+  label     = 'all',
+  output    = { format = 'vtk'},
   shape     = { kind='all'  },
   folder    = 'harvest/',
 }

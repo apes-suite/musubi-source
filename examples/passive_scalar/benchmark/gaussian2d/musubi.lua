@@ -2,7 +2,7 @@ require 'args'
 require 'func'
 -------------------------------------------------------------------------------
 -- import mesh from ./mesh folder
-mesh               = './mesh/'  
+mesh               = './mesh/'
 cs2 = 1./3.
 
 -- initial condition for the gaussian hill
@@ -23,9 +23,9 @@ sim_control        = {
 -- select collison scheme between bgk and trt by selecting "relaxation"
 -- select order between first and second for different equilibria
 identify  = {
-  label = 'species', 
-  kind = 'passive_scalar', 
-  relaxation='trt', 
+  label = 'species',
+  kind = 'passive_scalar',
+  relaxation='trt',
   layout='d2q9',
   variant = order
 }
@@ -47,7 +47,7 @@ variable = {
     st_fun = gauss_pulse_real,
   }
 }
-tracking  = { 
+tracking  = {
   { label     = 'spc1',
     variable  = {'spc1_density', 'concentration_real'},
     shape = {
@@ -61,28 +61,28 @@ tracking  = {
       -- }
     },
     folder    = 'tracking/',
-    output    = {format = 'asciispatial'},  
-    time_control     = { 
+    output    = {format = 'asciispatial'},
+    time_control     = {
       min = { iter = t_total }, max = { iter = t_total }, interval = { iter = t_total } }
   }
 }
 
-field = { 
+field = {
   label   = 'spc1',
-  -- define a diffusion parameter 
+  -- define a diffusion parameter
   species = {diff_coeff = {(tau-0.5)/3} },
   initial_condition = { pressure  = gauss_pulse,
                         velocityX = u_field,
                         velocityY = 0.0,
-                        velocityZ = 0.0 
+                        velocityZ = 0.0
                       },
 }
 
 restart = {
   write = 'restart/',
-  time_control = { 
-    min      = { iter = t_total }, 
-    max      = { iter = t_total }, 
-    interval = { iter = t_total } 
+  time_control = {
+    min      = { iter = t_total },
+    max      = { iter = t_total },
+    interval = { iter = t_total }
   },
 }

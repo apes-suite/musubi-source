@@ -14,24 +14,24 @@ length_bnd = length_usr
 bounding_cube = { origin = bc_origin,
                   length = length_bnd }
 
-ebug = {debugMode = true, debugFiles = false, debugMesh='debug/' }
+NOdebug = {debugMode = true, debugFiles = false, debugMesh='debug/' }
 spatial_object = {
   {
     attribute   = {
       kind      = 'periodic',
     },
-    geometry  = { 
+    geometry  = {
       kind    = 'periodic',
       object  = {
         plane1 = {
             origin = { -nelem-1, -nelem-1, -1},
-            vec = { {0., 0.0, 2.0}, 
+            vec = { {0., 0.0, 2.0},
                   {0.0, 2.0*(nelem+1), 0.0}
           },
         },
         plane2 = {
           origin = { nelem+1, -nelem-1, -1},
-          vec = { {0.0, 0., 2.0}, 
+          vec = { {0.0, 0., 2.0},
                 {0., 2*(nelem+1), 0.0}
         },
       },
@@ -42,18 +42,18 @@ spatial_object = {
     attribute   = {
       kind      = 'periodic',
     },
-    geometry  = { 
+    geometry  = {
       kind    = 'periodic',
       object  = {
         plane1 = {
             origin = { -nelem-1, -nelem-1, -1},
-            vec = { {2*(nelem+1), 0.0, 0.0}, 
+            vec = { {2*(nelem+1), 0.0, 0.0},
                   {0.0, 0., 2.}
           },
         },
         plane2 = {
           origin = { -nelem-1, nelem+1, -1},
-          vec = { {2*(nelem+1), 0., 0.0}, 
+          vec = { {2*(nelem+1), 0., 0.0},
                 {0., 0.0, 2.}
         },
       },
@@ -64,18 +64,18 @@ spatial_object = {
     attribute   = {
       kind      = 'periodic',
     },
-    geometry  = { 
+    geometry  = {
       kind    = 'periodic',
       object  = {
         plane1 = {
             origin = { -nelem-1, -nelem-1, -1},
-            vec = { {2*(nelem+1), 0.0, 0.0}, 
+            vec = { {2*(nelem+1), 0.0, 0.0},
                   {0.0, 2.0*(nelem+1), 0.0}
           },
         },
         plane2 = {
           origin = { -nelem-1, -nelem-1, 1},
-          vec = { {2*(nelem+1), 0., 0.0}, 
+          vec = { {2*(nelem+1), 0., 0.0},
                 {0., 2*(nelem+1), 0.0}
         },
       },
@@ -83,13 +83,13 @@ spatial_object = {
     }
   },
   {
-    attribute = { 
+    attribute = {
       kind    = 'seed',
       label   = 'seed',
     },
     geometry  = {
-      kind    = 'canoND', 
+      kind    = 'canoND',
       object  = { origin = {0.,0.,0.} }
-    }                
+    }
   }
 }
