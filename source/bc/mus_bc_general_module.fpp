@@ -115,7 +115,8 @@ module mus_bc_general_module
   use mus_bc_fluid_experimental_module, only: moments_inflow, moments_outflow, &
     &                                         spc_moments_outflow,             &
     &                                         spc_bb_wall, spc_bb_vel_test
-  use mus_bc_passiveScalar_module,      only: outlet_pasScal, inlet_pasScal
+  use mus_bc_passiveScalar_module,      only: outlet_pasScal, inlet_pasScal,   &
+    &                                         pressure_antiBounceBack_pasScal
   use mus_bc_species_module,            only: spc_outlet_zero_prsgrd,          &
     &                                         spc_moleFrac, spc_moleFlux,      &
     &                                         spc_moleFrac_wtdf,               &
@@ -691,7 +692,14 @@ contains
       case('pressure_eq')
         bc( iBnd )%fnct => pressure_eq
       case('pressure_antibounceback')
-        bc( iBnd )%fnct => pressure_antiBounceBack
+        select case(trim(schemeHeader%kind))
+        case('fluid')
+           bc( iBnd )%fnct => pressure_antiBounceBack
+        case('passive_scalar')
+           bc( iBnd )%fnct => pressure_antiBounceBack_pasScal
+        case default
+          call tem_abort('Unknown scheme kind for pressure_antiBounceBack')
+        end select
       case('outlet_zero_prsgrd')
         bc( iBnd )%fnct => outlet_zero_prsgrd
 ?? IF( .not. SOA ) then

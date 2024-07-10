@@ -103,6 +103,7 @@ module mus_derQuanPS_module
 
   public :: mus_append_derVar_lbmPS
   public :: deriveEquilPS_FromMacro
+  public :: deriveEquilPS2ndOrder_FromMacro
   public :: deriveEquilPS_fromAux
   public :: deriveAuxPS_fromState
 
@@ -259,6 +260,68 @@ contains
       res( (iElem-1)*QQ+1: iElem*QQ ) = fEq
     end do
   end subroutine deriveEquilPS_FromMacro
+! ****************************************************************************** !
+
+  
+! ****************************************************************************** !
+  !> This routine computes 2nd order equilbrium from density and velocity
+  !! This must comply with mus_variable_module%derive_FromMacro
+  !!
+  !! This subroutine's interface must match the abstract interface definition
+  !! [[derive_FromMacro]] in derived/[[mus_derVarPos_module]].f90 in order to be
+  !! callable via [[mus_derVarPos_type:equilFromMacro]] function pointer.
+  subroutine deriveEquilPS2ndOrder_FromMacro( density, velocity, iField, nElems, &
+    &                                 varSys, layout, res                )
+    ! -------------------------------------------------------------------- !
+    !> Array of density.
+    !! Single species: dens_1, dens_2 .. dens_n
+    !! multi-species: dens_1_sp1, dens_1_sp2, dens_2_sp1, dens_2_sp2 ...
+    !!                dens_n_sp1, dens_n_sp2
+    real(kind=rk), intent(in) :: density(:)
+
+    !> Array of velocity.
+    !! Size: dimension 1: n*nFields. dimension 2: 3 (nComp)
+    !! 1st dimension arrangement for multi-species is same as density
+    real(kind=rk), intent(in) :: velocity(:, :)
+
+    !> Current field
+    integer, intent(in) :: iField
+
+    !> number of elements
+    integer, intent(in) :: nElems
+
+    !> variable system which is required to access fieldProp
+    !! information via variable method data c_ptr
+    type(tem_varSys_type), intent(in) :: varSys
+
+    !> scheme layout contains stencil definition and lattice weights
+    type(mus_scheme_layout_type), intent(in) :: layout
+
+    !> Output of this routine
+    !! Dimension: n*nComponents of res
+    real(kind=rk), intent(out) :: res(:)
+    ! -------------------------------------------------------------------- !
+    real(kind=rk) :: fEq(layout%fStencil%QQ), vel(3), ucx, usq
+    integer :: QQ, iElem, iDir
+    ! ---------------------------------------------------------------------------
+    QQ = layout%fStencil%QQ
+    do iElem = 1, nElems
+      vel = velocity(:,iElem)
+
+      do iDir = 1, QQ
+        ucx = dot_product( layout%fStencil%cxDirRK(:, iDir), vel )
+        usq = dot_product( vel, vel )
+
+        ! calculate equilibrium
+        fEq( iDir ) = layout%weight( iDir ) * density(iElem) &
+          & * ( 1._rk + cs2inv * ucx + cs2inv * cs2inv * ucx * ucx &
+          & * 0.5_rk - usq * cs2inv * 0.5_rk )
+
+      end do
+
+      res( (iElem-1)*QQ+1: iElem*QQ ) = fEq
+    end do
+  end subroutine deriveEquilPS2ndOrder_FromMacro
 ! ****************************************************************************** !
 
 
