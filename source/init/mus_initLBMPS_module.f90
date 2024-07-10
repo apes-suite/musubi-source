@@ -33,10 +33,10 @@ module mus_initLBMPS_module
   use tem_logging_module, only: logUnit
 
   ! include musubi modules
-  use mus_bgk_module,         only: mus_advRel_kPS_rBGK_v1st,                  &
+  use mus_bgk_module,         only: mus_advRel_kPS_rBGK_v1st_l,                &
     &                               bgk_advrel_flekkoy_noFluid,                &
-    &                               mus_advRel_kPS_rBGK_v2nd,                  &
-    &                               mus_advRel_kPS_rTRT_vStdNoOpt
+    &                               mus_advRel_kPS_rBGK_v2nd_l,                &
+    &                               mus_advRel_kPS_rTRT_vStdNoOpt_l
   use mus_scheme_type_module, only: kernel
 
   implicit none
@@ -64,9 +64,9 @@ contains
     case( 'bgk' )
       select case( trim(relaxation_variant) )
       case( 'first' )
-        compute => mus_advRel_kPS_rBGK_v1st
+        compute => mus_advRel_kPS_rBGK_v1st_l
       case( 'second' )
-        compute => mus_advRel_kPS_rBGK_v2nd
+        compute => mus_advRel_kPS_rBGK_v2nd_l
       case default
         write(logUnit(1),*) 'relaxation_variant '//trim(relaxation_variant)//   &
           &                 ' is not supported yet!'
@@ -74,7 +74,7 @@ contains
       end select
     case( 'trt' )
       write(logUnit(1), *) 'Using trt_advRel scheme.'
-      compute => mus_advRel_kPS_rTRT_vStdNoOpt
+      compute => mus_advRel_kPS_rTRT_vStdNoOpt_l
     case( 'bgk_noFluid' )
       select case( trim(layout) )
       case( 'flekkoy' )

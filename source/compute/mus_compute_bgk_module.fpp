@@ -61,11 +61,11 @@ module mus_bgk_module
 
   private
 
-  public :: mus_advRel_kCFD_rBGK_vStdNoOpt_l
-  public :: mus_advRel_kPS_rBGK_v1st
   public :: bgk_advRel_flekkoy_noFluid
-  public :: mus_advRel_kPS_rBGK_v2nd
-  public :: mus_advRel_kPS_rTRT_vStdNoOpt
+  public :: mus_advRel_kCFD_rBGK_vStdNoOpt_l
+  public :: mus_advRel_kPS_rBGK_v1st_l
+  public :: mus_advRel_kPS_rBGK_v2nd_l
+  public :: mus_advRel_kPS_rTRT_vStdNoOpt_l
 
 contains
 
@@ -75,7 +75,7 @@ contains
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mus_advRel_kPS_rBGK_v1st( fieldProp, inState, outState, auxField, &
+  subroutine mus_advRel_kPS_rBGK_v1st_l( fieldProp, inState, outState, auxField, &
     &                            neigh, nElems, nSolve, level, layout,   &
     &                            params, varSys, derVarPos               )
     ! -------------------------------------------------------------------- !
@@ -167,7 +167,7 @@ contains
 
     end do nodeloop
 
-  end subroutine mus_advRel_kPS_rBGK_v1st
+  end subroutine mus_advRel_kPS_rBGK_v1st_l
 ! ****************************************************************************** !
 
 
@@ -347,15 +347,15 @@ contains
 ! **************************************************************************** !
 !> Advection relaxation routine for the 2nd order diffusion model.
 
-!! A comparison to the previous flekkoy model can be found in 
+!! A comparison to the previous flekkoy model can be found in
 !! Chopard, B., Falcone, J. & Latt, J. "The lattice Boltzmann advection
-!! -diffusion model revisited." Eur. Phys. J. Spec. Top. 171, 245–249 (2009). 
+!! -diffusion model revisited." Eur. Phys. J. Spec. Top. 171, 245–249 (2009).
 !! https://doi.org/10.1140/epjst/e2009-01035-5
 !!
 !! This subroutine interface must match the abstract interface definition
 !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
 !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mus_advRel_kPS_rBGK_v2nd( fieldProp, inState, outState, auxField, &
+  subroutine mus_advRel_kPS_rBGK_v2nd_l( fieldProp, inState, outState, auxField, &
     &                            neigh, nElems, nSolve, level, layout,   &
     &                            params, varSys, derVarPos               )
     ! -------------------------------------------------------------------- !
@@ -399,7 +399,7 @@ contains
     ! access scheme via 1st variable method data which is a state variable
     call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
     scheme => fPtr%solverData%scheme
-  
+
     ! passive scalar has only one transport Variable
     vel_varPos = scheme%transVar%method(1)%data_varPos
     ! Get velocity field
@@ -412,60 +412,60 @@ contains
       &           %val(1:nSolve),                      &
       & nVals   = nSolve,                              &
       & res     = transVel                             )
-  
+
     ! convert physical velocity into LB velocity
     inv_vel = 1.0_rk / params%physics%fac( level )%vel
     transVel = transVel * inv_vel
-  
+
     ! initialize and define some field wise parameters
     d_omega = 2._rk / ( 1._rk + 6._rk                               &
       &                       * fieldProp(1)%species%diff_coeff( 1 ))
-  
+
     nodeloop: do iElem = 1, nSolve
       ! x-, y- and z-velocity from transport field
       u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
-  
+
       do iDir = 1, layout%fStencil%QQ
         pdfTmp( iDir ) = &
   & instate( ?FETCH?( iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems,neigh ) )
       end do
       rho = sum( pdfTmp )
-  
+
       do iDir = 1, layout%fStencil%QQ
         ! compute c_i * u
         uc = dble( layout%fStencil%cxDir(1, iDir)) * u_fluid(1) + &
           &  dble( layout%fStencil%cxDir(2, iDir)) * u_fluid(2) + &
           &  dble( layout%fStencil%cxDir(3, iDir)) * u_fluid(3)
-  
+
         usq = u_fluid(1)*u_fluid(1) + u_fluid(2)*u_fluid(2) + u_fluid(3)*u_fluid(3)
-  
+
         ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
         feq = rho * layout%weight( iDir ) * (1._rk + 3._rk*uc    &
         &           +  9._rk*uc*uc*0.5_rk     &
         &           -  usq*0.5_rk*3._rk )
-  
+
         outstate(                                                            &
   & ?SAVE?( iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems,neigh ) ) =     &
           &                pdfTmp( iDir ) + d_omega * ( feq - pdfTmp( idir ))
       end do
-  
+
     end do nodeloop
-  
-    end subroutine mus_advRel_kPS_rBGK_v2nd
+
+    end subroutine mus_advRel_kPS_rBGK_v2nd_l
   ! ****************************************************************************** !
-  
+
 
 ! **************************************************************************** !
 !> Advection relaxation routine for the TRT diffusion model.
 !!
-!!   Irina Ginzburg (2005), "Equilibrium-type and link-type lattice Boltzmann 
+!!   Irina Ginzburg (2005), "Equilibrium-type and link-type lattice Boltzmann
 !!   models for generic advection and anisotropic-dispersion equation",
 !!   Advances in Water Resources, Volume 28, Issue 11
 !!
 !! This subroutine interface must match the abstract interface definition
 !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
 !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rTRT_vStdNoOpt( fieldProp, inState, outState, auxField, &
+    subroutine mus_advRel_kPS_rTRT_vStdNoOpt_l( fieldProp, inState, outState, auxField, &
       &                            neigh, nElems, nSolve, level, layout,   &
       &                            params, varSys, derVarPos               )
       ! -------------------------------------------------------------------- !
@@ -509,7 +509,7 @@ contains
       ! access scheme via 1st variable method data which is a state variable
       call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
       scheme => fPtr%solverData%scheme
-    
+
       ! passive scalar has only one transport Variable
       vel_varPos = scheme%transVar%method(1)%data_varPos
       ! Get velocity field
@@ -522,57 +522,57 @@ contains
         &           %val(1:nSolve),                      &
         & nVals   = nSolve,                              &
         & res     = transVel                             )
-    
+
       ! convert physical velocity into LB velocity
       inv_vel = 1.0_rk / params%physics%fac( level )%vel
       transVel = transVel * inv_vel
-    
+
       ! initialize and define some field wise parameters
       d_omega = 2._rk / ( 1._rk + 6._rk                               &
         &                       * fieldProp(1)%species%diff_coeff( 1 ))
       magicParam = fieldProp(1)%species%lambda
       aux_omega = 1.0_rk / (magicParam / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
-    
+
       nodeloop: do iElem = 1, nSolve
         ! x-, y- and z-velocity from transport field
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
-  
+
         do iDir = 1, layout%fStencil%QQ
           pdfTmp( iDir ) = &
     & instate( ?FETCH?( iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems,neigh ) )
         end do
         rho = sum( pdfTmp )
-    
+
         do iDir = 1, layout%fStencil%QQ
           ! compute c_i * u
           uc = dble( layout%fStencil%cxDir(1, iDir)) * u_fluid(1) + &
             &  dble( layout%fStencil%cxDir(2, iDir)) * u_fluid(2) + &
             &  dble( layout%fStencil%cxDir(3, iDir)) * u_fluid(3)
-    
+
           usq = u_fluid(1)*u_fluid(1) + u_fluid(2)*u_fluid(2) + u_fluid(3)*u_fluid(3)
-  
+
           ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
           feqPlus = rho * layout%weight( iDir ) * (1._rk    &
           &           +  9._rk*uc*uc*0.5_rk     &
           &           -  usq*0.5_rk*3._rk )
-  
+
           feqMinus = rho * layout%weight( iDir ) * 3._rk * uc
-  
+
           invDir = layout%fStencil%cxDirInv(iDir)
           fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
           fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
-          
+
           outstate(                                                            &
     & ?SAVE?( iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems,neigh ) ) =     &
             &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)              &
             &                + aux_omega * (feqPlus - fPlus)
         end do
-    
+
       end do nodeloop
-    
-      end subroutine mus_advRel_kPS_rtrt_vStdNoOpt
+
+      end subroutine mus_advRel_kPS_rTRT_vStdNoOpt_l
     ! ****************************************************************************** !
-    
+
 
 end module mus_bgk_module
 ! ****************************************************************************** !
