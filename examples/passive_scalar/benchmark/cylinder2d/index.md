@@ -30,6 +30,12 @@ In our simulation, the cylinder diameter $a=40$ is used as a default value. The 
 The pressure anti-bounce back boundary condition is used to compute and compare with the
 analytical solutions.
 
+![The comparison between computation and analytical solution at t=30000](media/compare_30000.png)
+
+Simply executing <tt>run.sh<tt> to get the above figure. Please try to use different initial condition
+by setting different values of $ tIni $ in <tt>musubi.lua<tt>. Test how the initial condition impacts
+the result.
+
 The objectives of this example is to introduce how to:
 * Simulate time evolution of the diffusion process inside a 2D cylinder
 * Testify the correctness of the anti-bounce back Dirichlet boundary condition

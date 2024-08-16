@@ -58,10 +58,14 @@ D = {
     sim = (sigmas.D_sim - sigma0 ^ 2) / 2 / t_total,
     real = (sigmas.D_real - sigma0 ^ 2) / 2 / t_total,
 }
+
 print(
     string.format('%-20s', case_args)..'\t'..
+    string.format('%20.18f', tau)..'\t'..
+    string.format('%20.18f', u_field)..'\t'..
     string.format('%20.18f', D.sim)..'\t'..
     string.format('%20.18f', D.real)..'\t'..
-    string.format('%20.18f', math.abs(D.sim - D.real) / D.real)
+    string.format('%20.18f', (D.sim - D.real) / D.real)..'\t'..
+    string.format('%20.18f', (D.sim - D.real))
 )
 

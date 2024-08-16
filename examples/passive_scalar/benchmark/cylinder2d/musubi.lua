@@ -10,7 +10,8 @@ c_init = 1.
 maxN = 150.0
 tau = 0.516
 diff = (tau - 0.5) / 3
-tIni = 0
+-- initial condition impacts the time-dependent result
+tIni = 0  
 
 function factorial(n)
   if n < 0.1 and n > -0.1 then
@@ -35,7 +36,7 @@ function concentration_real(x, y, z, t)
   local mu = {2.4048, 5.5201, 8.6537, 11.7915, 14.9309}
   local sum = 0
   local r = math.sqrt((x-nelem)^2 + (y-nelem)^2)
-  -- print("x = " .. x .. ", y = " .. y .. ", r = " .. r .. ", sum = ".. sum)
+
   if (r > nelem) then
     return cs2
   end
@@ -43,10 +44,6 @@ function concentration_real(x, y, z, t)
   for i = 1, #mu do
     sum = sum + 2 / (mu[i] * bessel(mu[i], 1)) * math.exp(-mu[i] ^ 2
       * diff * t / nelem ^ 2) * bessel(mu[i] * r / nelem, 0)
-    -- if x == 13 and y == 11 then
-    --   print("mu[i] = " .. mu[i])
-    --   print("bessel(mu[i], 1) = " .. bessel(mu[i], 1))
-    -- end
   end
 
   local c = c_init * (1 - sum)
@@ -78,7 +75,7 @@ sim_control        = {
 identify  = {
   label = 'species',
   kind = 'passive_scalar',
-  relaxation='trt',
+  relaxation='trt', -- trt is used for a converged solution
   layout='d2q9',
   variant = 'second'
 }
@@ -119,14 +116,12 @@ tracking  = {
       object  = {
         origin = {nelem, nelem, 5},
         vec = { {nelem, 0., 0.0} }
-        -- origin = {-50, -nelem-1, 0},
-        -- vec = { {0., 2.0*(nelem+1), 0.0} }
       }
     },
     folder    = 'tracking/',
     output    = {format = 'asciispatial'},
     time_control     = {
-      min = { iter = 0 }, max = { iter = t_total }, interval = { iter = interval } }
+      min = { iter = t_total }, max = { iter = t_total }, interval = { iter = t_total } }
   }
 }
 

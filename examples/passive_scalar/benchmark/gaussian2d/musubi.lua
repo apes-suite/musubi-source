@@ -25,9 +25,11 @@ sim_control        = {
 identify  = {
   label = 'species',
   kind = 'passive_scalar',
-  relaxation='trt',
-  layout='d2q9',
-  variant = order
+  relaxation = {
+    name = collision,
+    variant = order
+  },
+  layout='d2q9'
 }
 
 transport_velocity = 'velocity_fluid'
@@ -56,8 +58,6 @@ tracking  = {
       -- object  = {
       --   origin = {-nelem-1, 0, 0},
       --   vec = { {2.0*(nelem+1), 0., 0.0} }
-      --   -- origin = {-50, -nelem-1, 0},
-      --   -- vec = { {0., 2.0*(nelem+1), 0.0} }
       -- }
     },
     folder    = 'tracking/',
@@ -72,7 +72,7 @@ field = {
   -- define a diffusion parameter
   species = {diff_coeff = {(tau-0.5)/3} },
   initial_condition = { pressure  = gauss_pulse,
-                        velocityX = u_field,
+                        velocityX = 0.0,
                         velocityY = 0.0,
                         velocityZ = 0.0
                       },

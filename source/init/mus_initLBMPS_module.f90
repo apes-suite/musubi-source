@@ -33,11 +33,10 @@ module mus_initLBMPS_module
   use tem_logging_module, only: logUnit
 
   ! include musubi modules
-  use mus_bgk_module,         only: mus_advRel_kPS_rBGK_v1st_l,                &
-    &                               bgk_advrel_flekkoy_noFluid,                &
-    &                               mus_advRel_kPS_rBGK_v2nd_l,                &
-    &                               mus_advRel_kPS_rTRT_vStdNoOpt_l
-  use mus_scheme_type_module, only: kernel
+  use mus_compute_passiveScalar_module, only: mus_advRel_kPS_rBGK_v1st_l,      &
+    &                                         mus_advRel_kPS_rBGK_v2nd_l,      &
+    &                                         mus_advRel_kPS_rTRT_vStdNoOpt_l
+  use mus_scheme_type_module,           only: kernel
 
   implicit none
 
@@ -75,14 +74,6 @@ contains
     case( 'trt' )
       write(logUnit(1), *) 'Using trt_advRel scheme.'
       compute => mus_advRel_kPS_rTRT_vStdNoOpt_l
-    case( 'bgk_noFluid' )
-      select case( trim(layout) )
-      case( 'flekkoy' )
-        compute => bgk_advRel_flekkoy_noFluid
-      case default
-        write(logUnit(1),*) 'Stencil '//trim(layout)//' is not supported yet!'
-        call tem_abort()
-      end select
     case default
       write(logUnit(1),*) 'The selected relaxation model is not supported: '// &
         &                  trim(relaxation)

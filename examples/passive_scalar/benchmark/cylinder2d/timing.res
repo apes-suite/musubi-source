@@ -1,3 +1,0 @@
-#     Revision             Casename      nFluids        nBnds   nProcs    MFEPS  loadconfig|       proto|    flooding|   inHeritDR|  refineLeaf|  smoothLeaf|proto2treelm|   dump_mesh|
-  0830ede05de4           simulation         5005         5005        1    7.480E-03   39.679E-03  371.128E-03  115.452E-03    0.000E+00   26.771E-03   78.778E-06  106.251E-03    4.502E-03
-   cbfd25167a6c+           simulation           5005         1      7.27E-03     13.75E+00        100.00   84.1432E+00        10  634.546431887E+00          6.8873          0.0110          0.0362          0.0000          0.0000          0.0000        0.00        0.00        0.05        0.00           0.00        0.00        0.00

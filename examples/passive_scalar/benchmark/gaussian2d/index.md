@@ -17,20 +17,57 @@ In our simulation, $\sigma_0=40$ is used as a default value. A 1000*1000 2D mesh
  periodic. As the area is much larger than the $ \sigma_0 $, the effect from the boundaries
  is neglected. Results of t=200 are used to calculate the diffusion factor.
 
-![The comparison of concentration between simulation and analytical solution](media/compare_sim_ana_C.jpg)
-![The error of diffusion factor when u\_bg=0](media/err_numerical_diffusion.jpg)
+![The comparison of concentration between simulation and analytical solution](media/compare_sim_ana_C.png)
+
+In <tt>./musubi.lua<tt>, define 'shape' in 'tracking' block as
+
+```
+shape = {
+  -- kind = 'all'
+  kind  = 'canoND',
+  object  = {
+    origin = {-nelem-1, 0, 0},
+    vec = { {2.0*(nelem+1), 0., 0.0} }
+  }
+},
+```
+
+To generate a midline profile comparison between the analytical and computed solution, run <tt>profile.sh<tt> 
+to create the plot.
+
+![The error of diffusion factor when u\_bg=0](media/err_diffusion_factor.png)
+
+In <tt>./musubi.lua<tt>, define 'shape' in 'tracking' block as
+
+```
+shape = {
+  kind = 'all'
+  -- kind  = 'canoND',
+  -- object  = {
+  --   origin = {-nelem-1, 0, 0},
+  --   vec = { {2.0*(nelem+1), 0., 0.0} }
+  -- }
+},
+```
+
+To generate the above plot, simply run <tt>test_stability.sh<tt>. Notice that when $ \tau = 1 $,
+the error of computed diffusion factor is exactly 0.
+
 ![Absolute error of D with u\_bg and order of equilibriums](media/d_abs_err_tau0.501.jpg)
+
+In <tt>test_order.sh<tt>, define $ \tau=0.501 $, and run <tt>test_order.sh. The chart shows
+the error of diffusion factor changing with the background velocity. The following 
+charts can be obtained with different relaxation time $ \tau $.
+
 ![Absolute error of D with u\_bg and order of equilibriums](media/d_abs_err_tau0.503.jpg)
 ![Absolute error of D with u\_bg and order of equilibriums](media/d_abs_err_tau0.8.jpg)
 ![Absolute error of D with u\_bg and order of equilibriums](media/d_abs_err_tau2.jpg)
 ![Absolute error of D with u\_bg and order of equilibriums](media/d_abs_err_tau5.jpg)
-![The model error for first equilibrium](media/d_1st_model_error.jpg)
 
 The objectives of this example is to introduce how to:
 * Simulate time evolution of the advection-diffusion process of a 2D
 Gaussian Hill.
 * Compare the profile between first and second order bgk equilibria
-* Compare the profile between bgk and trt schemes
 * Compute the diffusion parameter and compare it to the theoritical value for different
 background velocities
 
