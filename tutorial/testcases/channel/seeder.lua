@@ -31,7 +31,7 @@ fixHeight = true          -- the channel's height is fixed and is used to comput
 --! [geometry relations]
 
 height = 1.               -- will be adapted to be exactly resolved by the discretization (physical)
-ratio  = 8.               -- will be adapted to be exactly resolved by the discretization 
+ratio  = 6.               -- will be adapted to be exactly resolved by the discretization 
 length = ratio*height     -- absolute length of the channel (physical)
 radius = 0.1*height       -- radius of the channel if a tube is used (physical)
 
@@ -50,7 +50,7 @@ radius = 0.1*height       -- radius of the channel if a tube is used (physical)
 if fixHeight then
 
   nElemsHeight = 2^(level-4)                              -- number of elements in the height (lattice)   
-  dx = height/nElemsHeight                                
+  dx = height/nElemsHeight
   nElemsLength = nElemsHeight*ratio + 2                   -- need inlet and outlet element
   level = math.ceil( math.log(nElemsLength)/math.log(2))  -- compute the required level
   lengthSeeder = 2^level*dx                               -- length of a bounding cube element
@@ -68,7 +68,7 @@ if fixHeight then
 
 else
   lengthSeeder = length/(1.-2./2.^level)                 -- length of a bounding cube element 
-  dx  = lengthSeeder/(2^level)                           
+  dx  = lengthSeeder/(2^level)
   nElemsHeight = 2.*math.floor(length/(dx*2.*ratio))     -- number of elements in the height (lattice)
   height = nElemsHeight*dx                               -- absolute height of the channel (physical)
 end 
@@ -79,7 +79,7 @@ end
 --! [reference values]
 
 minlevel=level
-maxLevel = level+math.max(refinementLevel, refinementLevel2) 
+maxLevel = level+math.max(refinementLevel, refinementLevel2)
 nElemsMax = 2^maxLevel
 dxMin  = lengthSeeder/(2^maxLevel)
 dxDash = 0.5*dxMin
@@ -93,8 +93,8 @@ size_x = 0.1*length
 start_x = -0.5*size_x
 if useObstacle then
   size_x = 0.68*length
-  start_x = -0.45*length
-  size_y = 2.*height/5.-5.*dxDash
+  start_x = -0.5*length+0.5*height
+  size_y = 2.*height/4.-5.*dxDash
   if testIntersection then
     start_x = -0.40*length
   end
@@ -105,24 +105,28 @@ start_y = -size_y/2
 size_z = size_y
 start_z = start_y
 
-start2_x = -0.32*length
+start2_x = start_x+0.25*height
 size2_x  = 0.37*size_x
-size2_y = size_y*0.48
+size2_y = size_y*0.7
 start2_y = -size2_y/2
 size2_z = size2_y
 start2_z = start2_y
 
 --! [reference values]
 
+-- How detailed should the output be?
+-- The higher the level, the more output you'll get from seeder.
+logging = {level=3}
 
 -- boundingbox: two entries: origin and length in this
 -- order, if no keys are used
 
-
 --! [bounding cube]
 
-bounding_cube = {origin = {-lengthSeeder*0.5, -lengthSeeder*.5, -lengthSeeder*0.5},
-               length = lengthSeeder}
+bounding_cube = {
+  origin = {-lengthSeeder*0.5, -lengthSeeder*.5, -lengthSeeder*0.5},
+  length = lengthSeeder
+}
 
 --! [bounding cube]
 
@@ -387,11 +391,11 @@ if useObstacle ==true then
   --            radius = radius }
           }
         },
-       transformation = {
+        transformation = {
           deformation =  2.0,
-          translation =  {-2., 0., 0. }
+          translation =  {start2_x+2*radius, 0., 0. }
         }
-        }) 
+      })
     elseif stlLabel == 'sphere' then
       table.insert(spatial_object,  { 
         attribute = { 
@@ -407,11 +411,11 @@ if useObstacle ==true then
   --            radius = radius }
           }
         },
-       transformation = {
-          deformation =  2.0,
-          translation =  {-2., 0., 0. }
+        transformation = {
+          deformation =  2.0/5.0,
+          translation =  {start2_x+2*radius, 0., 0. }
         }
-        }) 
+      }) 
       -- elseif stlLabel == 'sphere' then
     end -- stlLabel
   else
