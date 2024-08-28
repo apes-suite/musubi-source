@@ -1,8 +1,16 @@
+--! [Lattice viscosity calculation]
+omega = 1.7
+viscLB  = 1./6.*(2./omega - 1.) -- Lattice viscosity
+--! [Lattice viscosity calculation]
+
 --! [general settings]
 simulation_name = 'Gausspulse'
 timing_file = 'mus_timing.res'
 
-fluid = { omega = 1.7, rho0 = 1.0 }
+fluid = { 
+  kinematic_viscosity = viscLB,
+  bulk_viscosity = 2.0*viscLB/3.0
+}
 --! [general settings]
 
 
@@ -19,7 +27,7 @@ sim_control = {
 --! [identify]
 identify = {
   label = '',
-  kind  = 'lbm',
+  kind  = 'fluid',
   layout = 'd3q19',
   relaxation = 'bgk',
 }
