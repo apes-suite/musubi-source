@@ -63,12 +63,12 @@ units and vice-versa:
 | Measure      | Unit     | Reference          | Notation. | Name in physics table | Default value |
 |:------------:|:--------:|:------------------:|:---------:|:---------------------:|:-------------:|
 | Mass         | $kg$     | fluid mass         | $m_{ref}$    | `mass0`            | -             |
-| Density      | $kg/m^3$ | mean fluid density | $\rho_{ref}$ | `rho0`             | $mass0/dx^3   |
+| Density      | $kg/m^3$ | mean fluid density | $\rho_{ref}$ | `rho0`             | $mass0/dx^3$   |
 | Length       | $m$      | coarsest element   | $dx_{ref}$   | Not required | is taken from mesh  |
 | Time         | $s$      | coarsest time step size | $dt_{ref}$   | `dt`             | -                     |
-| Amount of substance | $mol$ | Inverse of Avagadro's number  | $N_A$ | 'mole0'       | $1/6.02214129e^{-23}$ |
-| Mole density | $mol/m^3$ | mean mole density | $c_{ref}$    | `moleDens0`           | $1/(N_A dx^3}$        |
-| Molecular weight | $kg/mol$ | Largest molecular weight of species| $M_{ref}$ | 'molWeight0' | $mass0/mole0$ |
+| Amount of substance | $mol$ | Inverse of Avagadro's number  | $N_A$ | `mole0`       | $1/6.02214129e^{-23}$ |
+| Mole density | $mol/m^3$ | mean mole density | $c_{ref}$    | `moleDens0`           | $1/(N_A dx^3)$        |
+| Molecular weight | $kg/mol$ | Largest molecular weight of species| $M_{ref}$ | `molWeight0` | $mass0/mole0$ |
 | Temperature  | $K$      | fluid temperature  | $T_{ref}$    | `temp0`               | 1.0                   |
 | Electric charge | $C$    | fundamental electric charge | $q_{ref}$ | `coulomb0`     | $1.60217657e^{-19}$   |
 
@@ -262,8 +262,8 @@ Initial conditions can be specified in the `initial_condition` section.
 First, let us define that the velocity at `t=0` should be `0` everywhere.
 
 But if every point is equal, not much is going to happen. So for the
-initial density, we will do something more fancy: We will define a function
-`gausspulse` that will set the initial density such that it has a peak
+initial pressure, we will do something more fancy: We will define a function
+`gausspulse` that will set the initial pressure such that it has a peak
 in the middle of the domain, and decreases quickly towards the sides.
 With this, we will create two waves running from the center towards both
 sides. The `initial_condition`-section will point to this function for the
