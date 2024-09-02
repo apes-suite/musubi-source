@@ -46,36 +46,99 @@ and unique names, you always know where a particular output came from.
 
 \snippet testcases/gaussian_pulse/musubi.lua general settings
 
-## The fluid table ##
+## Physics table ##
 
-### Physical and Lattice Boltzmann references ###
+Before we go to the next step, lets learn about the unit system used in 
+Musubi to define simulation parameters: `kinematic_viscosity` in `fluid` table 
+and macroscopic variables: `pressure`, `velocity` in `initial_condition` and 
+`boundary_condition` tables. These parameters/variables can be defined either in 
+physical SI units or lattice (non-dimensional) units but not mixed i.e. some in 
+physical and other in lattice. It is important that they are consistent. 
+Base SI units used to define the physical variabes are: kg (mass), m (length),
+s (time), mol (amount of substance), K (thermodynamic temperature) and A (electric 
+current). In Musubi, the following reference values 
+are used used to convert parameters/variables in physical units to lattice
+units and vice-versa: 
 
-Next, we define the fluid properties, required for LBM simulations.
-They are devided in two aspects, the physical and the Lattice Boltzmann (LB)
-values. The physical values are taken from the SI unit system which uses
-standard units like kg (mass), mol (amount of substance), K (thermodynamic 
-temperature), m (length), s (time), A (electric current and cd (luminous
-intensity). A lot of physical units are derived from this system. It is 
-normally used to present the solutions of scientific researches. 
-But for the program it is necessary to use the numerical LB methods to gain
-solutions. Therefore both unit systems are defined for Musubi and it is possible
-to convert each other in both directions. In general, these tables look like this:
+| Measure      | Unit     | Reference          | Notation. | Name in physics table | Default value |
+|:------------:|:--------:|:------------------:|:---------:|:---------------------:|:-------------:|
+| Mass         | $kg$     | fluid mass         | $m_{ref}$    | `mass0`            | -             |
+| Density      | $kg/m^3$ | mean fluid density | $\rho_{ref}$ | `rho0`             | $mass0/dx^3   |
+| Length       | $m$      | coarsest element   | $dx_{ref}$   | Not required | is taken from mesh  |
+| Time         | $s$      | coarsest time step size | $dt_{ref}$   | `dt`             | -                     |
+| Amount of substance | $mol$ | Inverse of Avagadro's number  | $N_A$ | 'mole0'       | $1/6.02214129e^{-23}$ |
+| Mole density | $mol/m^3$ | mean mole density | $c_{ref}$    | `moleDens0`           | $1/(N_A dx^3}$        |
+| Molecular weight | $kg/mol$ | Largest molecular weight of species| $M_{ref}$ | 'molWeight0' | $mass0/mole0$ |
+| Temperature  | $K$      | fluid temperature  | $T_{ref}$    | `temp0`               | 1.0                   |
+| Electric charge | $C$    | fundamental electric charge | $q_{ref}$ | `coulomb0`     | $1.60217657e^{-19}$   |
+
+As shown in the table some of them have default values and coarsest element size 
+is taken from the mesh. So, the only two reference units that are mandatory to 
+define in the `physics` table are reference for $kg$ and $s$. Most common approach
+to define $kg$ is using reference density $\rho_{ref}$: $m_{ref}=\rho_{ref} m^3$.
+Here is an example `physics` table used in a channel flow testcase.
+\snippet testcases/channel/musubi.lua physics table
+
+The non-dimensional lattice units for the base SI units are computed
+with physical values = reference values so they are usually 1.0.
+such that
+- Lattice density, $\rho_{l} = \frac{\rho_{p}}{\rho_{ref}} = 1.0$
+- Lattice element size, $dx_{l} = \frac{dx_p}{dx_{ref}} = 1.0$
+- Lattice time step, $dt_{l} = \frac{dt_p}{dt_{ref}} = 1.0$ and so on.
+
+All other derive variable in lattice units are converted to physical SI units
+using reference variables in base SI units. 
+For simplicity, underscore 'ref' are dropped in the equations below for the reference values.
+- Lattice pressure $p_l$ to physical pressure, $p_p = p_l * \frac{\rho dx^2}{dt^2}$ $[kg/m/s^2]$
+- Lattice velocity $u_l$ to physical velocity, $u_p = u_l * \frac{dx}{dt}$ $[m/s]$
+- Lattice kinematic viscosity to physical kinematic viscosity, $\nu_p = \nu_l * \frac{dx^2}{dt}$ $[m^2/s]$
+- Lattice force $f_l$ to physical force, $f_p = f_l * \frac{\rho dx^4}{dt^2}$ $[kg m/s^2]$
+- Lattice current $I_l$ to physical current, $I_p = I_l * \frac{q}{dt}$ $[C/s]$
+- Lattice potential $\phi_l$ to physical potential, $\phi_p = \phi_l * \frac{\rho dx^5}{q dt^2}$ $[kg m^2 /(C s^2)=V]$
+
+For more unit conversion for other derive variables refer to source/mus_physics_table.f90
+
+Now you know how to define variables in `fluid`/`species`/`mixture` tables and 
+macroscopic variables in `initial_conditon` and `boundary_condition`.
+Remember that the variables must be defined in consistent units.
+Here is an example which defines all variables in physical units
 \snippet testcases/channel/musubi.lua reference physical values
+
+Finally, the physical time step size required in the `physics` table is computed
+either by acoustic or diffusive scaling.
+\snippet testcases/channel/musubi.lua time step determination
+
+When physical units are not of interest and you would like to just run a simulation
+by defining lattice units then just remove `physics` table from the musubi
+configuration file. In this case, the variables are then defined in lattice units
 \snippet testcases/channel/musubi.lua reference LB values 
 
-\note In this example, these tables are not used.
+## The fluid table ##
 
-`omega0` is the collision frequency, `rho0` is the macroscopic density.
+Next, we define the fluid properties, required for the LBM simulations.
+As mentioned in previous session, they can be defined either in physical or
+in lattice units. When defining in physical units, DO NOT FORGET to define
+`physics` table. The properties to be defined in the fluid table depends
+on the type of equations being solved. 
+
+Here is the example for `fluid_incompressible` kind with `bgk` collision
+\snippet testcases/channel/musubi.lua fluid table 
+which only requires kinematic viscosity of the fluid. For a weakly-compressible 
+`fluid` kind, `bulk_viscosity` must also be defined.
 Both of them are inside the table `fluid` (Lua has a single neat concept
 [tables](http://www.lua.org/pil/2.5.html) for representing multiple datas in
 a structure. It allows you to treat variables a bit like trees: they can
 contain more variables, other tables or even references to functions).
 Tables are denoted by curly braces in Lua.
 
-Thus the configuration file for these options looks so far as follows:
+Here is a simple configuration file with `fluid` table in lattice units.
 \snippet testcases/gaussian_pulse/musubi.lua general settings
 With a single string variable describing the simulation name, and a table
-containing two reals of names `omega` and `rho0` describing the fluid.
+containing two reals of names `kinematic_viscosity` and 
+`bulk_viscosity` describing the fluid.
+`viscLB` can be computed from the relaxation parameter of the collision operator
+`omega` as
+\snippet testcases/gaussian_pulse/musubi.lua general settings
 
 ## Time settings ##
 
