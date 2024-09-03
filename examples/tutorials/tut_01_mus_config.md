@@ -57,7 +57,7 @@ and unique names, you always know where a particular output came from.
 simulation_name = 'Gausspulse'
 ```
 
-## the physics table ##
+## Physics table ##
 
 Before we go to the next step, lets learn about the unit system used in 
 Musubi to define simulation parameters: `kinematic_viscosity` in `fluid` table 
@@ -228,7 +228,7 @@ NOTE: Musubi can dump output variables in physical units.
 It just requires a suffix '_phy' to the variable name in tracking table.
 
 
-## The fluid table ##
+## Fluid table ##
 
 Next, we define the fluid properties, required for LBM simulations.
 As mentioned in previous session, they can be defined either in physical or
@@ -490,11 +490,13 @@ or at least give them some prefix so you don't confuse your own variables
 with *Musubi* options.
 @endnote
 
+@note
 An important remark on the pressure variable. It is a total pressure irrespective 
 of `fluid` and `fluid_incompressible`. So if pressure flucations are required
 to compute the acoustic waves then they can be obtained by calculating a
 difference between numerical pressure computed from simulation and 
 ambient pressure defined in initial/boundary condition.
+@endnote
 
 ## Result ##
 
