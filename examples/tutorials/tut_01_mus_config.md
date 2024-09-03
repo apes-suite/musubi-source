@@ -39,6 +39,52 @@ leave them alone if they are not relevant to you.
 created the subdirectories `restart` and `tracking` in the same path where
 `musubi.lua` is located.
 
+### Lua concepts for the configuration
+
+Lua provides a convenient data structure called
+[tables](http://www.lua.org/pil/2.5.html), that we use extensively in the
+configuration to structure it.
+Tables allow us to gather relevant settings together.
+They are indicated by curly brackets `{}`.
+Thus, we can define a table like this:
+
+```lua
+atable = { somevalue = 123 }
+```
+
+Note that tables can be nested and values inside the table can be themselves
+be tables again.
+We can have an arbitrary amount of values in the table definition and individual
+settings are separated by comma (`,`), like this:
+
+```lua
+atable = {
+  somevalue = 123,
+  anothervalue = "abc"
+}
+```
+
+A superfluous comma at the end of the last entry is also valid syntax here.
+
+Alternatively, we can also modify or add values to an existing table via the
+dot operator:
+
+```lua
+atable.somevalue = 42
+atable.third = 1.23
+```
+
+Here we modify `somvalue` in the `atable` table and add a `third` entry
+with the value `1.23` to the table.
+
+Comments in Lua are introduced by two dashes (`--`). We also make use of
+these to offer explanations to the settings in the configuration scripts.
+
+@note
+The complete configuration file is executed and the status of the various
+settings "at the end" of that execution is what Musubi will obtain.
+@endnote
+
 ## General Simulation Name ##
 
 Every simulation should have a name, which is specified by the variable
@@ -51,36 +97,99 @@ You can use just anything as a simulation name, just make it clear and
 descriptive, as it will help you to identify produced results from the
 simulation.
 
-@note The simulation name will appear in all output files, so if you use good
+@note
+The simulation name will appear in all output files, so if you use good
 and unique names, you always know where a particular output came from.
+@endnote
 
 ```lua
 simulation_name = 'Gausspulse'
 ```
 
+## Fluid table ##
+
+Musubi requires us to define the properties of the fluid to simulate in
+a `fluid` table.
+In that table we define the kinematic viscosity in the variable
+`kinematic_viscosity`:
+
+```lua
+fluid = {
+  kinematic_viscosity = 1.2e-6
+}
+```
+
+In the incompressible model this is already enough to define the fluid.
+For weakly compressible models, we also need to provide the bulk viscosity
+in the variable `bulk_viscosity`:
+
+```lua
+fluid = {
+  kinematic_viscosity = 1.2e-6
+}
+fluid.bulk_viscosity = 2*fluid.kinematic_viscosity/3
+```
+
+Notice how we defined the second entry here in dependency of the first.
+This is not possible when defining all entries in the table directly, thus
+we are using a separate line after the first definition of the table
+to set the bulk viscosity.
+
+One question that arises in setting the values in the fluid table, but
+also in other settings like the initial conditions, boundary conditions or source
+terms, is in what units those values are to be provided.
+
+The solver works on so called lattice units, which are tied to the discretization.
+However, that often is a little cumbersome to work with and it also provides
+the possibility to instead translate the given quantities from physical
+units.
+To that end the user has to provide a `physics` table.
+When provided by the user that table will be used by Musubi to convert
+given fluid property settings to the internal lattice units for the computation.
+It will also be used to translate results back to physical units in variable
+names that have a `_phy` suffix.
+Thus, when you want to refer obtain the resulting velocity field from the
+computation you would access the `velocity_phy` variable, which provides the
+velocity converted with the help of the settings in the `physics` table.
+
 ## Physics table ##
 
-Before we go to the next step, lets learn about the unit system used in 
-Musubi to define simulation parameters.
-We have to set:
+The `physics` table provides the necessary quantities to transform physical units
+to the lattice units used by the solver internally.
+Specifically it applies to the `fluid.kinematic_viscosity` setting and macroscopic
+variables like `pressure` and `velocity` used in the definition of boundary and
+initial conditions.
 
-- `kinematic_viscosity` in the `fluid` table 
-- and the macroscopic variables: `pressure`, `velocity` in the tables for
-   `initial_condition` and `boundary_condition`
-
-These parameters/variables can be defined either in physical units or lattice
-(non-dimensional) units but not mixed i.e. some in physical and other in lattice.
-
+As described above, these parameters/variables can be defined either in physical units
+or lattice (non-dimensional) units.
+But they can not be mixed i.e. some in physical and others in lattice units.
 It is important that they are consistent. 
-Base SI units used to define the physical variabes are: kg (mass), m (length),
-s (time), mol (amount of substance), K (thermodynamic temperature) and A (electric 
-current).
-In Musubi, the following reference values are used used to convert
+
+Two settings describe space and time: the edge length of the coarsest elements in the
+grid (`dx`) and the step length of the time steps of those elements (`dt`).
+While `dx` is given by the mesh definition, the time step length has to be provided in
+the physics table for the conversion between lattice and physical units.
+Additionally we need to define either the mean density `rho0` of the fluid or the 
+fluid mass `mass0` in the coarsest elements. 
+Providing the mass is more natural when simulating multiple species, as we can work
+with the respective mass fractions in that case.
+Otherwise, we normally describe the mean density.
+Both, `dt` and a measure for the mass have to be provided in the `physics` table.
+Thus, a minimal `physics` table should look like this:
+
+```lua
+physics = {
+  dt = 1.0e-3,
+  rho0 = 1.0
+}
+```
+
+In Musubi, the following reference values are used to convert
 parameters/variables in physical units to lattice units and vice-versa: 
 
 | Measure      | Unit     | Reference          | Notation. | Name in physics table | Default value |
 |:------------:|:--------:|:------------------:|:---------:|:---------------------:|:-------------:|
-| Mass         | $kg$     | fluid mass         | $m_{ref}$    | `mass0`            | -             |
+| Mass         | $kg$     | fluid mass         | $m_{ref}$    | `mass0`            | $rho0\times dx^3$  |
 | Density      | $kg/m^3$ | mean fluid density | $\rho_{ref}$ | `rho0`             | $mass0/dx^3$  |
 | Length       | $m$      | coarsest element   | $dx_{ref}$   | Not required | is taken from mesh  |
 | Time         | $s$      | coarsest time step size | $dt_{ref}$   | `dt`             | -                     |
@@ -90,30 +199,20 @@ parameters/variables in physical units to lattice units and vice-versa:
 | Temperature  | $K$      | fluid temperature  | $T_{ref}$    | `temp0`               | 1.0                   |
 | Electric charge | $C$    | fundamental electric charge | $q_{ref}$ | `coulomb0`     | $1.60217657e^{-19}$   |
 
-As shown in the table some of them have default values and the coarsest element size 
+As shown in the table most of them have default values and the coarsest element size (`dx`)
 is taken from the mesh.
-Thus, the only two reference units that have to be defined in the `physics` table are
-reference values for mass and time.
-The most common approach is to define a the reference density for mass and the reference
-time directly.
-Here is an example `physics` table:
+Thus the physics table provided above offers the minimal, but also usual
+setting for most cases.
 
-```lua
--- Required to convert physical unit to lattice unit
-physics = {
-  dt = dt,
-  rho0 = rho0_phy
-}
-```
-
-The non-dimensional lattice units are computed from physical values used as
-reference values so they are scaled to 1.0.
+The non-dimensional lattice units (subscript l) are scaled to one for the computation
+by choosing the provided physical units (subscript p) provided in the physics table also
+as the reference values (subscript ref):
 
 - Lattice density, $\rho_{l} = \frac{\rho_{p}}{\rho_{ref}} = 1.0$
 - Lattice element size, $dx_{l} = \frac{dx_p}{dx_{ref}} = 1.0$
 - Lattice time step, $dt_{l} = \frac{dt_p}{dt_{ref}} = 1.0$ and so on.
 
-All other derived variable in lattice units are converted to physical units
+All other derived variables in lattice units are converted to physical units
 using the reference variables in physical units. 
 For simplicity, the subscript 'ref' is dropped in the equations below for the reference values:
 
@@ -127,10 +226,19 @@ For simplicity, the subscript 'ref' is dropped in the equations below for the re
 For more on the unit conversion for other derived variables refer to 
 [mus_physics_module(module)].
 
-Now you know how to define variables in `fluid`/`species`/`mixture` tables and 
-macroscopic variables in `initial_conditon` and `boundary_condition`.
-Remember that the variables must be defined in consistent units.
-Here is an example which defines all variables in physical units
+All physical quantities set in the configuration are affected by these
+conversions.
+This includes the settings in the `fluid`, `species` and `mixture` tables,
+aswell as the macroscopic variables in the `initial_condition` and `boundary_condition`
+tables.
+
+Now, usually we do not really care about the timestep width, but rather
+want to compute this from the other fluid properties.
+By using a Lua script for the configuration, we can easily define those
+relations by defining appropiate variables and compute the needed variables
+for the Musubi settings.
+
+For example like this:
 
 ```lua
 -- Flow parameters
@@ -148,7 +256,7 @@ press_ambient = rho0_phy*cs_phy^2
 
 For convenience, a suffix '_phy' and '_lat' are used to represent variables in 
 physical and lattice units respectively.
-In Musubi,  the flow is considered to be isothermal. For a perfect ideal gas,
+In Musubi, the flow is considered to be isothermal. For a perfect ideal gas,
 the pressure is related to the speed of sound as i.e. $p = \rho c^2_s$.
 
 The lattice speed of sound is fixed to $c_{s,lat} = \sqrt(1/3)$
@@ -208,9 +316,9 @@ Ma = vel_lat * cs_lat
 
 @note 
 Most of the variables mentioned above are local variables.
-we need `rho0_phy` and `dt` to define variables in physical units in `physics` 
-table, `nu_phy` to define fluid property in `fluid` table,
-`press_ambient` and `vel_phy` to define initial and boundary condition
+we need `rho0_phy` and `dt` to define variables in physical units in the `physics` 
+table, `nu_phy` to define the fluid property in the `fluid` table,
+and `press_ambient` and `vel_phy` to define initial and boundary conditions
 in `initial_condition` and `boundary_condition` tables.
 @endnote
 
@@ -219,64 +327,46 @@ half when the element size $dx$ is reduced by half i.e. $dt=\propto dx$ but
 with diffusive scaling, the time step size $dt$ is reduced to one-fourth i.e.
 $dt \propto dx^2$.
 
+With those definitions in place you can then define the physics table with
+the help of those variables:
+
+```lua
+physics = {
+  dt = dt,
+  rho0 = rho0_phy
+}
+```
+
+And of course also the fluid table:
+
+```lua
+fluid = {
+  kinematic_viscosity = nu_phy
+}
+```
+
 When physical units are not of interest and you would like to just run a simulation
-by defining lattice units then just remove `physics` table from the musubi
+by defining lattice units, remove the `physics` table from the Musubi
 configuration file. In this case, the variables are then defined in lattice units
 
 ```lua
+-- Relaxation parameter
+omega = 1.8
 -- Background density in lattice unit
 rho0 = 1.0
 -- Lattice speed of sound
-cs = 1/3.0
+cs = math.sqrt(1/3.0)
 -- Background pressure in lattice unit
 p0 = rho0*cs^2
--- Relaxation parameter
-omega = 1.8
 -- Kinematic viscosity in lattice unit
 nu = ( 1.0/omega - 0.5 ) / 3.0
 ```
 
-NOTE: Musubi can dump output variables in physical units. 
+@note
+Musubi can dump output variables in physical units. 
 It just requires a suffix '_phy' to the variable name in tracking table.
+@endnote
 
-
-## Fluid table ##
-
-Next, we define the fluid properties, required for LBM simulations.
-As mentioned in the previous session, they can be defined either in physical or
-in lattice units. When defining in physical units, **do not forget** to define 
-`physics` table. The properties to be defined in the fluid table depends
-on the type of equations being solved. 
-
-Here is the example for `fluid_incompressible` kind and `bgk` collision which 
-only requires kinematic viscosity of the fluid.
-
-```lua
-fluid = {
-  kinematic_viscosity = nu_phy,
-}
-```
-
-For a weakly-compressible `fluid` kind, `bulk_viscosity` must also be defined.
-
-
-```lua
-fluid = {
-  kinematic_viscosity = nu_phy,
-  bulk_viscosity = 2.0*nu_phy/3.0
-}
-```
-
-Both of them are inside the table `fluid` (Lua has a single neat concept
-[tables](http://www.lua.org/pil/2.5.html) for representing multiple datas in
-a structure. It allows you to treat variables a bit like trees: they can
-contain more variables, other tables or even references to functions).
-Tables are denoted by curly braces in Lua.
-
-@note `nu_phy` is an global lua variable name and might change within different
-config files (the default should be `nu_phy`).
-The entries `kinematic_viscosity` and `bulk_viscosity` are part of the Lua table
-and must have these names! @endnote
 
 ## Time Settings ##
 
