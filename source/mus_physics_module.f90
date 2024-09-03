@@ -29,19 +29,28 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
 !> author: Kannan Masilamani
+!!
+!! @todo
+!! This module is referred to in the tutorial documentation and should be
+!! extended to provide some more explanations.
+!! @endtodo
+!!
 !! This module contains data type and modules related to musubi
-!! lattice to physical unit convertion and vice versa. \n
+!! lattice to physical unit convertion and vice versa.
 !! physics data type is global for all scheme, it is defined
-!! in the following format: \n
+!! in the following format:
+!!
 !!```lua
 !! physics = { dt = dt_phy, -- physical time step size
 !!             rho0 = rho0_phy, -- reference density
 !!             temp0 = t_phy -- reference temperature}
 !!```
+!!
 !! Of these quantities, dt is mandetory for conversion.
 !! Others can be omitted, thus use default values.
 !!
 !! To add a new conversion factor, one has to do the following:
+!!
 !! 1. add this new factor into mus_convertFac_type
 !! 2. add the defination of factor inside routine mus_set_convFac
 !! 3. add this new factor into routine mus_physics_out

@@ -10,13 +10,14 @@ Set up your first simulation with *Musubi*.
 
 This tutorial is using a 1D gaussian_pulse in pressure computed in a 3D domain.
 The necessary configuration file to run this case will be generated from
-scratch within this tutorial. An example of a final config-file for this case
-can be found in `examples/tutorials/tutorial_cases/tutorial_gaussian_pulse/`.
+scratch within this tutorial.
+The final config-file for this case can be found in
+`examples/tutorials/tutorial_cases/tutorial_gaussian_pulse/`.
 
 ## The musubi.lua File ##
 
-As a user, your best way to communicate with *Musubi* is a Lua-Script that
-tells *Musubi* what you want to simulate and which options you want to choose.
+We communicate with *Musubi* via a Lua-Script that tells *Musubi* what we
+want to simulate and which options we want to set.
 The Lua-syntax is fairly easy, and for this tutorial, we will use only a
 small subset of it, so don't be afraid if you hear of Lua for the first time.
 
@@ -35,13 +36,13 @@ Please navigate to your simulation directory, and create a new file called
 leave them alone if they are not relevant to you.
 
 @note Before you run the following simulation setup, make sure that you have
-created the directories `restart` and `tracking` in the same path where
+created the subdirectories `restart` and `tracking` in the same path where
 `musubi.lua` is located.
 
 ## General Simulation Name ##
 
-Moreover, every simulation should have a name,
-which is specified by a variable called `simulation_name`.
+Every simulation should have a name, which is specified by the variable
+`simulation_name` in the Lua script.
 
 In this example, we will simulate a
 [Gaussian pulse](http://en.wikipedia.org/wiki/Gaussian_function 'Wikipedia: Gaussian Pulse')
@@ -60,21 +61,27 @@ simulation_name = 'Gausspulse'
 ## Physics table ##
 
 Before we go to the next step, lets learn about the unit system used in 
-Musubi to define simulation parameters: `kinematic_viscosity` in `fluid` table 
-and macroscopic variables: `pressure`, `velocity` in `initial_condition` and 
-`boundary_condition` tables. These parameters/variables can be defined either in 
-physical SI units or lattice (non-dimensional) units but not mixed i.e. some in 
-physical and other in lattice. It is important that they are consistent. 
+Musubi to define simulation parameters.
+We have to set:
+
+- `kinematic_viscosity` in the `fluid` table 
+- and the macroscopic variables: `pressure`, `velocity` in the tables for
+   `initial_condition` and `boundary_condition`
+
+These parameters/variables can be defined either in physical units or lattice
+(non-dimensional) units but not mixed i.e. some in physical and other in lattice.
+
+It is important that they are consistent. 
 Base SI units used to define the physical variabes are: kg (mass), m (length),
 s (time), mol (amount of substance), K (thermodynamic temperature) and A (electric 
-current). In Musubi, the following reference values 
-are used used to convert parameters/variables in physical units to lattice
-units and vice-versa: 
+current).
+In Musubi, the following reference values are used used to convert
+parameters/variables in physical units to lattice units and vice-versa: 
 
 | Measure      | Unit     | Reference          | Notation. | Name in physics table | Default value |
 |:------------:|:--------:|:------------------:|:---------:|:---------------------:|:-------------:|
 | Mass         | $kg$     | fluid mass         | $m_{ref}$    | `mass0`            | -             |
-| Density      | $kg/m^3$ | mean fluid density | $\rho_{ref}$ | `rho0`             | $mass0/dx^3$   |
+| Density      | $kg/m^3$ | mean fluid density | $\rho_{ref}$ | `rho0`             | $mass0/dx^3$  |
 | Length       | $m$      | coarsest element   | $dx_{ref}$   | Not required | is taken from mesh  |
 | Time         | $s$      | coarsest time step size | $dt_{ref}$   | `dt`             | -                     |
 | Amount of substance | $mol$ | Inverse of Avagadro's number  | $N_A$ | `mole0`       | $1/6.02214129e^{-23}$ |
@@ -83,11 +90,13 @@ units and vice-versa:
 | Temperature  | $K$      | fluid temperature  | $T_{ref}$    | `temp0`               | 1.0                   |
 | Electric charge | $C$    | fundamental electric charge | $q_{ref}$ | `coulomb0`     | $1.60217657e^{-19}$   |
 
-As shown in the table some of them have default values and coarsest element size 
-is taken from the mesh. So, the only two reference units that are mandatory to 
-define in the `physics` table are reference for $kg$ and $s$. Most common approach
-to define $kg$ is using reference density $\rho_{ref}$: $m_{ref}=\rho_{ref} m^3$.
-Here is an example `physics` table used in a channel flow testcase.
+As shown in the table some of them have default values and the coarsest element size 
+is taken from the mesh.
+Thus, the only two reference units that have to be defined in the `physics` table are
+reference values for mass and time.
+The most common approach is to define a the reference density for mass and the reference
+time directly.
+Here is an example `physics` table:
 
 ```lua
 -- Required to convert physical unit to lattice unit
@@ -97,15 +106,17 @@ physics = {
 }
 ```
 
-The non-dimensional lattice units for the base SI units are computed
-with physical values = reference values so they are scaled to 1.0.
+The non-dimensional lattice units are computed from physical values used as
+reference values so they are scaled to 1.0.
+
 - Lattice density, $\rho_{l} = \frac{\rho_{p}}{\rho_{ref}} = 1.0$
 - Lattice element size, $dx_{l} = \frac{dx_p}{dx_{ref}} = 1.0$
 - Lattice time step, $dt_{l} = \frac{dt_p}{dt_{ref}} = 1.0$ and so on.
 
-All other derive variable in lattice units are converted to physical SI units
-using reference variables in base SI units. 
-For simplicity, underscore 'ref' are dropped in the equations below for the reference values.
+All other derived variable in lattice units are converted to physical units
+using the reference variables in physical units. 
+For simplicity, the subscript 'ref' is dropped in the equations below for the reference values:
+
 - Lattice pressure $p_l$ to physical pressure, $p_p = p_l * \frac{\rho dx^2}{dt^2}$ $[kg/m/s^2]$
 - Lattice velocity $u_l$ to physical velocity, $u_p = u_l * \frac{dx}{dt}$ $[m/s]$
 - Lattice kinematic viscosity to physical kinematic viscosity, $\nu_p = \nu_l * \frac{dx^2}{dt}$ $[m^2/s]$
@@ -113,8 +124,8 @@ For simplicity, underscore 'ref' are dropped in the equations below for the refe
 - Lattice current $I_l$ to physical current, $I_p = I_l * \frac{q}{dt}$ $[C/s]$
 - Lattice potential $\phi_l$ to physical potential, $\phi_p = \phi_l * \frac{\rho dx^5}{q dt^2}$ $[kg m^2 /(C s^2)=V]$
 
-For more unit conversion for other derive variables refer to 
-`~/apes/musubi/mus/source/mus_physics_module.f90`.
+For more on the unit conversion for other derived variables refer to 
+[mus_physics_module(module)].
 
 Now you know how to define variables in `fluid`/`species`/`mixture` tables and 
 macroscopic variables in `initial_conditon` and `boundary_condition`.
@@ -131,14 +142,14 @@ Re = 60
 cs_phy = 343
 -- Density of the fluid [kg/m^3]
 rho0_phy = 1.0
--- Ambient pressure used as a bacground pressure [kg/(m s^2)]
+-- Ambient pressure [kg/(m s^2)]
 press_ambient = rho0_phy*cs_phy^2
 ```
 
 For convenience, a suffix '_phy' and '_lat' are used to represent variables in 
 physical and lattice units respectively.
-In Musubi,  the flow is considered to be isothermal. For perfect ideal gas,
-the pressure is related to speed of sound as i.e. $p = \rho c^2_s$.
+In Musubi,  the flow is considered to be isothermal. For a perfect ideal gas,
+the pressure is related to the speed of sound as i.e. $p = \rho c^2_s$.
 
 The lattice speed of sound is fixed to $c_{s,lat} = \sqrt(1/3)$
 
@@ -149,10 +160,10 @@ cs_lat = math.sqrt(1.0/3.0)
 
 Finally, the physical time step size $dt$ required in the `physics` table.
 It is computed either by acoustic or diffusive scaling.
-In acoustic scaling, the time step $dt$ is computed from speed of sound or 
+In acoustic scaling, the time step $dt$ is computed from the speed of sound or 
 velocity so that the Mach ($Ma$) number is fixed across different element sizes. 
-Thus, when conducting grid convergences study with 
-acoustic scaling, the Mach number,  lattice speed of sound and lattice velocity 
+Thus, when conducting grid convergence studies with 
+acoustic scaling, the Mach number, lattice speed of sound and lattice velocity 
 remains constant while lattice viscosity and relaxation parameter changes.
 
 ```lua
@@ -174,7 +185,7 @@ omega   = 1.0/(nu_lat/cs_lat^2 + 0.5)
 On the other hand, in diffuive scaling, the time step $dt$ is computed from 
 the kinematic viscosity so that the lattice kinematic viscosity and the 
 relaxation parameter `omega` ($\omega$) are fixed across the element sizes 
-while the Mach numberi $Ma$ and lattice velocity $vel_lat$ changes. 
+while the Mach number $Ma$ and lattice velocity $vel_lat$ changes. 
 
 ```lua
 -- In diffusive scaling, Kinematic viscosity and omega are fixed by user
@@ -205,7 +216,7 @@ in `initial_condition` and `boundary_condition` tables.
 
 In simple words, with acoustic scaling, the time step size $dt$ is reduced by 
 half when the element size $dx$ is reduced by half i.e. $dt=\propto dx$ but 
-with diffusive scaling, the time step size $dt$ is reduced by one-fourth i.e.
+with diffusive scaling, the time step size $dt$ is reduced to one-fourth i.e.
 $dt \propto dx^2$.
 
 When physical units are not of interest and you would like to just run a simulation
@@ -232,7 +243,7 @@ It just requires a suffix '_phy' to the variable name in tracking table.
 ## Fluid table ##
 
 Next, we define the fluid properties, required for LBM simulations.
-As mentioned in previous session, they can be defined either in physical or
+As mentioned in the previous session, they can be defined either in physical or
 in lattice units. When defining in physical units, **do not forget** to define 
 `physics` table. The properties to be defined in the fluid table depends
 on the type of equations being solved. 
