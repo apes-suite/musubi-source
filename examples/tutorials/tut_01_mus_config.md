@@ -113,7 +113,8 @@ For simplicity, underscore 'ref' are dropped in the equations below for the refe
 - Lattice current $I_l$ to physical current, $I_p = I_l * \frac{q}{dt}$ $[C/s]$
 - Lattice potential $\phi_l$ to physical potential, $\phi_p = \phi_l * \frac{\rho dx^5}{q dt^2}$ $[kg m^2 /(C s^2)=V]$
 
-For more unit conversion for other derive variables refer to source/mus_physics_table.f90
+For more unit conversion for other derive variables refer to 
+`~/apes/musubi/mus/source/mus_physics_module.f90`.
 
 Now you know how to define variables in `fluid`/`species`/`mixture` tables and 
 macroscopic variables in `initial_conditon` and `boundary_condition`.
