@@ -229,7 +229,7 @@ For more on the unit conversion for other derived variables refer to
 All physical quantities set in the configuration are affected by these
 conversions.
 This includes the settings in the `fluid`, `species` and `mixture` tables,
-aswell as the macroscopic variables in the `initial_condition` and `boundary_condition`
+aswell as the macroscopic variables in the `initial_condition`, `boundary_condition` and `source`
 tables.
 
 Now, usually we do not really care about the timestep width, but rather
@@ -251,7 +251,7 @@ cs_phy = 343
 -- Density of the fluid [kg/m^3]
 rho0_phy = 1.0
 -- Ambient pressure [kg/(m s^2)]
-press_ambient = rho0_phy*cs_phy^2
+press_ambient_phy = rho0_phy*cs_phy^2
 ```
 
 For convenience, a suffix '_phy' and '_lat' are used to represent variables in 
@@ -259,7 +259,7 @@ physical and lattice units respectively.
 In Musubi, the flow is considered to be isothermal. For a perfect ideal gas,
 the pressure is related to the speed of sound as i.e. $p = \rho c^2_s$.
 
-The lattice speed of sound is fixed to $c_{s,lat} = \sqrt(1/3)$
+The lattice speed of sound is fixed to $c_{s,lat} = \sqrt{(1/3)}$
 
 ```lua
 -- Lattice speed of sound
@@ -272,7 +272,8 @@ In acoustic scaling, the time step $dt$ is computed from the speed of sound or
 velocity so that the Mach ($Ma$) number is fixed across different element sizes. 
 Thus, when conducting grid convergence studies with 
 acoustic scaling, the Mach number, lattice speed of sound and lattice velocity 
-remains constant while lattice viscosity and relaxation parameter changes.
+remains constant while lattice viscosity `nu_lat``and relaxation parameter 
+`omega` ($\omega$) changes.
 
 ```lua
 -- Inflow velocity computed from Ma number [m/s]
@@ -291,9 +292,9 @@ omega   = 1.0/(nu_lat/cs_lat^2 + 0.5)
 ```
 
 On the other hand, in diffuive scaling, the time step $dt$ is computed from 
-the kinematic viscosity so that the lattice kinematic viscosity and the 
-relaxation parameter `omega` ($\omega$) are fixed across the element sizes 
-while the Mach number $Ma$ and lattice velocity $vel_lat$ changes. 
+the kinematic viscosity so that the lattice kinematic viscosity `nu_lat` 
+and the relaxation parameter `omega` ($\omega$) are fixed across the element 
+sizes while the Mach number $Ma$ and lattice velocity $vel_lat$ changes. 
 
 ```lua
 -- In diffusive scaling, Kinematic viscosity and omega are fixed by user
@@ -318,12 +319,12 @@ Ma = vel_lat * cs_lat
 Most of the variables mentioned above are local variables.
 we need `rho0_phy` and `dt` to define variables in physical units in the `physics` 
 table, `nu_phy` to define the fluid property in the `fluid` table,
-and `press_ambient` and `vel_phy` to define initial and boundary conditions
+and `press_ambient_phy` and `vel_phy` to define initial and boundary conditions
 in `initial_condition` and `boundary_condition` tables.
 @endnote
 
 In simple words, with acoustic scaling, the time step size $dt$ is reduced by 
-half when the element size $dx$ is reduced by half i.e. $dt=\propto dx$ but 
+half when the element size $dx$ is reduced by half i.e. $dt \propto dx$ but 
 with diffusive scaling, the time step size $dt$ is reduced to one-fourth i.e.
 $dt \propto dx^2$.
 
