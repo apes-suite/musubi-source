@@ -216,12 +216,12 @@ All other derived variables in lattice units are converted to physical units
 using the reference variables in physical units. 
 For simplicity, the subscript 'ref' is dropped in the equations below for the reference values:
 
-- Lattice pressure $p_l$ to physical pressure, $p_p = p_l * \frac{\rho dx^2}{dt^2}$ $[kg/m/s^2]$
+- Lattice pressure $p_l$ to physical pressure, $p_p = p_l * \frac{\rho \cdot dx^2}{dt^2}$ $[kg/m/s^2]$
 - Lattice velocity $u_l$ to physical velocity, $u_p = u_l * \frac{dx}{dt}$ $[m/s]$
 - Lattice kinematic viscosity to physical kinematic viscosity, $\nu_p = \nu_l * \frac{dx^2}{dt}$ $[m^2/s]$
-- Lattice force $f_l$ to physical force, $f_p = f_l * \frac{\rho dx^4}{dt^2}$ $[kg m/s^2]$
+- Lattice force $f_l$ to physical force, $f_p = f_l * \frac{\rho \cdot dx^4}{dt^2}$ $[kg m/s^2]$
 - Lattice current $I_l$ to physical current, $I_p = I_l * \frac{q}{dt}$ $[C/s]$
-- Lattice potential $\phi_l$ to physical potential, $\phi_p = \phi_l * \frac{\rho dx^5}{q dt^2}$ $[kg m^2 /(C s^2)=V]$
+- Lattice potential $\phi_l$ to physical potential, $\phi_p = \phi_l * \frac{\rho \cdot  dx^5}{q \cdot dt^2}$ $[kg m^2 /(C s^2)=V]$
 
 For more on the unit conversion for other derived variables refer to 
 [mus_physics_module(module)].
