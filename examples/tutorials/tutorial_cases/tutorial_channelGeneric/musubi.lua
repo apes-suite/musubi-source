@@ -291,8 +291,8 @@ if (physicsModel == 'fluid') then
   }
 else
   fluid = {
-      kinematic_viscosity = nu_phy,
-    }
+    kinematic_viscosity = nu_phy,
+  }
 end
 --! [Fluid]
 

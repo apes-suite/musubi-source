@@ -29,22 +29,27 @@
 ! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ! **************************************************************************** !
 !> author: Kannan Masilamani
+!!
 !! This module contains data type and modules related to musubi
-!! lattice to physical unit convertion and vice versa. \n
-!! physics data type is global for all scheme, it is defined
-!! in the following format: \n
+!! lattice to physical unit convertion and vice versa.
+!! physics data type is global for all schemes, it is defined
+!! in the following format:
+!!
 !!```lua
 !! physics = { dt = dt_phy, -- physical time step size
 !!             rho0 = rho0_phy, -- reference density
-!!             temp0 = t_phy -- reference temperature}
+!!             temp0 = t_phy -- reference temperature
+!!}
 !!```
+!!
 !! Of these quantities, dt is mandetory for conversion.
 !! Others can be omitted, thus use default values.
 !!
 !! To add a new conversion factor, one has to do the following:
-!! 1. add this new factor into mus_convertFac_type
-!! 2. add the defination of factor inside routine mus_set_convFac
-!! 3. add this new factor into routine mus_physics_out
+!!
+!! 1. add this new factor into [mus_convertFac_type]
+!! 2. add the defination of factor inside routine [mus_set_convFac]
+!! 3. add this new factor into routine [mus_physics_out]
 !!
 module mus_physics_module
 
@@ -57,10 +62,10 @@ module mus_physics_module
   use tem_tools_module,    only: tem_horizontalSpacer
 
   ! include aotus modules
-  use aotus_module,     only: flu_State, aot_get_val, aoterr_Fatal,            &
+  use aotus_module,     only: flu_State, aot_get_val, aoterr_Fatal, &
     &                         aoterr_NonExistent, aoterr_WrongType
   use aot_table_module, only: aot_table_open, aot_table_close, aot_get_val
-  use aot_out_module,   only: aot_out_type, aot_out_open_table,                &
+  use aot_out_module,   only: aot_out_type, aot_out_open_table, &
     &                         aot_out_close_table, aot_out_val
 
   implicit none
@@ -76,10 +81,10 @@ module mus_physics_module
   !> the boltzmann constant J K^-1
   real(kind=rk), parameter, public :: k_b = 1.38064852e-23_rk
 
-  ! Faraday constant C/mol
+  !> Faraday constant C/mol
   real(kind=rk), parameter, public :: faraday = 96485.3365_rk
 
-  ! Ideal gas constant N m / (mol K)
+  !> Ideal gas constant N m / (mol K)
   real(kind=rk), parameter, public :: gasConst_R = 8.3144621_rk
 
   public :: mus_physics_type
@@ -94,7 +99,8 @@ module mus_physics_module
   public :: mus_set_scaleFac
 
   !> This type contains the converstion factor for derived variables
-  !! from lattice to physical.\n
+  !! from lattice to physical.
+  !!
   !! Their inverses can be used to convert physical to lattice units
   !! use reference density to parmeterize kg and reference mole density
   !! to parmeterize mol
@@ -142,10 +148,13 @@ module mus_physics_module
     real(kind=rk) :: potential
   end type mus_convertFac_type
 
-  !> This type contains the basic SI units used to convert
-  !! lattice to physical unit and vice versa.
+  !> This type contains the reference values as defined in the physics
+  !! table by the user
+  !!
+  !! They are used to convert lattice to physical unit and vice versa.
   !! keep reference mass density, mole density and molecular weight
   !! same for all levels.
+  !! Use [mus_load_physics] to fill the datatype properly.
   type mus_physics_type
     !> needed to check if physics table is defined
     logical :: active = .false.
@@ -219,6 +228,12 @@ contains
   ! ************************************************************************** !
   !> This routine loads the physics table from musubi config file
   !!
+  !! If no physics table is provided, the conversion factors default to
+  !! 1, resulting in the lattice units being directly used.
+  !! dx_ref and dt_ref are set according to the provided arguments, or if
+  !! not provided default to 1.
+  !! See the [mus_physics_type] for a description of the various factors that
+  !! can be set here.
   subroutine mus_load_physics( me, conf, tree, scaleFactor, dtRef, dxRef )
     ! --------------------------------------------------------------------------
     !> physics type
@@ -244,7 +259,7 @@ contains
       dt_ref = 1._rk
     end if
 
-    if( present( dxRef )) then
+    if (present(dxRef)) then
       dx_ref = dxRef
     else
       dx_ref = 1._rk
@@ -254,7 +269,7 @@ contains
     write(logUnit(1),*) ' Loading physics table ...'
     call aot_table_open( L=conf, thandle=thandle, key='physics' )
 
-    if ( thandle > 0 ) then
+    if (thandle > 0) then
       me%active = .true.
       ! Found a physics table.
       ! Activate the conversion
@@ -265,8 +280,8 @@ contains
       me%dx = tem_ElemSizeLevel( tree, tree%global%minLevel )
 
       ! load dt
-      call aot_get_val( L = conf, thandle = thandle, key = 'dt',               &
-        &               val = me%dt, ErrCode = iError )
+      call aot_get_val( L = conf, thandle = thandle, key = 'dt', &
+        &               val = me%dt, ErrCode = iError            )
       if (btest(iError, aoterr_Fatal)) then
         write(logUnit(1),*)'FATAL Error occured, while retrieving dt.'
         if (btest(iError, aoterr_NonExistent)) then
@@ -284,8 +299,8 @@ contains
       ! defined to compute reference mass than we need reference mole.
       ! try to load reference mole density, if not defined then set reference
       ! mole to inverse of avogadro's constant
-      call aot_get_val( L = conf, thandle = thandle, key = 'moleDens0',        &
-        &               val = me%moleDens0, ErrCode = iError )
+      call aot_get_val( L = conf, thandle = thandle, key = 'moleDens0', &
+        &               val = me%moleDens0, ErrCode = iError            )
       if (btest(iError, aoterr_Fatal)) then
         write(logUnit(7),*) 'No value given for moleDens0.'
         if (btest(iError, aoterr_WrongType)) then
@@ -298,8 +313,8 @@ contains
       if (btest(iError, aoterr_NonExistent)) then
         write(logUnit(7),*)'WARNING: Reference moleDens0 is not found. '
         write(logUnit(7),*)'Loading reference mole0(mol):'
-        call aot_get_val( L = conf, thandle = thandle, key = 'mole0',          &
-          &               val = me%mole0, ErrCode = iError )
+        call aot_get_val( L = conf, thandle = thandle, key = 'mole0', &
+          &               val = me%mole0, ErrCode = iError            )
         if (btest(iError, aoterr_Fatal)) then
           write(logUnit(7),*)'FATAL Error occured, while retrieving mole0.'
           if (btest(iError, aoterr_WrongType)) then
@@ -324,8 +339,8 @@ contains
       ! molecular weight, if not defined then try to load reference mass in 'kg'
       ! if that also is not defined prompt an error message
       ! load rho0
-      call aot_get_val( L = conf, thandle = thandle, key = 'rho0',             &
-        &               val = me%rho0, ErrCode = iError )
+      call aot_get_val( L = conf, thandle = thandle, key = 'rho0', &
+        &               val = me%rho0, ErrCode = iError            )
       if (btest(iError, aoterr_Fatal)) then
         write(logUnit(3),*) 'No value given for rho0.'
         if (btest(iError, aoterr_WrongType)) then
@@ -338,10 +353,10 @@ contains
       ! molecular weight
       if (btest(iError, aoterr_NonExistent)) then
         write(logUnit(1),*)'WARNING: Reference mass density rho0 is not found.'
-        write(logUnit(1),*)'Loading reference molecular weight '               &
+        write(logUnit(1),*)'Loading reference molecular weight ' &
           &              //'molWeight0(kg/mol):'
-        call aot_get_val( L = conf, thandle = thandle, key = 'molWeight0',     &
-          &               val = me%molWeight0, ErrCode = iError )
+        call aot_get_val( L = conf, thandle = thandle, key = 'molWeight0', &
+          &               val = me%molWeight0, ErrCode = iError            )
         if (btest(iError, aoterr_Fatal)) then
           write(logUnit(3),*)'No value given for molWeight0.'
           if (btest(iError, aoterr_WrongType)) then
@@ -354,8 +369,8 @@ contains
           write(logUnit(5),*)'WARNING: Reference molecular weight molWeight0 ' &
           &                //'is not found. '
           write(logUnit(5),*)'Loading reference mass0(kg):'
-          call aot_get_val( L = conf, thandle = thandle, key = 'mass0',        &
-            &               val = me%mass0, ErrCode = iError )
+          call aot_get_val( L = conf, thandle = thandle, key = 'mass0', &
+            &               val = me%mass0, ErrCode = iError            )
           if (btest(iError, aoterr_Fatal)) then
             write(logUnit(3),*)'No value given for mass0'
             if (btest(iError, aoterr_WrongType)) then
@@ -366,14 +381,14 @@ contains
           ! if reference mass is also not defined prompt an error message
           if (btest(iError, aoterr_NonExistent)) then
             write(logUnit(1),*) 'ERROR: Unable to obtain reference mass0(kg)'
-            write(logUnit(1),*) "Solution: Provide reference density 'rho0' "  &
+            write(logUnit(1),*) "Solution: Provide reference density 'rho0' " &
               &               //"in kg/m^3"
-            write(logUnit(1),*) "or reference molecular weight 'molWeight0' "   &
+            write(logUnit(1),*) "or reference molecular weight 'molWeight0' " &
               &               //"in kg/mol"
             write(logUnit(1),*) "or reference mass 'mass0' in kg"
             call tem_abort()
           else
-          ! reference mass is defined derive density and molWeight0
+            ! reference mass is defined derive density and molWeight0
             me%rho0 = me%mass0/me%dx**3
             ! same as rho0/moleDens0
             ! molecular Weight in independent of dx
@@ -393,8 +408,8 @@ contains
       endif
 
       ! try to load coloumb, if not defined set to fundamental electrical charge
-      call aot_get_val( L = conf, thandle = thandle, key = 'coulomb0',         &
-        &               val = me%coulomb0, ErrCode = iError )
+      call aot_get_val( L = conf, thandle = thandle, key = 'coulomb0', &
+        &               val = me%coulomb0, ErrCode = iError            )
       if (btest(iError, aoterr_Fatal)) then
         write(logUnit(3),*)'No value given for coulomb0'
         if (btest(iError, aoterr_WrongType)) then
@@ -411,8 +426,8 @@ contains
       endif
 
       ! load temp0
-      call aot_get_val(L = conf, thandle = thandle, key = 'temp0',             &
-        &              val = me%temp0, default = 1.0_rk, ErrCode = iError)
+      call aot_get_val(L = conf, thandle = thandle, key = 'temp0',        &
+        &              val = me%temp0, default = 1.0_rk, ErrCode = iError )
       if (btest(iError, aoterr_WrongType)) then
         write(logUnit(1),*)'temp0 has wrong type! Stopping!'
         call tem_abort()
@@ -441,21 +456,21 @@ contains
 
     ! dx and dt is set according scaling type
     me%dxLvl( tree%global%minLevel:tree%global%maxLevel ) =  &
-      & set_values_by_levels( me%dx, tree%global%minLevel,  &
+      & set_values_by_levels( me%dx, tree%global%minLevel,   &
       &                              tree%global%maxLevel, 2 )
 
-    me%dtLvl( tree%global%minLevel:tree%global%maxLevel ) =  &
+    me%dtLvl( tree%global%minLevel:tree%global%maxLevel ) =            &
       & set_values_by_levels( me%dt, tree%global%minLevel,             &
       &                              tree%global%maxLevel, scaleFactor )
 
     ! compute and store conversion factors in converstionFac type
     call mus_set_convFac( me = me, minLevel = tree%global%minLevel, &
-      &                            maxLevel = tree%global%maxLevel )
+      &                            maxLevel = tree%global%maxLevel  )
     ! set scale factor
     call mus_set_scaleFac( me, tree%global%minLevel, tree%global%maxLevel )
 
-    call mus_physics_dump2outUnit( me, logUnit(4), tree%global%minLevel,  &
-      &                           tree%global%maxLevel )
+    call mus_physics_dump2outUnit( me, logUnit(4), tree%global%minLevel, &
+      &                           tree%global%maxLevel                   )
 
     call tem_horizontalSpacer(fUnit = logUnit(1))
 
