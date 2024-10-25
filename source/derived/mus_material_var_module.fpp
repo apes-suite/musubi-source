@@ -32,6 +32,7 @@ module mus_material_var_module
   ! include treelm modules
   use env_module,               only: rk, labelLen
   use tem_logging_module,       only: logUnit
+  use tem_param_module,         only: cs2, rho0
   use tem_variable_module,      only: tem_variable_type
   use tem_topology_module,      only: tem_levelOf
   use tem_time_module,          only: tem_time_type
@@ -98,9 +99,10 @@ contains
     ! --------------------------------------------------------------------------
     select case (trim(schemeHeader%kind))
     case ('fluid', 'fluid_incompressible')
-      nDerVars = 2
+      nDerVars = 3
       allocate(derVarName_loc(nDerVars))
-      derVarName_loc    = [ 'kine_viscosity ', 'omega          ' ]
+      derVarName_loc    = [ 'kine_viscosity    ', 'pressure_reference', &
+        &                   'omega             ']
     case default
       nDerVars = 0
       write(logUnit(3),*) 'No material variables are defined for chosen '&
@@ -124,6 +126,9 @@ contains
         nComponents = 1
       case ('omega')
         get_element => access_kineOmega_forElement
+        nComponents = 1
+      case ('pressure_reference')
+        get_element => access_pressRef_forElement
         nComponents = 1
       case default
           call tem_abort( 'Error: Unknown material variable')
@@ -279,6 +284,55 @@ contains
     end do !iElem
 
   end subroutine access_kineOmega_forElement
+  ! ************************************************************************** !
+  
+  ! ************************************************************************** !
+  !> This routine returns the reference pressure
+  !!
+  !! The interface has to comply to the abstract interface
+  !! [[tem_varSys_module:tem_varSys_proc_element]].
+  recursive subroutine access_pressRef_forElement(fun, varsys, elempos, time, &
+    &                                             tree, nElems, nDofs, res    )
+    ! -------------------------------------------------------------------- !
+    !> Description of the method to obtain the variables, here some preset
+    !! values might be stored, like the space time function to use or the
+    !! required variables.
+    class(tem_varSys_op_type), intent(in) :: fun
+
+    !> The variable system to obtain the variable from.
+    type(tem_varSys_type), intent(in) :: varSys
+
+    !> Position of the TreeID of the element to get the variable for in the
+    !! global treeID list.
+    integer, intent(in) :: elempos(:)
+
+    !> Point in time at which to evaluate the variable.
+    type(tem_time_type), intent(in)  :: time
+
+    !> global treelm mesh info
+    type(treelmesh_type), intent(in) :: tree
+
+    !> Number of values to obtain for this variable (vectorized access).
+    integer, intent(in) :: nElems
+
+    !> Number of degrees of freedom within an element.
+    integer, intent(in) :: nDofs
+
+    !> Resulting values for the requested variable.
+    !!
+    !! Linearized array dimension:
+    !! (n requested entries) x (nComponents of this variable)
+    !! x (nDegrees of freedom)
+    !! Access: (iElem-1)*fun%nComponents*nDofs +
+    !!         (iDof-1)*fun%nComponents + iComp
+    real(kind=rk), intent(out) :: res(:)
+    ! -------------------------------------------------------------------- !
+    ! -------------------------------------------------------------------- !
+
+    ! res is always AOS layout
+    res = rho0 * cs2
+
+  end subroutine access_pressRef_forElement
   ! ************************************************************************** !
 
 end module mus_material_var_module

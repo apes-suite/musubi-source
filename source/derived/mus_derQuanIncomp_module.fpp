@@ -82,6 +82,9 @@ module mus_derQuanIncomp_module
   use tem_operation_var_module, only: tem_evalMag_forElement,      &
     &                                 tem_evalMag_forPoint,        &
     &                                 tem_evalMag_fromIndex,       &
+    &                                 tem_evalDiff_forElement,     &
+    &                                 tem_evalDiff_forPoint,       &
+    &                                 tem_evalDiff_fromIndex,      &
     &                                 tem_opVar_setupIndices,      &
     &                                 tem_get_new_varSys_data_ptr, &
     &                                 tem_opVar_setParams,         &
@@ -195,18 +198,18 @@ contains
     nullify(get_point, get_element, set_params, get_params, setup_indices, &
       &     get_valOfIndex)
 
-    nDerVars = 19
+    nDerVars = 20
     allocate(derVarName_loc(nDerVars))
-    derVarName_loc = [ 'fetch_pdf      ', 'fetch_pdf_now  ', &
-      &                'pressure       ', 'equilibrium    ', &
-      &                'non_equilibrium', 'kinetic_energy ', &
-      &                'shear_stress   ', 'strain_rate    ', &
-      &                'shear_rate     ', 'wss            ', &
-      &                'momentum       ', 'vel_mag        ', &
-      &                'bnd_force      ', 'fetch_pdf      ', &
-      &                'shear_mag      ', 'temperature    ', &
-      &                'grad_velocity  ', 'vorticity      ', &
-      &                'q_criterion    '                     ]
+    derVarName_loc = [ 'fetch_pdf         ', 'fetch_pdf_now     ', &
+      &                'pressure          ', 'equilibrium       ', &
+      &                'non_equilibrium   ', 'kinetic_energy    ', &
+      &                'shear_stress      ', 'strain_rate       ', &
+      &                'shear_rate        ', 'wss               ', &
+      &                'momentum          ', 'vel_mag           ', &
+      &                'bnd_force         ', 'fetch_pdf         ', &
+      &                'shear_mag         ', 'temperature       ', &
+      &                'grad_velocity     ', 'vorticity         ', &
+      &                'q_criterion       ', 'pressure_deviation'  ]
 
     do iVar = 1, nDerVars
       call append(derVarName, derVarName_loc(iVar))
@@ -355,6 +358,19 @@ contains
         nComponents = 1
         allocate(input_varname(1))
         input_varname(1) = 'shear_stress'
+        
+      case ('pressure_deviation')
+        get_element => tem_evalDiff_forElement
+        get_point => tem_evalDiff_forPoint
+        get_valOfIndex => tem_evalDiff_fromIndex
+        setup_indices => tem_opVar_setupIndices
+        set_params => tem_opVar_setParams
+        get_params => tem_opVar_getParams
+        method_data = tem_get_new_varSys_data_ptr(method_data)
+        nComponents = 1
+        allocate(input_varname(2))
+        input_varname(1) = 'pressure'
+        input_varname(2) = 'pressure_reference'
 
       case default
         write(logUnit(1),*) 'WARNING: Unknown variable: '//&

@@ -154,7 +154,8 @@ contains
         case ('current_density')
           get_element => deriveCurrentDensityPhy
           get_valOfIndex => deriveCurrentDensityPhy_fromIndex
-        case ('pressure', 'shear_stress', 'wss', 'shear_mag')
+        case ('pressure', 'pressure_reference', 'pressure_deviation', &
+          &   'shear_stress', 'wss', 'shear_mag')
           get_element => derivePressurePhy
           get_valOfIndex => derivePressurePhy_fromIndex
         case ('kinematic_pressure')
