@@ -31,13 +31,11 @@ press_drop = 4.0 * vel_phy * rho0_phy * nu_phy * length / radius^2.0
 -- Pressure gradient
 press_grad = press_drop / length
 
------------- Compute physical timestep from lattice Mach number ---------------
+------------ Compute physical timestep from speed of sound  ---------------
 -- Lattice speed of sound
 cs_lat = math.sqrt(1.0/3.0)
 -- Lattice maximum velocity
-vel_lat = Ma * cs_lat
--- Physical timestep computed from physical and lattice velocity
-dt = dx * vel_lat / vel_phy
+dt = dx * cs_lat / cs_phy
 --------------------------------------------------------------------------------
 
 ----------------------------- Time settings ------------------------------------

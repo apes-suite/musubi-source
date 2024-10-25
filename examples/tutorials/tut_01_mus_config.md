@@ -168,7 +168,10 @@ It is important that they are consistent.
 Two settings describe space and time: the edge length of the coarsest elements in the
 grid (`dx`) and the step length of the time steps of those elements (`dt`).
 While `dx` is given by the mesh definition, the time step length has to be provided in
-the physics table for the conversion between lattice and physical units.
+the physics table for the conversion between lattice and physical units. As an alternate
+to time step `dt`, the physical speed of sound `cs` can be provided. Interally, the
+time step `dt` is computed from speed of sound as $dt = dx * cs_{lat} / cs$, where
+$cs_{lat}=\sqrt{1/3}$.
 Additionally we need to define either the mean density `rho0` of the fluid or the 
 fluid mass `mass0` in the coarsest elements. 
 Providing the mass is more natural when simulating multiple species, as we can work
