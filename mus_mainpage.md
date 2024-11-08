@@ -9,7 +9,7 @@ output_dir: docu
 page_dir: doc_pages
 media_dir: examples/tutorials/images
 copy_subdir: media
-project_website: https://geb.inf.tu-dresden.de/pages/musubi.html
+project_website: https://apes-suite.github.io/
 project_github: https://github.com/apes-suite/musubi.git
 graph: true
 graph_maxdepth: 4
