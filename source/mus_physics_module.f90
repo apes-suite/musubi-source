@@ -1,7 +1,7 @@
-! Copyright (c) 2013 Harald Klimach <harald.klimach@uni-siegen.de>
+! Copyright (c) 2013,2024 Harald Klimach <harald.klimach@dlr.de>
 ! Copyright (c) 2013 Manuel Hasert <m.hasert@grs-sim.de>
 ! Copyright (c) 2013-2016 Jiaxing Qi <jiaxing.qi@uni-siegen.de>
-! Copyright (c) 2013-2020 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
+! Copyright (c) 2013-2020,2024 Kannan Masilamani <kannan.masilamani@dlr.de>
 ! Copyright (c) 2013-2014 Simon Zimny <s.zimny@grs-sim.de>
 ! Copyright (c) 2014 Kartik Jain <kartik.jain@uni-siegen.de>
 ! Copyright (c) 2016 Tobias Schneider <tobias1.schneider@student.uni-siegen.de>
@@ -263,41 +263,57 @@ contains
       ! reference dx is always the coarsest level in the tree
       me%dx = tem_ElemSizeLevel( tree, tree%global%minLevel )
 
-      ! load dt
-      call aot_get_val( L = conf, thandle = thandle, key = 'dt', &
-        &               val = me%dt, ErrCode = iError            )
+      ! load cs
+      call aot_get_val( L = conf, thandle = thandle, key = 'cs', &
+        &               val = cs_phy, ErrCode = iError           )
       if (btest(iError, aoterr_Fatal)) then
-        write(logUnit(7),*)'FATAL Error occured, while retrieving dt.'
+        write(logUnit(7),*)'FATAL Error occured, while retrieving cs.'
         if (btest(iError, aoterr_WrongType)) then
           write(logUnit(1),*)'Variable has wrong type!'
           write(logUnit(1),*)'STOPPING'
           call tem_abort()
         endif
       end if
-      
-      ! load physical speed of sound if dt is not defined
+
       if (btest(iError, aoterr_NonExistent)) then
-        write(logUnit(1),*) 'WARNING: Time step (dt) is not defined. '
-        write(logUnit(1),*) 'Loading speed of sound (cs):'
-        call aot_get_val( L = conf, thandle = thandle, key = 'cs', &
-          &               val = cs_phy, ErrCode = iError           )
+        write(logUnit(1),*) 'Speed of sound (cs) is not defined.'
+        write(logUnit(1),*) 'Attempting to load time step dt on coarsest level:'
+
+        ! load dt
+        call aot_get_val( L = conf, thandle = thandle, key = 'dt', &
+          &               val = me%dt, ErrCode = iError            )
         if (btest(iError, aoterr_Fatal)) then
-          write(logUnit(7),*) 'FATAL Error occured, while retrieving cs.'
-          if (btest(iError, aoterr_NonExistent)) then
-            write(logUnit(1),*) 'ERROR: Speed of sound (cs) is not defined'
-            write(logUnit(1),*) "Solution: Provide speed of sound 'cs' " &
-              &               //"in m/s"
-            write(logUnit(1),*) "          or time step 'dt' in s"
+          write(logUnit(7),*)'FATAL Error occured, while retrieving dt.'
+          if (btest(iError, aoterr_WrongType)) then
+            write(logUnit(1),*)'Variable has wrong type!'
+            write(logUnit(1),*)'STOPPING'
             call tem_abort()
-          end if
+          endif
+        end if
+      
+        ! load time step size if speed of sound is not defined
+        if (btest(iError, aoterr_NonExistent)) then
+          write(logUnit(1),*) 'ERROR: Neither speed or sound (cs), nor'
+          write(logUnit(1),*) '       time step length (dt) is defined'
+          write(logUnit(1),*) "Solution: Provide speed of sound 'cs' " &
+            &               //"in m/s"
+          write(logUnit(1),*) "          or time step 'dt' in s"
+          call tem_abort()
+        end if
+        if (btest(iError, aoterr_Fatal)) then
+          write(logUnit(7),*) 'FATAL Error occured, while retrieving dt.'
           if (btest(iError, aoterr_WrongType)) then
             write(logUnit(1),*)'Variable has wrong type!'
             call tem_abort()
           endif
         end if
-        write(logUnit(1),*) '  cs = '//trim(tem_toStr(cs_phy))
+        cs_phy = me%dx*cs/me%dt
+      else
         me%dt = me%dx * cs / cs_phy
       end if
+
+      write(logUnit(1),*) '  cs = '//trim(tem_toStr(cs_phy))
+      write(logUnit(1),*) '  dt = '//trim(tem_toStr(me%dt))
 
       ! define mole before loading density because if molecular weight is
       ! defined to compute reference mass than we need reference mole.
