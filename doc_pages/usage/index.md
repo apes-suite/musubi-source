@@ -3,22 +3,22 @@ title: Build and run Musubi
 Subsequently is a short explanation on how to use Musubi:
 
 - Checkout: 
-    - <tt>hg clone https://geb.inf.tu-dresden.de/hg/musubi</tt>
+    - <tt>git clone --recurse-submodules git@github.com:apes-suite/musubi.git</tt>
 
   then you have the repository with sub-repos aotus and treelm in the folder
   <tt>musubi</tt>.
-- Note: You need MPI in order to compile the code. 
+- Note: You need MPI in order to compile the code.
 
 - Set environment variables
     - <tt>export CC=mpicc</tt>
     - <tt>export FC=mpif90</tt>
 - Configure
-    - <tt>./waf configure</tt>
+    - <tt>bin/waf configure</tt>
 - Build 
-    - <tt>./waf build</tt>
+    - <tt>bin/waf build</tt>
 - Change settings in <tt>musubi.lua</tt>
 - Run 
-    - <tt>./build/musubi</tt>
+    - <tt>build/musubi</tt>
 
 You will get .vtk files, if you have activated the output in
 <tt>musubi.lua</tt>.  The current test case is a Gaussian Pulse with a wall in
@@ -37,7 +37,7 @@ approach via the <tt>--stream=PULL</tt> or <tt>--stream=PUSH</tt> option.
 Aside from the default <tt>build</tt>, there is also a <tt>debug</tt> target
 which creates an executable with debugging information.
 Other variants, for example for performance profiling can be found in the output
-of <tt>./waf --help</tt>
+of <tt>bin/waf --help</tt>
 
 # Coco preprocessing
 
@@ -59,17 +59,18 @@ A different geometry can be generated with the tree-based Mesh generator Seeder.
 
 ## Build and run Seeder
 
-- Checkout: <tt>hg clone https://geb.inf.tu-dresden.de/hg/seeder</tt>
+- Checkout: <tt>git clone --recurse-submodules git@github.com:apes-suite/seeder.git</tt>
   then you have the repository with sub-repos aotus and treelm in the folder
   <tt>seeder</tt>.
-- Note: You need MPI in order to compile the code.
+- Note: You need MPI in order to compile the code (though seeder does not make
+  use of the MPI parallelism right now).
 
 Set environment variables
 <tt>export CC=mpicc</tt>
 <tt>export FC=mpif90</tt>
 
-- Configure <tt>./waf configure</tt>
-- Build <tt>./waf build</tt>
+- Configure <tt>bin/waf configure</tt>
+- Build <tt>bin/waf build</tt>
 - Generate mesh folder in current folder: <tt>mkdir ./mesh</tt>
 - Change settings in <tt>input/config.lua</tt>. Specify the STL file(s) and set
   the min and max tree levels.

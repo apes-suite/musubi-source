@@ -12,16 +12,15 @@ If you run Windows, some commands might be different.
 
 ## Download ## {#tut_download}
 
-We use *Mercurial (hg)* for revision control. You need to have it
-installed on your system in order to download *Musubi*.
-Follow [these instructions](http://mercurial.selenic.com/
-"Mercurial website") if you haven't, yet.
-Then, create a directory for everything that happens in these tutorials
+We use *git* with submodules for revision control.
+You need to have it installed on your system in order to download *Musubi*.
+
+Create a directory for everything that happens in these tutorials
 (we will call this directory `apes`, but you can use a different name.
 Inside this directory, clone the *Musubi* repository from
 `https://geb.inf.tu-dresden.de/hg/musubi` by running
 ```sh
-hg clone https://geb.inf.tu-dresden.de/hg/musubi
+git clone --recurse-submodules https://github.com/apes-suite/musubi.git
 ```
 in your console.
 If this worked, you have an up-to-date copy of the *Musubi* source code,
@@ -29,14 +28,13 @@ which we will compile now.
 
 If you already cloned *Musubi* you can update *Musubi* via:
 ```sh
-hg pull
-hg up
+git pull --recurse-submodules
 ```
 
 ## Build ## {#tut_build}
 
 We use the *waf* build system, you can learn more about it
-[from its website](https://code.google.com/p/waf/ "waf website").
+[from its website](https://waf.io/).
 Also, you need *MPI* installed on your system, see for example the
 [OpenMPI website](http://www.open-mpi.org/) for instructions.
 Finally, you need to set environment variables `FC` and `CC` in order to
@@ -51,19 +49,19 @@ export CC=mpicc; export FC=mpif90
 If you updated *Musubi* you need yo clean the old build and the coco
 preprocessor. If you cloned *Musubi* there is no need to do so.
 ```sh
-./waf cleanall
+bin/waf cleanall
 ```
 
 Once you have done all this, navigate to your *Musubi* directory and use the
 command
 ```sh
-./waf configure
+bin/waf configure
 ```
 to configure the compilation.
 
 We are now ready to compile *Musubi*. Run
 ```sh
-./waf build
+bin/waf build
 ```
 to get a *Musubi* executable including *Mus_Harvester* for post-processing in
 the *build* subdirectory. To compile musubi only add the following argument:
@@ -103,12 +101,12 @@ post-processing of the results. The corresponding tools in our toolchain
 and run
 
 ```sh
-hg clone https://geb.inf.tu-dresden.de/hg/seeder
+git clone https://github.com/apes-suite/seeder.git
 ```
 to get a fresh copy of *Seeder*. Compile it by running
 ```sh
 cd seeder
-./waf configure build
+bin/waf configure build
 ```
 and fix any errors before you proceed.
 
@@ -131,7 +129,7 @@ errors you can type this command inside the `musubi` directory which is
 `apes/musubi/` as default:
 
 ```sh
-./waf distclean configure debug
+bin/waf distclean configure debug
 ```
 If you run your simulation once again, you will get more information about the
 files that cause errors.
