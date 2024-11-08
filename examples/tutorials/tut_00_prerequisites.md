@@ -16,7 +16,7 @@ We use *git* with submodules for revision control.
 You need to have it installed on your system in order to download *Musubi*.
 
 Create a directory for everything that happens in these tutorials
-(we will call this directory `apes`, but you can use a different name.
+(we will call this directory `apes`), but you can use a different name.
 Inside this directory, clone the *Musubi* repository from
 `https://geb.inf.tu-dresden.de/hg/musubi` by running
 ```sh
