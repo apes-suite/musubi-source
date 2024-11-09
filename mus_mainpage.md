@@ -3,8 +3,8 @@ summary: A multi-level parallel lattice Boltzmann solver within the APES suite.
 src_dir: source
 src_dir: build/ford
 exclude_dir: build/ford/treelm
-external: aoturl = https://geb.inf.tu-dresden.de/doxy/aotus
-external: temurl = https://geb.inf.tu-dresden.de/doxy/treelm
+external: aoturl = https://apes-suite.github.io/aotus
+external: temurl = https://apes-suite.github.io/treelm
 output_dir: docu
 page_dir: doc_pages
 media_dir: examples/tutorials/images
