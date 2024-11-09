@@ -92,7 +92,7 @@ def configure(conf):
 
     conf.setenv('ford', conf.env)
     conf.env.ford_mainpage = 'mus_mainpage.md'
-    conf.env.fordurl_mus = 'https://geb.inf.tu-dresden.de/doxy/musubi/'
+    conf.env.fordurl_mus = 'https://apes-suite.github.io/musubi/'
 
 def build(bld):
     from waflib.extras.utest_results import utests

@@ -18,7 +18,7 @@ You need to have it installed on your system in order to download *Musubi*.
 Create a directory for everything that happens in these tutorials
 (we will call this directory `apes`), but you can use a different name.
 Inside this directory, clone the *Musubi* repository from
-`https://geb.inf.tu-dresden.de/hg/musubi` by running
+`https://github.com/apes-suite/musubi.git` by running
 ```sh
 git clone --recurse-submodules https://github.com/apes-suite/musubi.git
 ```
