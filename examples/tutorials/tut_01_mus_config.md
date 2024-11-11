@@ -165,21 +165,35 @@ or lattice (non-dimensional) units.
 But they can not be mixed i.e. some in physical and others in lattice units.
 It is important that they are consistent. 
 
-Two settings describe space and time: the edge length of the coarsest elements in the
-grid (`dx`) and the step length of the time steps of those elements (`dt`).
-While `dx` is given by the mesh definition, the time step length has to be provided in
+Two settings describe space and time: the edge length of the coarsest elements
+in the grid (`dx`) and the step length of the time steps of those elements
+(`dt`).
+While `dx` is given by the mesh definition, the time step length has to be
+derived differently.
+Usually, this is achieved by providing the physical speed of sound `cs` of the
+fluid in the physics table.
+Musubi computes the time step length via the relation
+$dt = dx * cs_{lat} / cs$, where $cs_{lat}=\sqrt{1/3}$.
 the physics table for the conversion between lattice and physical units.
-Additionally we need to define either the mean density `rho0` of the fluid or the 
+Alternatively, `dt` on the coarsest level itself may be provided in the physics
+table, which implies a speed of sound according to the relation above.
+Note, that for a fixed physical speed of sound, the time step length is
+proportional to the element edge lengths.
+In case of multilevels this relation is maintained and the time step size
+scales along with the mesh element sizes.
+
+Finally, we need to define either the mean density `rho0` of the fluid or the 
 fluid mass `mass0` in the coarsest elements. 
-Providing the mass is more natural when simulating multiple species, as we can work
-with the respective mass fractions in that case.
-Otherwise, we normally describe the mean density.
-Both, `dt` and a measure for the mass have to be provided in the `physics` table.
+Providing the mass is more natural when simulating multiple species, as we can
+work with the respective mass fractions in that case.
+Otherwise, we usually describe the mean density.
+Both, `cs` (or `dt` on the coarsest level) and a measure for the mass have to
+be provided in the `physics` table.
 Thus, a minimal `physics` table should look like this:
 
 ```lua
 physics = {
-  dt = 1.0e-3,
+  cs = 330.0,
   rho0 = 1.0
 }
 ```
