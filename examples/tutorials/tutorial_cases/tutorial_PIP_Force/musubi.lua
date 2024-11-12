@@ -110,8 +110,6 @@ logging = {
   level = 5,
   --filename = 'log' -- filename to write logging output
 }
--- Scaling for multilevel simulation
-scaling = 'acoustic'
 -- Interpolation method for multilevel simulation
 interpolation_method = 'quadratic'
 

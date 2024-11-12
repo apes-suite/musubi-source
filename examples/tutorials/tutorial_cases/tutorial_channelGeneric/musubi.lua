@@ -6,8 +6,6 @@ require "seeder"
 --! [Set options]
 -- Initialization of channel, for true --> values>0, false --> initalized with 0
 initChannel = false
--- Scaling for multilevel simulation
-scaling = 'acoustic'
 --! [Set options]
 
 
@@ -37,39 +35,21 @@ cs_phy = 343
 ------------ Compute physical timestep from lattice Mach number ---------------
 -- Lattice speed of sound
 cs_lat = math.sqrt(1.0/3.0)
-if (scaling == 'acoustic') then
-  -- In acoustic scaling, Ma is fixed by user
-  -- Mach number
-  Ma = 0.05
-  -- Inflow velocity computed from Ma number [m/s]
-  vel_phy = Ma * cs_phy
-  -- Kinematic viscosity of the fluid calculated from Re [m^2/s]
-  nu_phy = vel_phy * height / Re
-  -- Lattice velocity
-  vel_lat = Ma * cs_lat
-  -- Physical timestep computed from physical and lattice speed of sound
-  dt  = cs_lat / cs_phy * dx
-  -- Lattice viscosity
-  nu_lat  = nu_phy*dt /dx^2
-  -- Relaxation parameter
-  omega   = 1.0/(nu_lat/cs_lat^2 + 0.5)
-else
-  -- In diffusive scaling, Kinematic viscosity and omega are fixed by user
-  -- Kinematic viscosity of the fluid [m^2/s]
-  nu_phy = 0.285
-  -- Inflow velocity is computed from Re and viscosity [m/s]
-  vel_phy = Re * nu_phy / height
-  -- Relaxation parameter
-  omega   = 1.7
-  -- Lattice viscosity
-  nu_lat  = ( 1.0/omega - 0.5 ) / 3.0
-  -- Physical timestep computed from physical and lattice velocity
-  dt = nu_lat/nu_phy*dx*dx
-  -- Lattice velocity
-  vel_lat = vel_phy*dt/dx
-  -- Mach number
-  Ma = vel_lat * cs_lat
-end
+-- In acoustic scaling, Ma is fixed by user
+-- Mach number
+Ma = 0.05
+-- Inflow velocity computed from Ma number [m/s]
+vel_phy = Ma * cs_phy
+-- Kinematic viscosity of the fluid calculated from Re [m^2/s]
+nu_phy = vel_phy * height / Re
+-- Lattice velocity
+vel_lat = Ma * cs_lat
+-- Physical timestep computed from physical and lattice speed of sound
+dt  = cs_lat / cs_phy * dx
+-- Lattice viscosity
+nu_lat  = nu_phy*dt /dx^2
+-- Relaxation parameter
+omega   = 1.0/(nu_lat/cs_lat^2 + 0.5)
 
 -- Bulk viscosity
 if physicsModel == 'fluid' then

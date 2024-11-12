@@ -286,7 +286,7 @@ In acoustic scaling, the time step $dt$ is computed from the speed of sound or
 velocity so that the Mach ($Ma$) number is fixed across different element sizes. 
 Thus, when conducting grid convergence studies with 
 acoustic scaling, the Mach number, lattice speed of sound and lattice velocity 
-remains constant while lattice viscosity `nu_lat``and relaxation parameter 
+remain constant while the lattice viscosity `nu_lat``and relaxation parameter 
 `omega` ($\omega$) changes.
 
 ```lua
