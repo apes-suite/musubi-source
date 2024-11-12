@@ -416,17 +416,6 @@ Usage like:
 interpolation_method = 'average'
 ```
 
-## scaling
-    
-  * diffusive
-  * ...
-
-Usage like:
-
-```lua
-scaling = 'diffusive'
-```
-
 ## time step setting
     
   * maximum time
