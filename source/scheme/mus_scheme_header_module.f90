@@ -245,6 +245,12 @@ contains
     case ( 'multispecies_gas', 'multispecies_liquid', 'nernst_planck', &
       &    'passive_scalar, ''poisson', 'poisson_boltzmann_linear',    &
       &    'poisson_boltzmann_nonlinear'                               )
+      ! todo: with the removal of the scaling option from the configuration,
+      !       we need to do something here, otherwise all those schemes get
+      !       disabled.
+      !       It would be best to check for multilevel meshes, and complain
+      !       about them, in the case of these schemes.
+      !       Doesn't have to be here, though.
       if(trim(scaling) /= 'diffusive') then
          call tem_abort('ERROR: Choose scaling = "diffusive" for ' &
            &            // trim(me%kind))
