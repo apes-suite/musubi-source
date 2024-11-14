@@ -122,7 +122,7 @@ p0_l        = rho0_l*cs2_l
 ```
 
 
-For acoustic scaling we fix the incoming lattice velocity and compute omega.
+For acoustic scaling we fix the speed of sound and compute omega:
 
 ```lua
 if acoustic_scaling == true then
@@ -130,16 +130,18 @@ if acoustic_scaling == true then
   -- acoustic scaling
   -- ----------------
   
-  u_in_L    = 0.05--os.getenv('u_in_L')
-  dt        = u_in_L*dx/u_in_phy
-  u_mean_L  = 2.0*u_in_L/3.0
-  nu_L      = nu_phy*dt/dx^2.
-  omega     = 1.0/(3.0*nu_L+0.5)
+  cs    = 343.0 -- m/s
+  cs_L  = math.sqrt(1.0/3.0)
+  dt    = cs_L * dx / cs_phy
+  nu_L  = nu_phy*dt/dx^2.
+  omega = 1.0/(3.0*nu_L+0.5)
 
 ```
 
 And for diffusive scaling it is the other way round, we fix omega and compute 
 the lattice incoming velocity.
+And on the other hand for diffusive scaling, we fix omega and compute the speed
+of sound:
 
 ```lua
 else
@@ -147,16 +149,18 @@ else
   -- diffusive scaling
   -- -----------------
   
-  omega     = 1.9--os.getenv('omega')
-  nu_L      = (1.0/omega-0.5)/3.0
-  dt        = nu_L*dx^2/nu_phy
-  u_in_L    = u_in_phy*dt/dx
-  u_mean_L  = 2.0*u_in_L/3.0
+  cs_L  = math.sqrt(1.0/3.0)
+  omega = 1.9 --os.getenv('omega')
+  nu_L  = (1.0/omega-0.5)/3.0
+  dt    = nu_L*dx^2/nu_phy
+  cs    = cs_L * dx/dt
 
 end
 ```
 
-Note that the actual relevant setting for Musubi here is only the `dt`.
+Note that the actual relevant setting for Musubi here is only either
+`cs` or `dt`. With `cs` taking precedence if both are defined in the
+physics table.
 
 > To get better results, we could also change the Mach number which is a 
 > division by the lattice velocity over the square root of the lattice stream of 
