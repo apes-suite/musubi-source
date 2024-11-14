@@ -166,15 +166,11 @@ contains
     ! load scaling type
     ! KM: @todo move scaling inside physics table because for lbm
     ! default scaling is acoustic and for multispecies default is diffusive
-    !
-    !! Do not read in the scaling parameter anymore, as diffusive scaling
-    !! doesn't work for multi-level, and users have no other choice!
-    !!call aot_get_val( L       = conf,           &
-    !!  &               key     = 'scaling',      &
-    !!  &               val     = params%scaling, &
-    !!  &               ErrCode = iError,         &
-    !!  &               default = 'acoustic'      )
-    params%scaling = 'acoustic'
+    call aot_get_val( L       = conf,           &
+      &               key     = 'scaling',      &
+      &               val     = params%scaling, &
+      &               ErrCode = iError,         &
+      &               default = 'acoustic'      )
     write(logUnit(1),*) 'Setting SCALING to:',trim( params%scaling )
 
     ! Set acoustic or diffusive scaling parameters
