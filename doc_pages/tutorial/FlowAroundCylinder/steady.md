@@ -44,11 +44,7 @@ We calculate the mean velocity \( \bar{U} = Re\frac{\nu}{D} \) and call it
 `u_mean_phy` and the incoming velocity 
 \( U_{m} = \frac{3}{2}\bar{U} \) and call it `u_in_phy`.
 
-We also define a variable to check the Reynolds number. In this testcase we 
-can make use of either acoustic scaling where dt is proportional to \(dx\) or
-diffusive scaling where dt is proportional to \( dx^{2} \) . 
-We define a boolian variable for this. The calculation of lattice units depends
-on the use of different scaling methods. 
+We also define a variable to check the Reynolds number.
 After that, we calculate the physical pressure which depends on the physical 
 density in the solver.
 The function for the incoming velocity of the flow is given in the paper 
@@ -71,7 +67,7 @@ and functions that are needed for the whole package of seeder, harvester and
 musubi.
 
 In this test case we have to set up variables concerning refinement, geometry, 
-physics, fluid and scaling method.
+physics and fluid.
 
 We write down everything we know from the provided conditions.
 
@@ -125,20 +121,8 @@ cs2_l       = 1./3.
 p0_l        = rho0_l*cs2_l
 ```
 
-There is a difference between acoustic scaling and diffusive scaling. 
-This is why we have to define two different cases.
 
-```lua
--- --------
--- scaling
--- -------
-
----------------------------
-acoustic_scaling = false -- set true for acoustic scaling, false for diffusive scaling
----------------------------
-```
-
-For acoustic scaling we fix the incoming lattice velocity and compute omega.
+For acoustic scaling we fix the speed of sound and compute omega:
 
 ```lua
 if acoustic_scaling == true then
@@ -146,17 +130,18 @@ if acoustic_scaling == true then
   -- acoustic scaling
   -- ----------------
   
-  u_in_L    = 0.05--os.getenv('u_in_L')
-  dt        = u_in_L*dx/u_in_phy
-  u_mean_L  = 2.0*u_in_L/3.0
-  nu_L      = nu_phy*dt/dx^2.
-  omega     = 1.0/(3.0*nu_L+0.5)
-  scaling   = 'acoustic'
+  cs    = 343.0 -- m/s
+  cs_L  = math.sqrt(1.0/3.0)
+  dt    = cs_L * dx / cs_phy
+  nu_L  = nu_phy*dt/dx^2.
+  omega = 1.0/(3.0*nu_L+0.5)
 
 ```
 
 And for diffusive scaling it is the other way round, we fix omega and compute 
 the lattice incoming velocity.
+And on the other hand for diffusive scaling, we fix omega and compute the speed
+of sound:
 
 ```lua
 else
@@ -164,15 +149,18 @@ else
   -- diffusive scaling
   -- -----------------
   
-  omega     = 1.9--os.getenv('omega')
-  nu_L      = (1.0/omega-0.5)/3.0
-  dt        = nu_L*dx^2/nu_phy
-  u_in_L    = u_in_phy*dt/dx
-  u_mean_L  = 2.0*u_in_L/3.0
-  scaling   = 'diffusive'
+  cs_L  = math.sqrt(1.0/3.0)
+  omega = 1.9 --os.getenv('omega')
+  nu_L  = (1.0/omega-0.5)/3.0
+  dt    = nu_L*dx^2/nu_phy
+  cs    = cs_L * dx/dt
 
 end
 ```
+
+Note that the actual relevant setting for Musubi here is only either
+`cs` or `dt`. With `cs` taking precedence if both are defined in the
+physics table.
 
 > To get better results, we could also change the Mach number which is a 
 > division by the lattice velocity over the square root of the lattice stream of 
@@ -226,11 +214,6 @@ It just prints all the values to the screen. It looks like this:
 require "common"
 require "units"
 
-if acoustic_scaling == true then
-   print('acoustic_scaling = True')
-else
-   print('acoustic_scaling = False')
-end 
 print('##Physical parameters##')
 print('Re =', Re)
 print('Re_check =', Re_check)

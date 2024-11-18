@@ -592,11 +592,6 @@ require "seeder" -- Tells musubi.lua to use defined variables from seeder.lua
 simulation_name = simName
 ```
 
-Specify the scaling (diffusive or acoustic):
-```lua
--- Scaling for multilevel simulation
-scaling = 'acoustic'
-```
 We define local variables that we need to turn off or on a few features:
 ```lua
 -- Initialization of channel, for true --> values>0, false --> initalized with 0
@@ -630,17 +625,19 @@ Re = 60
 -- speed of sound in air [m/s]
 cs_phy = 343
 ```
+
 Other flow parameters like Mach number and viscosity are defined below depending
 on scaling type which is used to compute time step. In acoustic scaling, 
 dt is computed for fixed Ma number whereas in diffusive scaling, dt is computed
 for fixed viscosity and omega.
 Here are timestep calculation for acoustic and diffusive scaling.
+
 ```lua
 ------------------------ Compute physical timestep -----------------------------
 -- Lattice speed of sound
 cs_lat = math.sqrt(1.0/3.0)
 if (scaling == 'acoustic') then
-  -- In acoustic scaling, Ma is fixed by user
+  -- In acoustic scaling, Ma is fixed
   -- Mach number
   Ma = 0.05
   -- Inflow velocity computed from Ma number [m/s]
@@ -656,7 +653,7 @@ if (scaling == 'acoustic') then
   -- Relaxation parameter
   omega   = 1.0/(3.0*nu_lat + 0.5)
 else
-  -- In diffusive scaling, Kinematic viscosity and omega are fixed by user
+  -- In diffusive scaling, Kinematic viscosity and omega are fixed
   -- Kinematic viscosity of the fluid [m^2/s]
   nu_phy = 0.285
   -- Inflow velocity is computed from Re and viscosity [m/s]
@@ -674,6 +671,11 @@ else
 end
 --------------------------------------------------------------------------------
 ```
+
+Instead of the time step `dt`, we can alternatively prescribe the
+phsical speed of sound (`cs`), which is especially for acoustic scaling,
+where this is fixed independently of the mesh cell sizes.
+
 The bulk viscosity for weakly-compressible model:
 ```lua
 -- Bulk viscosity
