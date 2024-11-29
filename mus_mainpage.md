@@ -21,7 +21,6 @@ sort: permission
 source: false
 externalize: true
 author: University of Siegen
-title: Mainpage
 print_creation_date: True
 md_extensions: markdown.extensions.toc
 

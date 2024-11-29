@@ -135,7 +135,7 @@ module mus_bc_header_module
 
     !> Positions in levelDesc total list
     !! Its purpose is to get the treeID of BC elements
-    !! size: globBC%nElems
+    !! size is globBC%nElems
     !! to use: levelDesc(iLevel)%total( globBC%elemLvl(iLevel)%elem%val(iElem) )
     type( dyn_intArray_type ) :: elem
 
@@ -192,13 +192,13 @@ module mus_bc_header_module
   !> Wall bouzidi data for one level
   type bc_wall_bouzidi_type
 
-    !> size: links(iLevel)%nVals
+    !> size is links(iLevel)%nVals
     real(kind=rk), allocatable :: qVal(:)
     real(kind=rk), allocatable ::  cIn(:)
     real(kind=rk), allocatable :: cOut(:)
     real(kind=rk), allocatable :: cNgh(:)
 
-    !> size: links(iLevel)%nVals
+    !> size is links(iLevel)%nVals
     !! set in routine: mus_set_bouzidi
     integer, allocatable ::  inPos(:) ! position in bcBuffer
     integer, allocatable :: outPos(:) ! position in bcBuffer
@@ -211,22 +211,22 @@ module mus_bc_header_module
   !! implementation of certain inlet boundary conditions.
   type bc_inlet_bouzidi_type
 
-    !> size: links(iLevel)%nVals
+    !> size is links(iLevel)%nVals
     real(kind=rk), allocatable :: qVal(:) ! q-Values
     real(kind=rk), allocatable ::  cIn(:) ! coefficient for incoming directions
     real(kind=rk), allocatable :: cOut(:) ! coefficient for outgoing directions
     real(kind=rk), allocatable :: cNgh(:) ! coefficient for neighbours
 
-    !> size: links(iLevel)%nVals
+    !> size is links(iLevel)%nVals
     !! set in routine: mus_set_bouzidi
     integer, allocatable ::  inPos(:) ! position in bcBuffer
     integer, allocatable :: outPos(:) ! position in bcBuffer
     integer, allocatable :: nghPos(:) ! position in computeNeighBuf
 
-    !> size: links(iLevel)%nVals
+    !> size is links(iLevel)%nVals
     real(kind=rk), allocatable ::    cVel(:) ! coefficient for eqPlus
 
-    !> size: links(iLevel)%nVals
+    !> size is links(iLevel)%nVals
     !! set in routine: mus_set_bouzidi
     integer, allocatable :: iDir(:) ! incoming direction from boundary
 
@@ -238,14 +238,14 @@ module mus_bc_header_module
   !! nonEquilibrium extrapolation scheme for boundary conditions.
   type bc_nonEqExpol_type
 
-    !> size: links(iLevel)%nVals
+    !> size is links(iLevel)%nVals
     real(kind=rk), allocatable ::      c_w(:) ! coefficient for surface
     real(kind=rk), allocatable ::      c_f(:) ! coefficient for fluid
     real(kind=rk), allocatable ::     c_ff(:) ! coefficient for overnext fluid
     real(kind=rk), allocatable ::  c_neq_f(:) ! nonEq coefficient for fluid
     real(kind=rk), allocatable :: c_neq_ff(:) ! nonEq coeff. for overnext fluid
 
-    !> size: links(iLevel)%nVals
+    !> size is links(iLevel)%nVals
     !! set in routine: mus_set_bouzidi
     integer, allocatable ::          iDir(:) ! incoming direction
     integer, allocatable ::   posInBuffer(:) ! used for position in bcBuffer
@@ -260,7 +260,7 @@ module mus_bc_header_module
   !> condition outlet_expol
   type bc_outlet_type
 
-    !> size: links(iLevel)%nVals
+    !> size is links(iLevel)%nVals
     integer, allocatable ::  statePos(:) ! position of state
     integer, allocatable ::  iElem(:) ! position of state
 
@@ -372,7 +372,7 @@ module mus_bc_header_module
     character(len=LabelLen) :: label
 
     !> elements list of this boundary in different refinement level
-    !! size: minLevel -> maxLevel
+    !! size is minLevel -> maxLevel
     type( bc_elems_type ), allocatable :: elemLvl(:)
 
     !> Collect corner BC i.e elements which are interesected by multiple
@@ -425,24 +425,24 @@ module mus_bc_header_module
   type bc_neigh_type
 
     !> Neighbor position in level-wise state array
-    !! size: nNeighs, nElems
+    !! size is nNeighs, nElems
     !! allocated in routine: setFieldBCNeigh, mus_construction_module
     integer, allocatable :: posInState(:,:)
 
     !> Pre-collision state values of neighbors on normal direction on next
     !! time step
-    !! size: nNeighs, nElems*stencil%QQ
+    !! size is nNeighs, nElems*stencil%QQ
     !! It is allocated in routine update_BClists
     real(kind=rk), allocatable :: neighBufferPre_nNext(:,:)
 
     !> Pre-collision state values of neighbors on normal direction on previous
     !! time step
-    !! size: nNeighs, nElems*stencil%QQ
+    !! size is nNeighs, nElems*stencil%QQ
     !! It is allocated in routine update_BClists
     real(kind=rk), allocatable :: neighBufferPre(:,:)
 
     !> Post-collision state values of neighbors on normal direction
-    !! size: nNeighs, nElems*stencil%QQ
+    !! size is nNeighs, nElems*stencil%QQ
     !! It is allocated in routine update_BClists
     !! It is filled in fill_neighBuffer
     real(kind=rk), allocatable :: neighBufferPost(:,:)
@@ -451,7 +451,7 @@ module mus_bc_header_module
     !! current time step.
     !! Its also a Pre-collision state values of an element next to boundary
     !! at next time step
-    !! size: nElems * computeStencil%QQ
+    !! size is  nElems * computeStencil%QQ
     !! It is allocated in routine update_BClists (mus_construction_module),
     !! filled in routine: fill_computeNeighBuf (mus_bc_general_module).
     !! it use AOS layout always!
@@ -481,7 +481,7 @@ module mus_bc_header_module
     type( bc_moments_type ), allocatable :: moments(:)
 
     !> Position in LevelDesc%neigh%NghElems
-    !! size: globBC%nElems(iLevel)
+    !! size is globBC%nElems(iLevel)
     !! allocated in mus_build_BCStencils routine, mus_construction_module
     integer, allocatable :: posInNghElems(:)
 
@@ -581,28 +581,28 @@ module mus_bc_header_module
     logical :: treat_corner = .false.
 
     !> Level-wise links that are to be updated
-    !! size: minLevel:maxLevel
+    !! size is minLevel:maxLevel
     !! allocated in mus_alloc_fieldBC
     type(array_type), allocatable :: links(:)
 
     !> Level wise wall bouzidi data
-    !! size: minLevel:maxLevel
+    !! size is minLevel:maxLevel
     type(bc_wall_bouzidi_type), allocatable :: bouzidi(:)
 
     !> Level wise inletUbbQVal data
-    !! size: minLevel:maxLevel
+    !! size is minLevel:maxLevel
     type(bc_inlet_bouzidi_type), allocatable :: inletUbbQVal(:)
 
     !> Level wise inletBfl data
-    !! size: minLevel:maxLevel
+    !! size is minLevel:maxLevel
     type(bc_inlet_bouzidi_type), allocatable :: inletBFL(:)
 
     !> Level wise nonEquilibrium extrapolation data for link-wise implementation
-    !! size: minLevel:maxLevel
+    !! size is minLevel:maxLevel
     type(bc_nonEqExpol_type), allocatable :: nonEqExpol(:)
 
     !> Level wise outletExpol data
-    !! size: minLevel:maxLevel
+    !! size is minLevel:maxLevel
     type(bc_outlet_type), allocatable :: outletExpol(:)
 
     !> Turbulent wall model type contains function pointers to
