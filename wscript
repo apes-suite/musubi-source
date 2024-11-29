@@ -188,6 +188,7 @@ def build(bld):
         features = 'includes coco',
         source   = pp_sources)
 
+      mpp.post()
       mus_preprocessed = []
       for ppm in mpp.tasks:
         for f in ppm.outputs:
