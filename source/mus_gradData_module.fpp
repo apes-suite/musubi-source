@@ -104,7 +104,7 @@ module mus_gradData_module
       integer, intent(in) :: elemOffset
       !> Dimensions
       integer, intent(in) :: nDims
-      !> output: gradient of velocity
+      !> output is gradient of velocity
       real(kind=rk) :: gradU(nDims,nDims,nSolve)
 
     end function getGradU
@@ -129,7 +129,7 @@ module mus_gradData_module
       integer, intent(in) :: elemOffset
       !> Dimensions
       integer, intent(in) :: nDims
-      !> output: gradient of velocity:
+      !> output is gradient of velocity:
       ! 1: Dxxu, 2: Dyyv, 3: Dzzw
       real(kind=rk) :: gradXXU(nDims,nSolve)
 
@@ -154,7 +154,7 @@ module mus_gradData_module
       integer, intent(in) :: elemOffset
       !> Dimensions
       integer, intent(in) :: nDims
-      !> output: gradient of velocity
+      !> output is gradient of velocity
       real(kind=rk) :: gradRhoU3(nDims,nSolve)
 
     end function getGradRhoU3
@@ -180,7 +180,7 @@ module mus_gradData_module
       integer, intent(in) :: elemOffset
       !> Dimensions
       integer, intent(in) :: nDims
-      !> output: gradient of velocity
+      !> output is gradient of velocity
       real(kind=rk) :: gradRhoUVZ(nDims,nSolve)
 
     end function getGradRhoUVZ
@@ -360,7 +360,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity
+    !> output is gradient of velocity
     real(kind=rk) :: gradU(nDims,nDims,nSolve)
     ! --------------------------------------------------------------------------
     integer :: iElem, elempos
@@ -405,7 +405,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity
+    !> output is gradient of velocity
     real(kind=rk) :: gradU(nDims,nDims,nSolve)
     ! --------------------------------------------------------------------------
     integer :: iElem, elempos
@@ -463,7 +463,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity
+    !> output is gradient of velocity
     real(kind=rk) :: gradU(nDims,nDims,nSolve)
     ! --------------------------------------------------------------------------
     integer :: iElem, elempos
@@ -544,7 +544,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity:
+    !> output is gradient of velocity:
     ! 1: Dxxu, 2: Dyyv, 3: Dzzw
     real(kind=rk) :: gradXXU(nDims,nSolve)
     ! --------------------------------------------------------------------------
@@ -591,7 +591,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity:
+    !> output is gradient of velocity:
     ! 1: Dxxu, 2: Dyyv, 3: Dzzw
     real(kind=rk) :: gradXXU(nDims,nSolve)
     ! --------------------------------------------------------------------------
@@ -645,7 +645,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity:
+    !> output is gradient of velocity:
     ! 1: Dxxu, 2: Dyyv, 3: Dzzw
     real(kind=rk) :: gradXXU(nDims,nSolve)
     ! --------------------------------------------------------------------------
@@ -705,7 +705,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity
+    !> output is gradient of velocity
     real(kind=rk) :: gradRhoU3(nDims,nSolve)
     ! --------------------------------------------------------------------------
     integer :: iElem, elempos
@@ -750,7 +750,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity
+    !> output is gradient of velocity
     real(kind=rk) :: gradRhoU3(nDims,nSolve)
     ! --------------------------------------------------------------------------
     integer :: iElem, elempos
@@ -801,7 +801,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity
+    !> output is gradient of velocity
     real(kind=rk) :: gradRhoU3(nDims,nSolve)
     ! --------------------------------------------------------------------------
     integer :: iElem, elempos
@@ -859,7 +859,7 @@ end function mus_assign_GradCalculation_ptr
     integer, intent(in) :: elemOffset
     !> Dimensions
     integer, intent(in) :: nDims
-    !> output: gradient of velocity
+    !> output is gradient of velocity
     real(kind=rk) :: gradRhoUVZ(nDims,nSolve)
     ! --------------------------------------------------------------------------
     integer :: iElem, elempos
