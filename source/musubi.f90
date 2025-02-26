@@ -9,6 +9,7 @@
 ! Copyright (c) 2014 Julia Moos <julia.moos@student.uni-siegen.de>
 ! Copyright (c) 2016 Tobias Schneider <tobias1.schneider@student.uni-siegen.de>
 ! Copyright (c) 2016 Raphael Haupt <raphael.haupt@uni-siegen.de>
+! Copyright (c) 2025 Tristan Vlogman <t.g.vlogman@utwente.nl>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -57,8 +58,15 @@ program musubi
   ! ESPECIALLY OF THE FOLLOWING MODULES
   use mus_control_module,            only: mus_control_type
   use mus_program_module,            only: mus_initialize, mus_solve, &
-    &                                      mus_finalize
+    &                                      mus_finalize, mus_solve_particles
   use mus_varSys_module,             only: mus_varSys_solverData_type
+
+  ! include modules for coupled LBM-DEM simulations of solid particles
+  use mus_particle_type_module,      only: mus_particle_group_type
+  use mus_particle_config_module,    only: mus_finalize_particleGroup, &
+                                         & mus_load_particles
+  use mus_particle_module,           only: mus_particles_initialize
+  use mus_particle_timer_module,     only: mus_init_particleTimer
 
   implicit none
   ! -------------------------------------------------------------------------- !
@@ -71,6 +79,10 @@ program musubi
   type(tem_adapt_type)                     :: adapt
   integer :: ierr
   ! -------------------------------------------------------------------------- !
+    !> PARTICLE module types
+  ! particle group type holds all particle data on this partition
+  ! particle data read from lua file in mus_load_config -> mus_load_particles
+  type(mus_particle_group_type) :: particleGroup
 
   ! Initialize environment
   call tem_start(codeName   = 'Musubi',                 &
@@ -83,13 +95,15 @@ program musubi
   end if
 
   call mus_init_mainTimer()
+  call mus_init_particleTimer
 
   ! load configuration file
-  call mus_load_config( scheme     = scheme,     &
-    &                   solverData = solverData, &
-    &                   geometry   = geometry,   &
-    &                   params     = params,     &
-    &                   adapt      = adapt       )
+  call mus_load_config( scheme        = scheme,       &
+    &                   solverData    = solverData,   &
+    &                   geometry      = geometry,     &
+    &                   params        = params,       &
+    &                   adapt         = adapt,        &
+    &                   particleGroup = particleGroup )
 
   ! KM: Do not move this init_levelTimer and init_bcTimer from here,
   ! Need to be here for apesmate
@@ -98,21 +112,47 @@ program musubi
   call mus_init_bcTimer( geometry%boundary%nBCtypes )
 
   ! initialize musubi
-  call mus_initialize( scheme     = scheme,     &
-    &                  solverData = solverData, &
-    &                  geometry   = geometry,   &
-    &                  params     = params,     &
-    &                  control    = control     )
+  call mus_initialize( scheme        = scheme,                     &
+    &                  solverData    = solverData,                 &
+    &                  geometry      = geometry,                   &
+    &                  params        = params,                     &
+    &                  control       = control,                    &
+    &                  particle_kind = particleGroup%particle_kind )
+
+  call mus_load_particles( particleGroup = particleGroup, &
+                        & conf = params%general%solver%conf(1), &
+                        & chunkSize = 100,  &
+                        & scheme = scheme, &
+                        & geometry = geometry, &
+                        & myRank = params%general%proc%rank )
+ 
+  if( particleGroup%particle_kind /= 'none' ) then
+    call mus_particles_initialize( particleGroup = particleGroup, &
+                                 & scheme        = scheme,        &
+                                 & geometry      = geometry,      &
+                                 & params        = params         )   
+  end if
 
   call mpi_barrier( MPI_COMM_WORLD, ierr )
 
+
   ! do main loop
-  call mus_solve( scheme     = scheme,     &
-    &             solverData = solverData, &
-    &             geometry   = geometry,   &
-    &             params     = params,     &
-    &             control    = control,    &
-    &             adapt      = adapt       )
+  if(particleGroup%particle_kind == 'none') then
+    call mus_solve( scheme     = scheme,     &
+      &             solverData = solverData, &
+      &             geometry   = geometry,   &
+      &             params     = params,     &
+      &             control    = control,    &
+      &             adapt      = adapt       )
+  else
+    call mus_solve_particles( scheme     = scheme,          &
+                &             solverData = solverData,      &
+                &             geometry   = geometry,        &
+                &             params     = params,          &
+                &             control    = control,         &
+                &             adapt      = adapt,           &
+                &             particleGroup = particleGroup )
+  end if
 
   ! finialize musubi
   call mus_finalize( scheme       = scheme,                     &
@@ -121,6 +161,11 @@ program musubi
     &                nBCs         = geometry%boundary%nBCtypes, &
     &                levelPointer = geometry%levelPointer,      &
     &                globIBM      = geometry%globIBM            )
+
+  ! De-allocate particleGroup object
+  if( particleGroup%particle_kind /= 'none' ) then
+    call mus_finalize_particleGroup( particleGroup )
+  end if
 
   ! finalize treelm function like print run time info and mpi
   call tem_finalize(params%general)

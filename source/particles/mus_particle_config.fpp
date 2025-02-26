@@ -49,7 +49,6 @@ module mus_particle_config_module
   use mus_particle_timer_module,         only : mus_particle_timerHandles
   use mus_particle_aux_module,           only : getProcessBoundingBox, &
                                               & positionLocalOnMyRank
-  use mus_particle_perfectcube_module,   only : perfectcube_params
   use mus_particle_blob_module,          only : mus_particle_blob_cylinder_type, &
                                               & particleblob, &
                                               & particleblob_prism, &
@@ -125,8 +124,8 @@ subroutine mus_load_particle_creator_timing( conf, p_thandle, particle_creator, 
   else
     ! If no timing subtable is present, load the default values
     ! This will only create particles once, at the start of the simulation
-    particle_creator%iter_start = 0
-    particle_creator%iter_end = 0
+    particle_creator%iter_start = 1
+    particle_creator%iter_end = 1
     particle_creator%iter_interval = 1  
   end if ! thandle /= 0
 
@@ -732,239 +731,6 @@ subroutine mus_load_int(conf, thandle, key, buff, default_val, flag)
 
 end subroutine mus_load_int
 
-!> Routine to load the particle data from the musubi.lua file
-!! meant to be called from within mus_load_config after the lua
-!! file has already been opened
-subroutine mus_load_particles_perfectcube(particleGroup, conf, chunkSize, &
-                                         & scheme, geometry, params       )
-  !> particleGroup to add particles loaded from the lua script to
-  type(mus_particle_group_type), intent(inout) :: particleGroup
-  !> configuration
-  type(flu_State) :: conf
-  !> Size of the number of particles to be read in one chunk from the lua table
-  integer, intent(in) :: chunkSize
-  !> Scheme
-  type(mus_scheme_type) :: scheme
-  !> Geometry
-  type(mus_geom_type) :: geometry
-  !> Params
-  type(mus_param_type) :: params
-  ! -----------------------------------------!
-  !> Scheme kind to check compatibility with particle kind
-  character(len=labelLen) :: schemeKind
-  !> Layout kind (e.g. d2q9 or d3q19) to load correct interpolation routines 
-  character(len=labelLen) :: layout
-
-  type(mus_particle_DPS_type), allocatable :: particleBuffer(:)
-  integer :: nParticles, nChunks, nChunkVals
-  integer :: particleLogInterval, particleBufferSize
-  integer :: intBuffer 
-  integer :: iError
-  integer :: iParticle, iStart, iChunk
-  integer :: iVal, nVals
-  !> Handle to particle table
-  integer :: p_thandle
-
-  !> Handle to domain_bnd table
-  integer :: domain_bnd_handle, boundaries_handle, bnd_kind_handle
-  real(kind=rk) :: realBuffer
-
-  logical :: wasAdded
-  logical :: flag
-  character(len=labelLen) :: particle_kind
-  character(len=labelLen) :: bnd_kind
-  real(kind=rk) :: particle_radius
-  real(kind=rk) :: particle_mass
-  real(kind=rk) :: processBoundingBox(6)
-  real(kind=rk) :: boundingBoxOrigin(3)
-  real(kind=rk) :: boundingBoxLength
-  ! -----------------------------------------!
-  nChunkVals = 1
-  schemeKind = scheme%header%kind
-  layout = scheme%layout%fStencil%label
-  
-  !-- Open particle table if it exists --!
-  call aot_table_open( L=conf, thandle=p_thandle, key='particles' )
-
-  if( p_thandle > 0 ) then
-    ! Set default particle kind to Momentum Exchange Method (MEM)
-    particle_kind = 'DPS'
-    particleGroup%particle_kind = particle_kind
-
-    ! Check to make sure particle kind is compatible with fluid kind
-    if( trim(particle_kind) == 'DPS' .AND. &
-      &  (trim(schemeKind) /= 'fluid_GNS' .AND. trim(schemeKind) /= 'fluid_incompressible_GNS') ) then
-      write(stdOutUnit,*) 'ERROR: particle kind is incompatible with fluid scheme kind!'
-      write(stdOutUnit,*) 'particle kind DPS is only compatible with fluid_GNS scheme!'
-      call tem_abort()
-    end if
-
-    ! ---- LOAD NUMBER OF PARTICLES ---- !
-    ! This should be the total amount of particles defined in the 
-    ! 'particles' table in musubi.lua
-    ! This is required if particle table is present.
-    call mus_load_int( conf    = conf,         &
-                     & thandle = p_thandle,    &
-                     & key     = 'nParticles', &
-                     & buff    = nParticles,   &
-                     & flag    = flag          )
-
-    particleGroup%nParticles = nParticles
-    perfectcube_params%particles_per_process = nParticles
-    perfectcube_params%particles_per_side = nParticles**(1.0/3.0)
-
-    !-- INITIALIZE MAXIMUM SIZE OF PARTICLE DYN ARRAYS --!
-    ! This should be the greater than the total amount of particles defined 
-    ! in the 'particles' table in musubi.lua
-    ! This is required if particle table is present.
-    call mus_load_int( conf        = conf,                     &
-                     & thandle     = p_thandle,                &
-                     & key         = 'maxDynArraySize',        &
-                     & buff        = intBuffer,                &
-                     & default_val = particleGroup%nParticles, &
-                     & flag        = flag                      )
-
-    maxContainerSize = intBuffer
-
-    ! ---- LOAD PARTICLE LOG INTERVAL ---- !
-    ! Optional, default value is logging every LBM time step
-    call mus_load_int( conf        = conf,                  &
-                     & thandle     = p_thandle,             &
-                     & key         = 'particleLogInterval', &
-                     & buff        = particleLogInterval,   &
-                     & default_val = 1,                     &
-                     & flag        = flag                   )
-
-    particleGroup%particleLogInterval = particleLogInterval 
-
-    ! ------ LOAD INTERPOLATION STENCIL -------!
-    call mus_load_particle_interpolation(                             &
-                          & conf         = conf,                      &
-                          & p_thandle    = p_thandle,                 &
-                          & layout       = layout,                    &
-                          & interpolator = particleGroup%interpolator )
-    call printParticleInterpolator( interpolator = particleGroup%interpolator, &
-                                  & logUnit      = stdOutUnit                  )
-    
-
-    !-- INITIALIZE PARTICLE COLLISION SETTINGS --!
-    ! Get number of DEM subcycles to use per LBM time step
-    call mus_load_int( conf        = conf,                  &
-                     & thandle     = p_thandle,             &
-                     & key         = 'nDEMsubcycles',       &
-                     & buff        = intBuffer,             &
-                     & default_val = 50,                    &
-                     & flag        = flag                   )
-
-    particleGroup%Nsubcycles = intBuffer
-
-    ! Get particle collision time. If this is not specified particles will NOT 
-    ! collide at all during the simulation. In that case the collision time will be 
-    ! set to -1.0 to signify this.
-    call mus_load_real( conf        = conf,                      &
-                      & thandle     = p_thandle,                 &
-                      & key         = 'particle_collision_time', &
-                      & buff        = realBuffer,                &
-                      & default_val = -1.0_rk,                   &
-                      & flag        = flag                       )
-    if( flag ) then
-      ! Successfully read particle collision time.
-      ! Enable collisions with the specified time
-      particleGroup%enableCollisions = .TRUE.
-      particleGroup%collision_time = realBuffer
-
-      ! If particle collisions are enabled, get particle threshold collision gap
-      ! This is the distance between particle surfaces at which we consider two 
-      ! particles colliding
-
-      ! NOTE: collision_tol MUST be specified when using collisions. If it cannot 
-      ! be read the simulation will abort..
-      call mus_load_real( conf    = conf,                      &
-                        & thandle = p_thandle,                 &
-                        & key     = 'particle_collision_tol', &
-                        & buff    = realBuffer,                &
-                        & flag    = flag                       )
-    else
-      write(stdOutUnit,*) 'No particle collision time specified: disabling particle collisions!'
-      particleGroup%enableCollisions = .FALSE.
-    end if
-
-    !-- INITIALIZE DEBUG TRACKERS --!
-    call mus_load_debugtracker( conf = conf, p_thandle = p_thandle, tracker = debugTracker ) 
-
-    !-- FOR SIMPLE PRISMATIC DOMAIN CASES --!
-    ! By default (if domain_bnd table is not given) particles will be deleted upon leaving 
-    ! the domain. Prescribing domain_bnd allows us to handle interactions with periodic 
-    ! or wall BC's provided that the geometry is simple prismatic.
-    
-    call mus_load_particle_boundaries( conf      = conf,      &
-                                     & p_thandle = p_thandle, &
-                                     & bndData   = pgBndData  )
-
-
-    !-- INITIALIZE PARTICLE BUFFER SIZE --!
-    call mus_load_int( conf        = conf,                 &
-                     & thandle     = p_thandle,            &
-                     & key         = 'particleBufferSize', &
-                     & buff        = particleBufferSize,   &
-                     & default_val = 100,                  &
-                     & flag        = flag                  )
-
-    particleGroup%particleBufferSize = particleBufferSize 
-  
-
-    !-- LOAD ACTUAL PARTICLE DATA --!
-    ! * Initial positions and velocities
-    ! * External forcesi (e.g. gravity)
-    ! * Radius
-    ! * Mass
-    ! * Etc.
-
-    call tem_startTimer( timerHandle = mus_particle_timerHandles%loadParticleTimer )
-    ! First load particle radius and mass
-    ! These are taken as the first values in the corresponding lua tables.
-    ! So we only need to specify one! e.g. inside the lua script do:
-    ! particles = {
-    !   radius = { Rp }
-    !   mass = { mp }
-    ! }
-
-    ! First load the properties of a single particle in particleBuffer.
-    ! We will then use these to set the properties of all the other particles.
-    allocate(particleBuffer(1))
-    call mus_load_particle_DPS_data_chunk( conf           = conf,           &
-                                         & parent         = p_thandle,      &
-                                         & particleBuffer = particleBuffer, &
-                                         & nChunkVals     = nChunkVals,     &
-                                         & key            = 'radius',       &
-                                         & iStart         = 1               )
-
-    call mus_load_particle_DPS_data_chunk( conf           = conf,           &
-                                         & parent         = p_thandle,      &
-                                         & particleBuffer = particleBuffer, &
-                                         & nChunkVals     = nChunkVals,     &
-                                         & key            = 'mass',         &
-                                         & iStart         = 1               )
-
-    ! Set perfectcube_params for use in mus_particles_initialize later.
-    perfectcube_params%radius = particleBuffer(1)%radius
-    perfectcube_params%mass = particleBuffer(1)%mass
-    perfectcube_params%rotInertia = 0.4*particleBuffer(1)%mass &
-    & * particleBuffer(1)%radius**2
-
-    deallocate(particleBuffer)
-
-
-    call tem_stopTimer( timerHandle = mus_particle_timerHandles%loadParticleTimer )
-
-    call aot_table_close( L=conf, thandle=p_thandle )
-  else
-    particleGroup%nParticles = 0
-    write(stdOutUnit,*) 'mus_load_particles: no particle table found'
-  end if ! particle table exists
-  write(stdOutUnit,*) "finished mus_load_particles_perfectcube"
-end subroutine mus_load_particles_perfectcube
-
 subroutine mus_load_particlekind(particleGroup, conf)
   !> particleGroup to add particles loaded from the lua script to
   type(mus_particle_group_type), intent(inout) :: particleGroup
@@ -1300,9 +1066,6 @@ subroutine mus_load_particles(particleGroup, conf, chunkSize, scheme, geometry, 
       &               default = 1.0_rk,                 &
       &               ErrCode = iError                  )
 
-    call tem_startTimer( timerHandle = mus_particle_timerHandles%loadParticleTimer )
-
-
     ! Initialize the particle dynamic arrays
     select case(particle_kind)
       case( 'MEM', 'MEM_unittest' )
@@ -1404,8 +1167,6 @@ subroutine mus_load_particles(particleGroup, conf, chunkSize, scheme, geometry, 
       end select ! particle kind
 
     end if ! use predefined shape for particle 'blob' initialization
-
-    call tem_stopTimer( timerHandle = mus_particle_timerHandles%loadParticleTimer )
 
     call aot_table_close( L=conf, thandle=p_thandle )
 

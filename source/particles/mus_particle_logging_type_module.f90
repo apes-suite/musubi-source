@@ -55,25 +55,6 @@ type(mus_particle_debugtracking_type), save :: debugTracker
 
 contains
 
-! subroutine init_particle_logger( logger, logFileName, myRank )
-!   !> logging type to initialize
-!   type(mus_particle_logging_type), intent(inout) :: logger
-!   !> name of the log file e.g. passing in "myLogFile" puts out myLogFile.txt
-!   character(len=30), intent(in) :: logFileName
-!   !> rank of this process, used to construct the log file name
-!   integer, intent(in) :: myRank
-!   ! --------------------------------------!
-!   integer :: debugLogUnit
-!   ! --------------------------------------!
-!   write(logger%lfile, "(A,I0.4,A4)" ) trim(logFileName), myRank, ".txt"
-!   logger%lu = newunit()
-!   
-!   open(logger%lu, file = logger%lfile, status = 'new')
-!   write(logger%lu,*) "Log rank ", myRank
-!   close(logger%lu)
-! 
-! end subroutine init_particle_logger
-
 subroutine printDebugTrackerData(debugTracker, logUnit)
   type(mus_particle_debugtracking_type) :: debugTracker
   integer :: logUnit
@@ -119,7 +100,6 @@ subroutine init_particle_logger( logger, myRank )
   !> rank of this process, used to construct the log file name
   integer, intent(in) :: myRank
   ! --------------------------------------!
-  integer :: debugLogUnit
   logical :: fileExists
   ! --------------------------------------!
   write(logger%lfile, "(A16,I0.4,A4)" ) "particleGroupLog", myRank, ".txt"

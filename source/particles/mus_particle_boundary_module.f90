@@ -93,7 +93,6 @@ end function getNeighborCoord
 subroutine wrapPeriodicCoord( coord, boundaryData )
   integer, intent(inout) :: coord(4)
   type( mus_particle_boundarydata_type), intent(in) :: boundaryData
-  integer :: neighborCoord(4)
   ! ----------------------------- ! 
   integer :: xsize, ysize, zsize
   integer :: xmin, xmax, ymin, ymax, zmin, zmax
@@ -272,7 +271,6 @@ subroutine calcPeriodicRsurface( r, R_particle, boundaryData )
   type(mus_particle_boundarydata_type), intent(in) :: boundaryData
   ! --------------------------------------------------------- !
   integer :: k, i
-  real(kind=rk) :: rmag
   ! --------------------------------------------------------- !
 
   i = 1

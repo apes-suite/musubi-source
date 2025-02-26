@@ -675,7 +675,7 @@ subroutine find_particle_comm_procs( procs, scheme, geometry, myRank, dpad )
   ! -------------------------------------------!
   integer :: nx, ny, nz
   integer :: Ndpad 
-  integer :: iElem, iproc, i
+  integer :: iElem, iproc
   integer :: firstHalo, lastHalo
   integer :: lev, foundProc, newPos
   integer(kind=long_k) :: TIDoffset, TreeID
@@ -770,7 +770,7 @@ subroutine find_particle_comm_procs2( procs, scheme, geometry, myRank, dpad )
   real(kind=rk) :: dpad
   ! -------------------------------------------!
   integer :: nx, ny, nz, ndpad
-  integer :: iElem, iproc, i
+  integer :: iElem, iproc
   integer :: firstHalo, lastHalo
   integer :: lev, foundProc, newPos
   integer(kind=long_k) :: TIDoffset, TreeID
@@ -1151,7 +1151,7 @@ subroutine find_particle_comm_procs4( prunedProcs, scheme, geometry, myRank, dpa
   type(dyn_intarray_type) :: procs ! array of procs before pruning
   integer :: lev, Ndpad, upperBound
   integer :: searchBoxLims(6), dirs(6)
-  integer :: iProp, iproc, foundProc, newPos
+  integer :: iproc, foundProc, newPos
   integer :: nx, ny, nz
   integer :: iElem, nFluids
   integer :: elemCoord(4), coord(4)
