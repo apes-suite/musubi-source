@@ -1,3 +1,97 @@
+! Copyright (c) 2025 Tristan Vlogman <t.g.vlogman@utwente.nl>
+!
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions are met:
+!
+! 1. Redistributions of source code must retain the above copyright notice,
+! this list of conditions and the following disclaimer.
+!
+! 2. Redistributions in binary form must reproduce the above copyright notice,
+! this list of conditions and the following disclaimer in the documentation
+! and/or other materials provided with the distribution.
+!
+! THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF SIEGEN “AS IS” AND ANY EXPRESS
+! OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+! OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+! IN NO EVENT SHALL UNIVERSITY OF SIEGEN OR CONTRIBUTORS BE LIABLE FOR ANY
+! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+! **************************************************************************** !
+!> mus_particle_config_module contains routines for loading the data for LBM-DEM
+!! simulations of particles in a flow from the lua script. 
+!! All particle data is read from the "particles" table in the lua script.
+!! This table should look as follows:
+!! particles = {
+!!  nParticles = 1,        -- Total number of particles in the simulation
+
+!!  -- particle kind, can be:
+!!  -- * 'MEM' for fully-resolved particles using the Momentum-Exchange Method
+!!  -- * 'DPS' for four-way coupled unresolved particles based on the 
+!!  --   Volume-Averaged Navier-Stokes equations
+!!  -- * 'DPS_twoway' for two-way coupled unresolved particles, neglecting the 
+!!  --   effect of volume fraction
+!!  -- * 'DPS_oneway' for one-way coupled unresolved particles. That is, particles 
+!!  --   do not affect the flow
+!!  kind = 'DPS',          
+!!
+!!  -- Describe how particles should interact with boundaries. They can either bounce
+!!  -- off them ('wall') or have periodic boundaries ('periodic'). Currently only 
+!!  -- interactions with prismatic boundaries are supported. If not specified, 
+!!  -- particles will be removed from the domain once they hit a boundary of the 
+!!  -- fluid domain (also works for arbitrary geometries).
+!!  boundaries = {
+!!    domain_bnd = { 0.0, L, 0.0, W, 0.0, H },
+!!    bnd_kind = {'wall', 'wall', 'wall', 'wall', 'wall', 'wall'}
+!!  },
+!!
+!!  -- Number of DEM subcycles per LBM time step to use
+!!  nDEMsubcycles = 50,
+!!
+!!  -- How often to log the particle data (1 = log every LBM time step)
+!!  particleLogInterval = 1,
+!!
+!!  -- Size of the buffers in the particle communication routines. Should be 
+!!  -- sufficient to hold all particles anticipated to be on a domain boundary 
+!!  -- at any time during the simulation. Safest option is to make this equal 
+!!  -- to or greater than nParticles.
+!!  particleBufferSize = 100,
+!!
+!!  -- Collision time (in physical units) of particle-particle collisions
+!!  particle_collision_time = 0.1*dt,
+!!
+!!  -- Collision tolerance, i.e. what should the gap between particles be 
+!!  -- before we call it a collision
+!!  particle_collision_tol = 0.0,
+!!
+!!  -- Size of the gap before capping the calculation of lubrication forces
+!!  critical_gap_Flub = 0.01,
+!!
+!!  -- Particle positions. Should contain nParticles tables of the form
+!!  -- {x,y,z,rx,ry,rz} with x, y, z the translational positions and 
+!!  -- rx, ry, rz the rotation angles about the corresponding axes.
+!!  position = { { x_p_phy, y_p_phy, z_p_phy, 0.0, 0.0, 0.0} },
+!! 
+!!  -- Particle initial velocities. Should contain nParticles tables of the form
+!!  -- {ux, uy, uz, urx, ury, urz}
+!!  velocity = { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0} },
+!!
+!!  -- External forces on particles. Should contain nParticles tables of the form
+!!  -- {Fx, Fy, Fz, Frx, Fry, Frz}
+!!  force    = { {0.0, 0.0, -F_gravity + F_buoyancy, 0.0, 0.0, 0.0} },
+!!
+!!  -- Particle radii, should have nParticles entries 
+!!  radius = { 0.5*Dia_p_phy },
+!! 
+!!  -- Particle masses, should have nParticles entries 
+!!  mass = { m_p_phy }
+!!}
+
+
+
 ?? include 'particleArrayMacros.inc'
 ! Module to load particle parameters from lua file
 module mus_particle_config_module

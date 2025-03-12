@@ -397,114 +397,8 @@ subroutine updateExistsOnProc_DPS( this, interpolator, scheme, geometry, &
 
 end subroutine updateExistsOnProc_DPS
 
-
-subroutine updateExistsOnProc_DPS_old( this, interpolator, scheme, geometry, procs, nProcs, myRank )
-  !> Particle to update owner of
-  type(mus_particle_DPS_type), intent(inout) :: this
-  !> Interpolation data type. We don't interpolate stuff here but we use it to determine the 
-  !! directions we need to search for local elements in (only x, y for d2q9, x, y, z for d3q19)
-  type(mus_particle_interpolator_type), intent(in) :: interpolator
-  !> Scheme for access to level descriptor
-  type(mus_scheme_type), intent(inout) :: scheme
-  !> Geometry to determine TreeIDs of elements 'covered' by particle
-  type(mus_geom_type), intent(in) :: geometry
-    !> Array of neighbor procs on which particle could possibly exist
-  integer, intent(in) :: procs(:)
-  !> Number of procs in array procs
-  integer, intent(in) :: nProcs
-  !> This process's rank
-  integer, intent(in) :: myRank
-  ! ------------------------------------- !
-  integer :: nx, ny, nz
-  integer :: coord(4)
-  integer :: lev, upperBound, iproc, iElemProc, elemProc
-  integer(kind=long_k) :: TreeID
-  integer :: ldPos
-  logical :: oldExistsOnProc( 1:nProcs )
-  ! ------------------------------------- !
-  lev = geometry%tree%global%maxLevel
-  upperBound = 2**lev
-
-  this%addToProc = .FALSE.
-  this%removeFromProc = .FALSE.
-
-  ! Store the existsOnProc mask from the previous time step
-  do iproc = 1, nProcs
-    oldExistsOnProc(iproc) = this%existsOnProc(iproc)
-  end do
-
-  this%existsOnProc = .FALSE.
-
-  ! Set removeParticle_local to true initially. Will be set to false once we encounter a 
-  ! particle that is local to our proc within a bounding box of 1 lattice 
-  ! site around this particle's coordOfOrigin
-  this%removeParticle_local = .TRUE.
-
-  do nx = interpolator%bnd_x(1), interpolator%bnd_x(2)
-    do ny = interpolator%bnd_y(1), interpolator%bnd_y(2)
-      do nz = interpolator%bnd_z(1), interpolator%bnd_z(2)
-        coord = getNeighborCoord( coord        = this%coordOfOrigin, &
-                                & nx           = nx,                 &
-                                & ny           = ny,                 &
-                                & nz           = nz,                 &
-                                & boundaryData = pgBndData           )
-
-        ! Check if coordinate is within actual simulation domain
-        if( any(coord(1:3) < 0) .OR. any(coord(1:3) > upperBound) ) then
-          cycle
-        else
-          ! get TreeID
-          TreeID = tem_IdOfCoord(coord = coord)
-
-          ! Update removeParticle_local if it is not yet set to FALSE for this iteration
-          if(this%removeParticle_local) then
-            ! Check if this is a local fluid element
-            ldPos = tem_PosOfId( sTreeID    = TreeID,                      &
-                               & treeIDlist = scheme%levelDesc(lev)%total, &
-                               & lower      = 1,                           &
-                               & upper      = scheme%pdf(lev)%nElems_fluid )
-            if( ldPos > 0 ) then
-              ! Element is local to our process so this particle should not 
-              ! be removed from our process.
-              this%removeParticle_local = .FALSE.
-            end if
-          end if
-
-          ! Check which process this element belongs to to update 
-          ! existsOnProc masks
-          if( TreeID < geometry%tree%Part_First(myRank + 1) &
-            & .OR. TreeID > geometry%tree%Part_Last(myRank + 1) ) then
-            ! Element is not local so find the neighbor process that 
-            ! this element is on
-            call findPartitionOfTreeID(                                         &
-                            & sTreeID = TreeID,                                 &
-                            & geometry = geometry,                              &
-                            & procs = procs,    &
-                            & nProcs = nProcs, &
-                            & outProc = elemProc,                               &
-                            & procIndex = iElemProc                             )
-            if(elemProc >= 0 ) then
-              this%existsOnProc( iElemProc ) = .TRUE.
-            end if ! elemProc >= 0
-          end if ! element is NOT local
-        end if ! coordinate is within domain
-      end do
-    end do
-  end do
-
-  ! Set addToProc and removeFromProc based on old and new values
-  ! of existsOnProc
-  do iproc = 1, nProcs
-    if( (.NOT. oldExistsOnProc(iproc)) .AND. this%existsOnProc(iproc)  ) then
-      this%addToProc(iproc) = .TRUE.
-    else if( oldExistsOnProc(iproc) .AND. ( .NOT. this%existsOnProc(iproc) ) ) then
-      this%removeFromProc(iproc) = .TRUE.
-    end if
-  end do ! iproc
-
-end subroutine updateExistsOnProc_DPS_old
-
-
+!> Routine that applies forces from particles to the fluid for unresolved 
+!! DPS particles based on the VANS equations
 subroutine transferMomentumToFluid_DPS( particle, interpolator, scheme, &
                                              & geometry, params, Ftot                )
   !> Particle to interpolate fluid properties to
@@ -575,6 +469,8 @@ subroutine transferMomentumToFluid_DPS( particle, interpolator, scheme, &
   particle%Favg = 0.0_rk
 end subroutine transferMomentumToFluid_DPS
 
+!> Routine that applies forces from particles to the fluid for unresolved 
+!! DPS two-way coupled particles
 subroutine transferMomentumToFluid_DPS_twoway( particle, interpolator, scheme, &
                                              & geometry, params, Ftot                )
   !> Particle to interpolate fluid properties to
@@ -644,7 +540,8 @@ subroutine transferMomentumToFluid_DPS_twoway( particle, interpolator, scheme, &
   particle%Favg = 0.0_rk
 end subroutine transferMomentumToFluid_DPS_twoway
 
-
+!> Routine to modify the auxField (velocity) with the forces exerted 
+!! by particles on the fluid
 subroutine addParticleSourceToAuxfield_DPS( particle, interpolator, scheme, &
                                              & geometry, params, Ftot                )
   !> Particle to interpolate fluid properties to
@@ -718,190 +615,8 @@ subroutine addParticleSourceToAuxfield_DPS( particle, interpolator, scheme, &
   end do
 end subroutine addParticleSourceToAuxfield_DPS
 
-subroutine TEST_transferMomentumToFluid_DPS( particle, scheme, geometry, params, Ftot )
-  !> Particle to interpolate fluid properties to
-  type(mus_particle_DPS_type), intent(in) :: particle
-  !> Scheme
-  type(mus_scheme_type), intent(inout) :: scheme
-  !> Geometry for access to tree
-  type(mus_geom_type), intent(in) :: geometry
-  !> Params for access to dt, dx, etc.
-  type(mus_param_type), intent(in) :: params
-  !> Output: force exerted on fluid by this particle
-  !! Should be equal to -particle%F
-  real(kind=rk), intent(out) :: Ftot(3)
-  ! ------------------------------------------!
-  integer :: lev
-  integer :: elemOff, ldPos, vol_frac_pos, vel_pos(3), dens_pos
-  real(kind=rk) :: geom_origin(3), dx
-  real(kind=rk) :: eps_f, eps_f_inv       ! fluid volume fraction and its inverse
-  real(kind=rk) :: inv_rho, velocity(3)   ! macroscopic velocity
-  real(kind=rk) :: F_cell(3)            ! part of hydro force to apply to current cell
-
-  ! For calculation of the source terms to add to pdfs
-  real(kind=rk) :: omega, omega_fac
-  real(kind=rk) :: forceTerm, ucx, uMinusCx(3)
-  integer :: iDir, QQ, nScalars, nSize, nNext
-  integer :: statePos
-  integer :: nSolve, iElem
-  ! ------------------------------------------!
-  lev = particle%coordOfOrigin(4)
-  dx = params%physics%dxLvl(lev)
-  QQ = scheme%layout%fStencil%QQ
-  nScalars = scheme%varSys%nScalars
-  nSize    = scheme%pdf(lev)%nSize
-  nNext  = scheme%pdf( lev )%nNext
-  nSolve = scheme%pdf( lev )%nElems_solve
-
-
-  geom_origin  = geometry%tree%global%origin
-  vol_frac_pos = scheme%varSys%method%val(scheme%derVarPos(1)%vol_frac)%auxField_varPos(1)
-  dens_pos     = scheme%varSys%method%val(scheme%derVarPos(1)%density)%auxField_varPos(1)
-  vel_pos      = scheme%varSys%method%val(scheme%derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-  Ftot = 0.0_rk
-  do iElem = 1, nSolve
-    ldPos = iElem
-
-    ! Compute portion of particle hydrodynamic force to distribute to this cell
-    ! Divide by cell volume to get volume force
-    F_cell = -particle%F(1:3) / (nSolve*dx**3)
-
-    Ftot = Ftot - particle%F(1:3)/nSolve
-    ! Convert to lattice units
-    F_cell = F_cell / params%physics%fac(lev)%body_force 
-
-    ! Get volume fraction and velocity at this lattice cell because 
-    ! we need it for computation of the force term
-    elemOff = (ldPos-1)*scheme%varSys%nAuxScalars
-
-    eps_f       = scheme%auxField(lev)%val(elemOff + vol_frac_pos)
-
-    eps_f_inv   = 1.0_rk / eps_f
-    inv_rho     = 1.0_rk / scheme%auxField(lev)%val(elemOff + dens_pos)
-    velocity(1) = scheme%auxField(lev)%val(elemOff + vel_pos(1))
-    velocity(2) = scheme%auxField(lev)%val(elemOff + vel_pos(2))
-    velocity(3) = scheme%auxField(lev)%val(elemOff + vel_pos(3))
-
-    ! Get the right omega value
-    omega = scheme%field(1)%fieldProp%fluid%viscKine              &
-    &                              %omLvl(lev)%val(ldPos)
-    omega_fac = 1.0_rk - omega * 0.5_rk
-
-    ! Apply forcing term to the PDFs
-    ! Force term:
-    ! F_i = w_i( (\vec{e}_i-\vec{u}*)/cs2 +
-    !       (\vec{e}_i \cdot \vec{u}*)\vec{e}_i/cs4) \cdot \vec{F}
-    do iDir = 1, QQ
-      ucx = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), &
-        &                velocity )
-      uMinusCx = scheme%layout%fStencil%cxDirRK(:, iDir) - velocity * eps_f_inv
-
-      forceTerm = dot_product( uMinusCx * cs2inv               &
-        &       + ucx * scheme%layout%fStencil%cxDirRK(:,iDir) &
-        &       * eps_f_inv * cs4inv, F_cell*eps_f )
-
-      statePos = ?SAVE?(iDir, 1, ldPos, QQ, nScalars, nSize, scheme%pdf(lev)%neigh(:) )
-
-      scheme%state(lev)%val( statePos, nNext ) = scheme%state(lev)%val( statePos, nNext ) &
-        &  + omega_fac * scheme%layout%weight(iDir) * forceTerm
-
-    end do ! iDir
-  end do
-
-  ! open( pgDebugLog%lu, file=pgDebugLog%lfile, status='old', position='append' )
-  !   write(pgDebugLog%lu,*) 'transferMomentumToFluid Ftot = ', Ftot
-  ! close( pgDebugLog%lu )
-
-
-end subroutine TEST_transferMomentumToFluid_DPS
-
-
-!> Test addParticleSourceToAuxfield by distributing source over all elements
-!! Only works in serial!
-subroutine Test_addParticleSourceToAuxfield_DPS( particle, scheme, geometry, params, auxFieldForceSum )
-  !> Particle to interpolate fluid properties to
-  type(mus_particle_DPS_type), intent(in) :: particle
-  !> Scheme
-  type(mus_scheme_type), intent(inout) :: scheme
-  !> Geometry for access to tree
-  type(mus_geom_type), intent(in) :: geometry
-  !> Params for access to dt, dx, etc.
-  type(mus_param_type), intent(in) :: params
-  !> For debugging
-  real(kind=rk) :: auxFieldForceSum(3)
-  ! ------------------------------------------!
-  integer :: lev
-  integer :: elemOff, ldPos, vol_frac_pos, vel_pos(3), dens_pos
-  real(kind=rk) :: geom_origin(3), dx
-  real(kind=rk) :: eps_f, eps_f_inv       ! fluid volume fraction and its inverse
-  real(kind=rk) :: inv_rho, velocity(3)   ! macroscopic velocity
-  real(kind=rk) :: F_cell(3)            ! part of hydro force to apply to current cell
-
-  ! For calculation of the source terms to add to pdfs
-  real(kind=rk) :: auxFieldForceTerm(3)
-  integer :: iElem, nSolve
-  ! ------------------------------------------!
-  lev = particle%coordOfOrigin(4)
-  dx = params%physics%dxLvl(lev)
-  nSolve = scheme%pdf(lev)%nElems_solve
-
-  geom_origin  = geometry%tree%global%origin
-  vol_frac_pos = scheme%varSys%method%val(scheme%derVarPos(1)%vol_frac)%auxField_varPos(1)
-  dens_pos     = scheme%varSys%method%val(scheme%derVarPos(1)%density)%auxField_varPos(1)
-  vel_pos      = scheme%varSys%method%val(scheme%derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-
-  ! Loop over lattice cells neighboring the particle and distribute
-  ! particle volume over them
-  auxFieldForceSum = 0.0_rk
-
-  do iElem = 1, nSolve
-    ldPos = iElem
-    ! Compute portion of particle hydrodynamic force to distribute to this cell
-    ! Divide by cell volume to get volume force
-    F_cell = -particle%F(1:3) / (nSolve*dx**3)
-
-    ! Convert to lattice units
-    F_cell = F_cell / params%physics%fac(lev)%body_force 
-
-    ! Get volume fraction and velocity at this lattice cell because 
-    ! we need it for computation of the force term
-    elemOff = (ldPos-1)*scheme%varSys%nAuxScalars
-
-    eps_f       = scheme%auxField(lev)%val(elemOff + vol_frac_pos)
-
-    eps_f_inv   = 1.0_rk / eps_f
-    inv_rho     = 1.0_rk / scheme%auxField(lev)%val(elemOff + dens_pos)
-    velocity(1) = scheme%auxField(lev)%val(elemOff + vel_pos(1))
-    velocity(2) = scheme%auxField(lev)%val(elemOff + vel_pos(2))
-    velocity(3) = scheme%auxField(lev)%val(elemOff + vel_pos(3))
-
-    ! Modify the velocity in auxField to take into account forcing term
-    auxFieldForceTerm = F_cell*0.5_rk*inv_rho*eps_f_inv
-
-    auxFieldForceSum = auxFieldForceSum + auxFieldForceTerm
-    ! add force to velocity
-    scheme%auxField(lev)%val(elemOff+vel_pos(1)) & 
-      & = scheme%auxField(lev)%val(elemOff+vel_pos(1)) + auxFieldForceTerm(1)
-
-    scheme%auxField(lev)%val(elemOff+vel_pos(2)) &
-      & = scheme%auxField(lev)%val(elemOff+vel_pos(2)) + auxFieldForceTerm(2)
-
-    scheme%auxField(lev)%val(elemOff+vel_pos(3)) &
-      & = scheme%auxField(lev)%val(elemOff+vel_pos(3)) + auxFieldForceTerm(3)
-  end do
-end subroutine Test_addParticleSourceToAuxField_DPS
-
-subroutine updateMomInc( particle, dt_DEM_lat )
-  !> Particle to interpolate fluid properties to
-  type(mus_particle_DPS_type), intent(inout) :: particle
-  !> Time step of DEM subcycles, in lattice units
-  real(kind=rk), intent(in) :: dt_DEM_lat
-  ! ----------------------------------------------- !
-  particle%Favg = particle%Favg - particle%F(1:3)*dt_DEM_lat
-end subroutine updateMomInc
-
+!> Remove the momentum increments added during subcycles to prevent double-adding 
+!! the momentum of particles to the fluid. 
 subroutine recalculate_auxField_DPS( particle, interpolator, scheme, &
                                 & geometry, params                   )
   !> Particle to interpolate fluid properties to
@@ -976,6 +691,8 @@ subroutine recalculate_auxField_DPS( particle, interpolator, scheme, &
   end do
 end subroutine recalculate_auxField_DPS
 
+!> Add momentum increments due to particles within DEM subcycles to the 
+!! auxField
 subroutine incrementAuxField_DPS( particle, interpolator, scheme, &
                                 & geometry, params, dt_DEM_lat                )
   !> Particle to interpolate fluid properties to
@@ -1123,128 +840,7 @@ subroutine addForceToAuxFieldCell( auxField, vel_pos, dens_pos, nAuxScalars, &
   !$OMP END ATOMIC
 end subroutine addForceToAuxFieldCell
 
-
-subroutine incrementAuxfield_DPS_old( particle, interpolator, scheme, &
-                                & geometry, params, auxFieldForceSum, dt_DEM_lat )
-  !> Particle to interpolate fluid properties to
-  type(mus_particle_DPS_type), intent(inout) :: particle
-  !> Interpolation object containing stencil and weight info
-  type(mus_particle_interpolator_type), intent(in) :: interpolator
-  !> Scheme
-  type(mus_scheme_type), intent(inout) :: scheme
-  !> Geometry for access to tree
-  type(mus_geom_type), intent(in) :: geometry
-  !> Params for access to dt, dx, etc.
-  type(mus_param_type), intent(in) :: params
-  !> For debugging
-  real(kind=rk), intent(inout), optional :: auxFieldForceSum(3)
-  !> DEM subcycle time step (in LATTICE units)
-  real(kind=rk), intent(in) :: dt_DEM_lat
-  ! ------------------------------------------!
-  integer :: nx, ny, nz, lev
-  integer :: coord(4)
-  integer :: elemOff, ldPos, vol_frac_pos, vel_pos(3), dens_pos
-  real(kind=rk) :: baryOfOrigin(3), rbary_lat(3), r_lat(3)
-  real(kind=rk) :: geom_origin(3), dx, dt, dt_DEM_phy
-  real(kind=rk) :: wght_x, wght_y, wght_z
-  real(kind=rk) :: inv_rho, velocity(3)   ! macroscopic velocity
-  real(kind=rk) :: F_cell(3)            ! part of hydro force to apply to current cell
-
-  ! For calculation of the source terms to add to pdfs
-  real(kind=rk) :: velocityIncrement(3)
-  ! ------------------------------------------!
-  lev = particle%coordOfOrigin(4)
-  dx = params%physics%dxLvl(lev)
-  dt = params%physics%dtLvl(lev)
-  dt_DEM_phy = dt*dt_DEM_lat
-
-  geom_origin  = geometry%tree%global%origin
-  vol_frac_pos = scheme%varSys%method%val(scheme%derVarPos(1)%vol_frac)%auxField_varPos(1)
-  dens_pos     = scheme%varSys%method%val(scheme%derVarPos(1)%density)%auxField_varPos(1)
-  vel_pos      = scheme%varSys%method%val(scheme%derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-  ! Find out what the nearest 8 barycenters are to which we will 
-  ! distribute the force by particle on fluid
-  baryOfOrigin = getBaryOfCoord( coord  = particle%coordOfOrigin(1:3), &
-                               & origin = geom_origin,             &
-                               & dx     = dx                       )
-
-  ! rbary_lat = vector FROM barycenter of coordOfOrigin TO particle
-  rbary_lat = (particle%pos(1:3) - baryOfOrigin)/dx
-
-
-  ! Loop over lattice cells neighboring the particle and distribute
-  ! particle volume over them
-
-  ! Add increment in to total momentum transferred within LBM time step
-  particle%Favg = particle%Favg - particle%F(1:3)*dt_DEM_phy
-
-  do nx = interpolator%bnd_x(1), interpolator%bnd_x(2)
-    do ny = interpolator%bnd_y(1), interpolator%bnd_y(2)
-      do nz = interpolator%bnd_z(1), interpolator%bnd_z(2)
-        coord = getNeighborCoord( coord        = particle%coordOfOrigin, &
-                                & nx           = nx,                     &
-                                & ny           = ny,                     &
-                                & nz           = nz,                     &
-                                & boundaryData = pgBndData               )
-
-
-        ! Get velocity and fluid volume fraction for this element
-        ! Get position in auxfield of this variable
-        call getIndexOfCoordInTotal( coord  = coord,  &
-                                   & scheme = scheme, &
-                                   & ldPos  = ldPos   )
-
-        ! If this element is not on our process domain, skip it
-        if( ldPos <= 0 ) then
-          cycle
-        end if
-        ! If this element is NOT a local fluid, skip it.
-        ! Each process only adds the source terms for its own local fluid elems.
-        ! if( ldPos > scheme%pdf(lev)%nElems_fluid) then
-        !   cycle
-        ! end if
-
-        ! Compute vector from particle to baryCenter of sample point
-        r_lat = abs( -rbary_lat + (/ nx, ny, nz /) )
-
-        ! Get weights in each Cartesian direction for this coord
-        wght_x = interpolator%getWght_x( r_lat(1) )
-        wght_y = interpolator%getWght_y( r_lat(2) )
-        wght_z = interpolator%getWght_z( r_lat(3) )
-
-        ! Compute portion of particle hydrodynamic force to distribute to this cell
-        ! Divide by cell volume to get volume force
-        F_cell = wght_x * wght_y * wght_z * -particle%F(1:3) 
-
-        if( present(auxFieldForceSum) ) then 
-          auxFieldForceSum = auxFieldForceSum + F_cell*dt_DEM_phy
-        end if
-
-        ! Convert to lattice units
-        F_cell = F_cell / params%physics%fac(lev)%force
-
-        ! Transfer momentum from particle to fluid by modifying the velocity in auxField
-        elemOff = (ldPos-1)*scheme%varSys%nAuxScalars
-        inv_rho = 1.0_rk / scheme%auxField(lev)%val(elemOff + dens_pos)
-
-        velocityIncrement = F_cell*dt_DEM_lat*inv_rho
-
-        ! Add this term to the velocity field
-        scheme%auxField(lev)%val(elemOff+vel_pos(1)) & 
-          & = scheme%auxField(lev)%val(elemOff+vel_pos(1)) + velocityIncrement(1)
-
-        scheme%auxField(lev)%val(elemOff+vel_pos(2)) &
-          & = scheme%auxField(lev)%val(elemOff+vel_pos(2)) + velocityIncrement(2)
-
-        scheme%auxField(lev)%val(elemOff+vel_pos(3)) &
-          & = scheme%auxField(lev)%val(elemOff+vel_pos(3)) + velocityIncrement(3)
-
-      end do ! nz
-    end do ! ny
-  end do ! nx
-end subroutine incrementAuxField_DPS_old
-
+!> Distribute the volume of a particle to update the fluid volume fraction field
 subroutine distributeParticleVolume( particle, interpolator, scheme, geometry, params )
   !> Particle to interpolate fluid properties to
   type(mus_particle_DPS_type), intent(in) :: particle
@@ -1333,93 +929,7 @@ subroutine distributeParticleVolume( particle, interpolator, scheme, geometry, p
 
 end subroutine distributeParticleVolume
 
-subroutine distributeParticleVolume_old( particle, interpolator, scheme, geometry, params )
-  !> Particle to interpolate fluid properties to
-  type(mus_particle_DPS_type), intent(in) :: particle
-  !> Interpolation object containing stencil and weight info
-  type(mus_particle_interpolator_type), intent(in) :: interpolator
-  !> Scheme
-  type(mus_scheme_type), intent(inout) :: scheme
-  !> Geometry for access to tree
-  type(mus_geom_type), intent(in) :: geometry
-  !> Params for access to dt, dx, etc.
-  type(mus_param_type), intent(in) :: params
-  ! ------------------------------------------!
-  integer :: nx, ny, nz, lev
-  integer :: coord(4)
-  integer :: elemOff, ldPos, vol_frac_pos
-  real(kind=rk) :: baryOfOrigin(3), rbary_lat(3), r_lat(3)
-  real(kind=rk) :: geom_origin(3), dx
-  real(kind=rk) :: f(0:1,0:1,0:1)
-  real(kind=rk) :: wght_x, wght_y, wght_z
-  real(kind=rk) :: Vparticle
-  real(kind=rk) :: eps_solid ! SOLID volume fraction = 1-fluid vol fraction
-
-  ! ------------------------------------------!
-  ! Find neighboring fluid cells
-  lev = particle%coordOfOrigin(4)
-  dx = params%physics%dxLvl(lev)
-  geom_origin = geometry%tree%global%origin
-  vol_frac_pos = scheme%varSys%method%val(scheme%derVarPos(1)%vol_frac)%auxField_varPos(1)
-
-
-  ! Find out what the nearest 8 barycenters are to which we will 
-  ! distribute the particle volume
-  baryOfOrigin = getBaryOfCoord( coord  = particle%coordOfOrigin(1:3), &
-                               & origin = geom_origin,             &
-                               & dx     = dx                       )
-
-  ! rbary_lat = vector FROM particle CoordOfOrigin barycenter to particle
-  rbary_lat = (particle%pos(1:3) - baryOfOrigin)/dx
-
-  ! Loop over lattice cells neighboring the particle and distribute
-  ! particle volume over them
-  do nx = interpolator%bnd_x(1), interpolator%bnd_x(2)
-    do ny = interpolator%bnd_y(1), interpolator%bnd_y(2)
-      do nz = interpolator%bnd_z(1), interpolator%bnd_z(2)
-        coord = getNeighborCoord( coord        = particle%coordOfOrigin, &
-                                & nx           = nx,                     &
-                                & ny           = ny,                     &
-                                & nz           = nz,                     &
-                                & boundaryData = pgBndData               )
-        
-
-        ! Compute vector from particle to the sample point
-        r_lat = abs( -rbary_lat + (/ nx, ny, nz /) )
-        
-        ! Get weights in each Cartesian direction for this coord
-        wght_x = interpolator%getWght_x( r_lat(1) )
-        wght_y = interpolator%getWght_y( r_lat(2) )
-        wght_z = interpolator%getWght_z( r_lat(3) )
-
-        ! Update fluid volume fraction
-        Vparticle = (4.0/3.0)*PI*particle%radius**3 
-        ! write(stdOutUnit,*) 'Vparticle / dx^3 = ', Vparticle / dx**3
-
-        ! Get position in auxfield of this variable
-        call getIndexOfCoordInTotal( coord  = coord,  &
-                                   & scheme = scheme, &
-                                   & ldPos  = ldPos   )
-        if( ldPos <= 0 ) then
-          ! If ldPos <= 0 then we are trying to update the fluid volume fraction
-          ! of a lattice cell outside the domain. This can happen if the particle 
-          ! is located close to the (global) domain boundary. In this case just 
-          ! skip to the next element.
-          cycle
-        end if
-
-        elemOff = (ldPos-1)*scheme%varSys%nAuxScalars
-
-        scheme%auxField(lev)%val(elemOff + vol_frac_pos) =                 &
-                        & scheme%auxField(lev)%val(elemOff + vol_frac_pos) & 
-                        &       - (wght_x*wght_y*wght_z*Vparticle) / dx**3
-
-      end do
-    end do
-  end do
-
-end subroutine distributeParticleVolume_old
-
+!> Get the index in the total list of a specified integer coordinate
 subroutine getIndexOfCoordInTotal(scheme, coord, ldPos)
   integer, intent(in) :: coord(4)
   type(mus_scheme_type), intent(in) :: scheme
@@ -1449,6 +959,7 @@ subroutine getIndexOfCoordInTotal(scheme, coord, ldPos)
 
 end subroutine getIndexOfCoordInTotal
 
+!> Main routine to update the fluid volume fraction in the auxField
 subroutine mus_particles_updateFluidVolumeFraction( particleGroup, scheme, geometry, params, nElems )
   !> Array of particles
   type(mus_particle_group_type), intent(in) :: particleGroup
@@ -1492,6 +1003,7 @@ subroutine mus_particles_updateFluidVolumeFraction( particleGroup, scheme, geome
 
 end subroutine mus_particles_updateFluidVolumeFraction
 
+!> Routine to initialize the fluid volume fraction field
 subroutine mus_particles_initFluidVolumeFraction( scheme, geometry, nElems )
   !> scheme for access to varSys
   type(mus_scheme_type), intent(inout) :: scheme
@@ -1514,8 +1026,7 @@ subroutine mus_particles_initFluidVolumeFraction( scheme, geometry, nElems )
 
 end subroutine mus_particles_initFluidVolumeFraction
 
-
-
+!> Routine to map particles to the lattice (update coordinate of the origin etc.)
 subroutine mapToLattice_DPS(particle, interpolator, scheme, geometry, params, &
                            & comm, particlelogInterval  )
   !> Array of particles
@@ -1578,6 +1089,7 @@ subroutine mapToLattice_DPS(particle, interpolator, scheme, geometry, params, &
 
 end subroutine mapToLattice_DPS
 
+!> Main control routine which maps each DPS particle to the lattice
 subroutine mapParticlesToLattice_DPS(particleGroup, scheme, geometry, params)
   !> Array of particles
   type(mus_particle_group_type), intent(inout) :: particleGroup
@@ -1696,6 +1208,8 @@ subroutine mapParticlesToLattice_DPS(particleGroup, scheme, geometry, params)
 
 end subroutine mapParticlesToLattice_DPS
 
+!> Main control routine which interpolates and stores the fluid properties at 
+!! the particle locations
 subroutine interpolateFluidProperties_DPS(particleGroup, scheme, geometry, params)
   !> Array of particles
   type(mus_particle_group_type), intent(inout) :: particleGroup
@@ -1814,6 +1328,7 @@ subroutine mus_particles_DPS_interpolateFluidProperties( particle, interpolator,
 
 end subroutine mus_particles_DPS_interpolateFluidProperties
 
+!> Interpolate the fluid properties to a point xp
 subroutine interpolateFluidProps(xp, coord_xp, scheme, geom_origin, dx, &
                                       & interpolator, vel_xp, rho_xp, eps_f_xp, posOfCoord )
   !> Query point (x,y,z) to interpolate fluid properties to 
@@ -1920,7 +1435,7 @@ subroutine interpolateFluidProps(xp, coord_xp, scheme, geom_origin, dx, &
   end do ! idir
 end subroutine interpolateFluidProps
 
-
+!> Interpolate the fluid properties to a point xp
 subroutine interpolateFluidProps_onewaycoupled(xp, coord_xp, scheme, geom_origin, dx, &
                                       & interpolator, vel_xp, rho_xp, eps_f_xp, posOfCoord )
   !> Query point (x,y,z) to interpolate fluid properties to 
@@ -2026,106 +1541,6 @@ subroutine interpolateFluidProps_onewaycoupled(xp, coord_xp, scheme, geom_origin
   ! Set fluid volume fraction to 1 for one way coupled simulations
   eps_f_xp = 1.0_rk
 end subroutine interpolateFluidProps_onewaycoupled
-
-subroutine interpolateFluidProps_old(xp, coord_xp, scheme, geom_origin, dx, &
-  & interpolator, vel_xp, rho_xp, eps_f_xp )
-!> Query point (x,y,z) to interpolate fluid properties to 
-real(kind=rk), intent(in) :: xp(3)
-!> Coordinate in the tree (ix,iy,iz,level) of xp
-integer, intent(in) :: coord_xp(4)
-!> Scheme for access to fluid data
-type(mus_scheme_type), intent(inout) :: scheme
-!> Origin of bounding cube (geometry%tree%global%origin)
-real(kind=rk), intent(in) :: geom_origin(3)
-!> Mesh size
-real(kind=rk), intent(in) :: dx
-!> Interpolator object containing stencil and weight function information
-type(mus_particle_interpolator_type), intent(in) :: interpolator
-!> Fluid velocity at xp
-real(kind=rk), intent(out) :: vel_xp(3)
-!> Fluid density at xp
-real(kind=rk), intent(out) :: rho_xp
-!> Fluid volume fraction at xp
-real(kind=rk), intent(out) :: eps_f_xp
-! ------------------------------------------!
-integer :: nx, ny, nz
-integer :: coord(4)
-integer :: vel_pos(3), dens_pos, vol_frac_pos
-real(kind=rk) :: del_x, del_y, del_z, wght
-real(kind=rk) :: r_lat(3), bary(3)
-real(kind=rk) :: u_tmp(3), rho_tmp, eps_f_tmp
-logical :: failedToGrabValue
-! ------------------------------------------!
-vol_frac_pos = scheme%varSys%method%val(scheme%derVarPos(1)%vol_frac)%auxField_varPos(1)
-dens_pos     = scheme%varSys%method%val(scheme%derVarPos(1)%density)%auxField_varPos(1)
-vel_pos      = scheme%varSys%method%val(scheme%derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-! Initialize output variables to 0
-vel_xp = 0.0_rk
-rho_xp = 0.0_rk
-eps_f_xp = 0.0_rk
-
-! Loop over sample points (= neigboring lattice cells)
-do nx = interpolator%bnd_x(1), interpolator%bnd_x(2)
-  do ny = interpolator%bnd_y(1), interpolator%bnd_y(2) 
-    do nz = interpolator%bnd_z(1), interpolator%bnd_z(2)
-    coord = getNeighborCoord( coord        = coord_xp, &
-    & nx           = nx,               &
-    & ny           = ny,               &
-    & nz           = nz,               &
-    & boundaryData = pgBndData               )
-
-    bary = getBaryOfCoord( coord  = coord(1:3), &
-    & origin = geom_origin,   &
-    & dx     = dx             )
-
-    ! Get normalized distance from query point to current sample point
-    r_lat = abs( (xp - bary)/dx )
-
-    ! Compute weights
-    del_x = interpolator%getWght_x( r_lat(1) )
-    del_y = interpolator%getWght_y( r_lat(2) )
-    del_z = interpolator%getWght_z( r_lat(3) )
-    wght  = del_x*del_y*del_z
-
-    call grabValueAtCoord( coord        = coord,            &
-    & scheme       = scheme,           &
-    & vel_pos      = vel_pos,          &
-    & dens_pos     = dens_pos,         &
-    & vol_frac_pos = vol_frac_pos,     &
-    & rho          = rho_tmp,          &
-    & u            = u_tmp,            &
-    & eps_f        = eps_f_tmp,        &
-    & err          = failedToGrabValue )
-
-    if(failedToGrabValue) then
-      call grabValueAtCoord( coord        = coord_xp,         &
-      & scheme       = scheme,           &
-      & vel_pos      = vel_pos,          &
-      & dens_pos     = dens_pos,         &
-      & vol_frac_pos = vol_frac_pos,     &
-      & rho          = rho_tmp,          &
-      & u            = u_tmp,            &
-      & eps_f        = eps_f_tmp,        &
-      & err          = failedToGrabValue )
-      if(failedToGrabValue) then
-        write(stdOutUnit,*) 'ERROR interpolateFluidProps_delta: ', &
-        & 'could not grab fluid prop values at coord', coord_xp
-        call tem_abort()
-      end if
-
-    end if
-
-    ! Add contribution of this value to vel_xp, rho_xp, eps_xp
-    vel_xp = vel_xp + wght*u_tmp 
-    rho_xp = rho_xp + wght*rho_tmp 
-    eps_f_xp = eps_f_xp + wght*eps_f_tmp 
-
-    end do
-  end do
-end do
-end subroutine interpolateFluidProps_old
-
 
 subroutine interpolateFluidProps_onewaycoupled_old(xp, coord_xp, scheme, geom_origin, dx, &
   & interpolator, vel_xp, rho_xp )
@@ -2546,167 +1961,6 @@ end subroutine calcVelocityAndPressureGradient_onewaycoupled
 !> calcVelocityAndPressureGradient calculates the gradient of pressure and 
 !! curl of the velocity field (in lattice units) at coordinate coord 
 !! Coord must be a local element on this process!
-subroutine calcVelocityAndPressureGradient_old(coord, scheme, grad_p, curl_u, err )
-  !> Integer coordinate to calculate grad(p) and curl(u) at
-  integer, intent(in) :: coord(4)
-  !> Scheme for access to total list
-  type(mus_scheme_type), intent(inout) :: scheme
-  !> Output pressure gradient at coord
-  real(kind=rk), intent(out) :: grad_p(3)
-  !> Output velocity curl at coord
-  real(kind=rk), intent(out) :: curl_u(3)
-  !> Error code: set to TRUE if we could not find ldPos of coord
-  !! we are trying to grab value at (for example because it is 
-  !! outside domain and not a halo.
-  logical, intent(out) :: err
-  ! ------------------------------------------!
-  integer :: dens_pos, vel_pos(3), vol_frac_pos
-  integer :: ldPos, elemOff, lev
-  integer :: iDir, QQ
-  integer :: invDir
-  integer :: cq(3), cqInv(3), neighborCoord(4) 
-  real(kind=rk) :: wq 
-  real(kind=rk) :: rho_tmp, u_tmp(3), curl_tmp(3)
-  real(kind=rk) :: eps_f_tmp   ! Not used for anything... but need for grabValueAtCoord
-  real(kind=rk) :: rho_coord, u_coord(3)
-  real(kind=rk) :: eps_f_inv         ! 1 / fluid volume fraction
-  logical :: failedToGrabValue
-
-  integer(kind=long_k) :: TreeID
-  ! ------------------------------------------!
-  lev = coord(4)
-  QQ = scheme%layout%fStencil%QQ 
-
-  ! Position of volume frac in varSys
-  vol_frac_pos = scheme%varSys%method%val(scheme%derVarPos(1)%vol_frac)%auxField_varPos(1)
-  dens_pos     = scheme%varSys%method%val(scheme%derVarPos(1)%density)%auxField_varPos(1)
-  vel_pos      = scheme%varSys%method%val(scheme%derVarPos(1)%velocity)%auxField_varPos(1:3)
-
-  ! Get fluid volume fraction at coord
-  call getIndexOfCoordInTotal( coord  = coord,  &
-                           & scheme = scheme, &
-                           & ldPos  = ldPos   )
-
-  ! If this element is not a local fluid on our process domain, skip it
-  if( ldPos <= 0 .OR. ldPos > scheme%pdf(lev)%nElems_fluid) then
-    err = .TRUE.
-    return
-  else
-    err = .FALSE.
-  end if
-
-  elemOff = (ldPos-1)*scheme%varSys%nAuxScalars
-  eps_f_inv = 1.0_rk / scheme%auxField(lev)%val(elemOff + vol_frac_pos)
-
-  ! Loop over points around coord and grab the values of velocity
-  ! and pressure at those points
-  grad_p = 0.0_rk
-  curl_u = 0.0_rk
-
-  do iDir = 1, QQ
-    ! Get lattice direction and weight
-    cq = scheme%layout%fStencil%cxDir(:,iDir)
-    wq = scheme%layout%weight(iDir)
-
-    ! Calculate neighbor coord
-    neighborCoord = getNeighborCoord( coord       = coord,    &
-                                   & nx           = cq(1),    &
-                                   & ny           = cq(2),    &
-                                   & nz           = cq(3),    &
-                                   & boundaryData = pgBndData )
-
-    ! Grab value of density and velocity at neighbor
-    call grabValueAtCoord( coord    = neighborCoord,    &
-                         & scheme   = scheme,           &
-                         & vel_pos  = vel_pos,          & 
-                         & dens_pos = dens_pos,         &
-                         & vol_frac_pos = vol_frac_pos,         &
-                         & rho      = rho_tmp,          &
-                         & u        = u_tmp,            &
-                         & eps_f    = eps_f_tmp,            &
-                         & err      = failedToGrabValue )
-    if( failedToGrabValue ) then
-      ! If we could not get density and velocity values at neighbor
-      ! i.e. if neighbor is outside domain, use the neighbor in the 
-      ! OTHER direction to extrapolate the values we need.
-      ! write(stdOutUnit,*) 'calcVelocityAndPressureGradient: extrapolating ', &
-      !   & 'from neighbor in opposite direction'
-
-      ! First grab value at coord itself
-      call grabValueAtCoord( coord    = coord,    &
-                           & scheme   = scheme,           &
-                           & vel_pos  = vel_pos,          & 
-                           & dens_pos = dens_pos,         &
-                           & vol_frac_pos = vol_frac_pos,         &
-                           & rho      = rho_coord,         &
-                           & u        = u_coord,            &
-                           & eps_f    = eps_f_tmp,            &
-                           & err      = failedToGrabValue )
-      if( failedToGrabValue ) then
-        write(stdOutUnit,*) 'ERROR calcVelocityAndPressureGradient: ', &
-          & 'could not grab pressure value at coord', coord
-        call tem_abort()
-      end if
-
-      ! Then get the value at neighbor in OPPOSITE direction
-      invDir = scheme%layout%fStencil%cxDirInv(iDir)
-      cqInv = scheme%layout%fStencil%cxDir(:,invDir)
-
-
-      neighborCoord = getNeighborCoord( coord       = coord,       &
-                                     & nx           = cqInv(1),    &
-                                     & ny           = cqInv(2),    &
-                                     & nz           = cqInv(3),    &
-                                     & boundaryData = pgBndData )
-
-      ! Grab value of density and velocity at neighbor
-      ! in INVERSE direction
-      call grabValueAtCoord( coord    = neighborCoord,    &
-                           & scheme   = scheme,           &
-                           & vel_pos  = vel_pos,          & 
-                           & dens_pos = dens_pos,         &
-                           & vol_frac_pos = vol_frac_pos,         &
-                           & rho      = rho_tmp,          &
-                           & u        = u_tmp,            &
-                           & eps_f    = eps_f_tmp,            &
-                           & err      = failedToGrabValue )
-      if( failedToGrabValue ) then
-        ! write(stdOutUnit,*) 'WARNING calcVelocityAndPressureGradient: ',  &
-        !   & 'could not grab value at neighbor coord. Assuming value at ', &
-        !   & 'coordOfOrigin'
-        rho_tmp = rho_coord
-        u_tmp   = u_coord
-      end if
-
-      ! Extrapolate the values of rho and u at the "missing" lattice 
-      ! site using those in of the neighbor in opposite direction.
-      rho_tmp = rho_coord - (rho_tmp - rho_coord)
-      u_tmp   = u_coord - ( u_tmp - u_coord )
-    end if
-
-    ! Add this coordinate's contribution to the gradients
-    ! according to the lattice differential operators
-    ! note that rho_tmp = cs^2 * p. This cancels out with the 
-    ! division by cs^2 in the definition of the lattice differential
-    ! operator, which is why cs^2 is not in this term
-    grad_p = grad_p + wq * cq * rho_tmp 
-
-    ! Compute the cross-product term, then add it to curl_u 
-    ! Convert the volume-averaged fluid velocity (= what grabValueAtCoord gives)
-    ! to the fluid phase velocity for Generalized Navier-Stokes
-    u_tmp = u_tmp * eps_f_inv
-
-    call cross_product( wq*cq, u_tmp, curl_tmp )
-    curl_u = curl_u + curl_tmp 
-  end do ! iDir
-
-  curl_u = curl_u * cs2inv
-
-end subroutine calcVelocityAndPressureGradient_old
-
-!> calcVelocityAndPressureGradient calculates the gradient of pressure and 
-!! curl of the velocity field (in lattice units) at coordinate coord 
-!! Coord must be a local element on this process!
 subroutine calcVelocityAndPressureGradient_onewaycoupled_old(coord, scheme, grad_p, curl_u, err )
   !> Integer coordinate to calculate grad(p) and curl(u) at
   integer, intent(in) :: coord(4)
@@ -2855,7 +2109,7 @@ subroutine calcVelocityAndPressureGradient_onewaycoupled_old(coord, scheme, grad
 
 end subroutine calcVelocityAndPressureGradient_onewaycoupled_old
 
-
+!> Get the value of the density and velocity at a certain integer coordinate 
 subroutine grabValueAtCoord_twowaycoupled(coord, scheme, vel_pos, dens_pos, vol_frac_pos, rho, u, eps_f, err )
   integer, intent(in) :: coord(4)
   type(mus_scheme_type), intent(inout) :: scheme
@@ -2922,6 +2176,7 @@ subroutine grabValueAtCoord_twowaycoupled(coord, scheme, vel_pos, dens_pos, vol_
 
 end subroutine grabValueAtCoord_twowaycoupled
 
+!> Get the value of the density and velocity at a certain integer coordinate 
 subroutine grabValueAtCoord_onewaycoupled(coord, scheme, vel_pos, dens_pos, rho, u, err )
   integer, intent(in) :: coord(4)
   type(mus_scheme_type), intent(inout) :: scheme
@@ -2984,42 +2239,14 @@ subroutine grabValueAtCoord_onewaycoupled(coord, scheme, vel_pos, dens_pos, rho,
 end subroutine grabValueAtCoord_onewaycoupled
 
 ! ***** Routines for hydrodynamic force computation ***** !
-! From Rettinger and Rude's paper
-! subroutine applyDragForce_DPS( particle, eps_p, nu, Fd )
-!   !> Particle to apply force to
-!   type(mus_particle_DPS_type), intent(inout) :: particle
-!   !> Solid volume fraction interpolated to location of the particle
-!   real(kind=rk), intent(in) :: eps_p
-!   !> Fluid kinematic viscosity (phy)
-!   real(kind=rk), intent(in) :: nu
-!   !> Output: drag force on particle
-!   real(kind=rk), intent(out) :: Fd(3)
-!   ! ------------------------------------------!
-!   real(kind=rk) :: umag, Re, Cd0, Cd, A, B
-!   real(kind=rk) :: c_eps   ! c_eps = 1-eps_p
-!   real(kind=rk) :: u_rel(3)
-!   ! ------------------------------------------!
-!   ! 1) Compute Reynolds number
-!   u_rel = particle%u_fluid(1:3) - particle%vel(1:3)
-!   umag = dot_product(u_rel,u_rel)
-!   umag = sqrt(umag)
-!   Re = (umag*2.0*particle%radius)/nu
-! 
-!   ! 2) Compute drag coefficient
-!   c_eps = abs(1.0_rk - eps_p)
-! 
-!   Cd0 = 1.0_rk + 0.15*Re**0.687
-!   A   = 5.81*eps_p / c_eps**3 + 0.48*( eps_p**(1.0/3.0) / c_eps**4 )
-!   B   = eps_p**3 * Re * ( 0.95 + 0.61*eps_p**3 / c_eps**2 )
-! 
-!   Cd = c_eps*(Cd0/c_eps**3 + A + B )
-! 
-!   ! 3) Compute drag force
-!   Fd = 6.0*PI*particle%radius*nu*particle%rho_fluid*(c_eps)*Cd*u_rel
-! 
-! end subroutine applyDragForce_DPS
 
-! Directly from Tenetti's paper
+!> Routine to calculate the drag force according to
+!! [1] S. Tenneti, R. Garg, and S. Subramaniam, “Drag law for monodisperse
+!! gas–solid systems using particle-resolved direct numerical simulation of flow
+!! past fixed assemblies of spheres,” International Journal of Multiphase Flow,
+!! vol. 37, no. 9, pp. 1072–1092, Nov. 2011, doi:
+!! 10.1016/j.ijmultiphaseflow.2011.05.010.
+
 subroutine applyDragForce_DPS( particle, eps_p, nu, Fd )
   !> Particle to apply force to
   type(mus_particle_DPS_type), intent(inout) :: particle
@@ -3120,6 +2347,7 @@ subroutine applyLiftForce_DPS( particle, nu, Flift )
 
 end subroutine applyLiftForce_DPS
 
+!> Calculate the pressure gradient force on a particle
 subroutine applyPressureForce_DPS( particle, Fp )
   !> Particle to apply force to
   type(mus_particle_DPS_type), intent(inout) :: particle
@@ -3133,9 +2361,11 @@ subroutine applyPressureForce_DPS( particle, Fp )
 end subroutine applyPressureForce_DPS
 
 ! ************************************************************************** !
+!> Modify the auxField of an element with posInTotal in the total list
 subroutine modify_AuxField_of_Elem(posInTotal, scheme, auxField, iLevel, &
   & varSys, derVarPos, G_lat)
   ! ------------------------------------------------------------------------ !
+  !> Position of element to modify in total list
   integer, intent(in) :: posInTotal
   !> Scheme
   type(mus_scheme_type), intent(inout) :: scheme
@@ -3167,9 +2397,11 @@ subroutine modify_AuxField_of_Elem(posInTotal, scheme, auxField, iLevel, &
 
 end subroutine modify_AuxField_of_Elem
 
+!> Add a momentum increment to element with PosInTotal in total list
 subroutine add_Momentum_Increment_to_Auxfield(posInTotal, scheme, auxField,  &
   & iLevel, varSys, derVarPos, momentumIncrement)
   ! ------------------------------------------------------------------------ !
+  !> Position of element to modify in total list
   integer, intent(in) :: posInTotal
   !> Scheme
   type(mus_scheme_type), intent(inout) :: scheme

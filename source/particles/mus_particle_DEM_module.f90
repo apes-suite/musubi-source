@@ -63,14 +63,12 @@ use mus_particle_logging_module,       only : openLogFile, &
                                             & dumpdata, &
                                             & mus_particles_log_total_momentum
 use mus_particle_logging_type_module,  only : mus_particle_logging_type, &
-                                            & pgDebugLog, &
-                                            & debugTracker
+                                            & pgDebugLog
 use mus_particle_MEM_module,           only : updateCoordOfOrigin       
 use mus_particle_DPS_module,           only : updateCoordOfOrigin_DPS, &
                                             & applyDragForce_DPS,      &
                                             & applyDragForce_DPS_noeps,      &
                                             & applyLiftForce_DPS,      &
-                                            & updateMomInc,            &
                                             & mapParticlesToLattice_DPS, &
                                             & interpolateFluidProperties_DPS, &
                                             & incrementAuxField_DPS, &

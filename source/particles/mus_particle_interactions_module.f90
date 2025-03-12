@@ -1,3 +1,29 @@
+! Copyright (c) 2025 Tristan Vlogman <t.g.vlogman@utwente.nl>
+!
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions are met:
+!
+! 1. Redistributions of source code must retain the above copyright notice,
+! this list of conditions and the following disclaimer.
+!
+! 2. Redistributions in binary form must reproduce the above copyright notice,
+! this list of conditions and the following disclaimer in the documentation
+! and/or other materials provided with the distribution.
+!
+! THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF SIEGEN “AS IS” AND ANY EXPRESS
+! OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+! OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+! IN NO EVENT SHALL UNIVERSITY OF SIEGEN OR CONTRIBUTORS BE LIABLE FOR ANY
+! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+! **************************************************************************** !
+!> In this module the routines for interactions between particles in the DEM 
+!! solver are implemented.
+
 module mus_particle_interactions_module
 
 use env_module,                        only : rk, long_k, stdOutUnit
@@ -1157,156 +1183,5 @@ subroutine DEM_computeWallForces_MEM( particleGroup, scheme, geometry, &
     end if
   end do
 end subroutine DEM_computeWallForces_MEM
-
-
-
-
-! ************************* OLD STUFF *****************************!
-! Old, currently not used routines but may want to try these out later
-
-! Apply close-range interparticle forces using Weeks-Chandler-Anderson potential
-! subroutine applyParticleInteractionForces( this, particleGroup, params )
-!   class(mus_particle_MEM_type), intent(inout) :: this
-!   !> Particle group to search for collisions
-!   type(mus_particle_group_type), intent(inout) :: particleGroup
-!   !> Parameters for access to conversion factors between units
-!   type(mus_param_type), intent(in) :: params
-!   ! ------------------------------------------!
-! 
-!   integer :: lev
-!   !-- For computation of close-range particle interaction forces --!
-!   integer :: iParticle
-!   ! separation distance, cutoff distance for lubrication correction
-!   real(kind=rk) :: d_ab, d_cutoff                 
-!   ! vector joining centers of two particles
-!   real(kind=rk) :: r_ab(3), length_r_ab           
-!   ! Radii of particles
-!   real(kind=rk) :: Ra, Rb                         
-!   ! magnitude of the hydrodynamic force computed using LBM, used to scale Fwca
-!   real(kind=rk) :: Flbm_mag                       
-!   ! magnitude of the close-range interaction force for one pair of particles
-!   real(kind=rk) :: F_ab_mag                       
-!   ! Fwca = total close-range interaction force, F_ab is for one pair of particles
-!   real(kind=rk) :: Fwca(3), F_ab(3)               
-! 
-! 
-!   ! ------------------------------------------!
-!   ! NB: all these calculations are done in PHYSICAL units
-!   lev = this%coordOfOrigin(4)
-! 
-!   ! Apply close-range forces whenever gap between particles < dx
-!   d_cutoff = params%physics%dxLvl(lev)
-! 
-!   Ra = this%radius  ! my radius
-!   Fwca = 0.0_rk
-!   
-!   Flbm_mag = sqrt( this%Fbuff( this%Fnow, 1 )**2 &
-!     &            + this%Fbuff( this%Fnow, 2 )**2 &
-!     &            + this%Fbuff( this%Fnow, 3 )**2 )
-! 
-!   do iParticle = 1, particleGroup%particles%nvals
-!     if( iParticle == this%particleID ) then 
-!       cycle
-!     end if
-! 
-!     F_ab = 0.0_rk
-!     F_ab_mag = 0.0_rk
-!     Rb = particleGroup%particles%val(iParticle)%radius  ! other particle radius
-!     r_ab = particleGroup%particles%val(iParticle)%pos(1:3) -  this%pos(1:3) 
-! 
-!     length_r_ab = dot_product(r_ab, r_ab)
-!     length_r_ab = sqrt( length_r_ab )
-! 
-!     ! compute separation distance
-!     d_ab = length_r_ab - Ra - Rb
-!     ! if( abs(d_ab) <= d_cutoff  .AND. d_ab > 0 ) then 
-!     if( d_ab > 0 ) then 
-! 
-!       !-- DEBUGGING: Log lubrication force data to file --!
-! !      if(this%particleID == 1) then
-! !        write(50,'(E17.9)', advance='no' ) params%general%simcontrol%now%sim
-! !        write(50,'(A)', advance='no' ) ' '
-! !        write(50,'(E13.5)', advance='no' ) d_ab
-! !        write(50,'(A)', advance='no' ) ' '
-! !      end if
-! 
-!       ! Compute WCA force for this particle pair and store in F_ab
-!       call computeWCAForce( this%radius, d_ab, d_cutoff, Flbm_mag, F_ab_mag )
-!       F_ab = F_ab_mag * (r_ab/length_r_ab)
-!       Fwca = Fwca + F_ab
-! 
-! !      if(this%particleID == 1) then
-! !        write(50,'(E13.5)', advance='no' ) Fwca(1)
-! !        write(50,'(A)', advance='no' ) ' '
-! !        write(50,'(E13.5)', advance='no' ) Fwca(2)
-! !        write(50,'(A)', advance='no' ) ' '
-! !        write(50,'(E13.5)') Fwca(3)
-! !
-! !        ! For debugging: also log the other particle data 
-! !        ! while lubrication correction is active
-! !        call logParticleData(this, 51, params%general%simcontrol%now%sim)
-! !      end if
-!     end if
-!   end do
-! 
-!   ! Add total WCA force over all particle pairs
-!   this%F(1:3) = this%F(1:3) + Fwca
-! 
-! end subroutine applyParticleInteractionForces
-! 
-! subroutine computeWCAForce( R, d_ab, d_c, Fcut, Fwca )
-!   !> Radius of the particles (or reduced radius if particle radii differ)
-!   real(kind=rk), intent(in) :: R
-!   !> Gap between particles 1 and 2
-!   real(kind=rk), intent(in) :: d_ab
-!   !> Cutoff distance
-!   real(kind=rk), intent(in) :: d_c
-!   !> Desired WCA force at the cutoff distance 
-!   real(kind=rk), intent(in) :: Fcut
-!   !> Output: force according to the Weeks-Chandler-Anderson potential
-!   real(kind=rk), intent(out) :: Fwca
-! 
-!   ! -------------------------------------------------- !
-!   real(kind=rk) :: sig, eps
-!   real(kind=rk) :: d_inv
-!   ! -------------------------------------------------- !
-!   ! -- Compute parameters in WCA potential sigma and epsilon -- ! 
-!   ! Take sigma to be reduced radius of the two particles
-! 
-!   d_inv = 1.0 / d_ab
-!   sig = d_c
-! 
-!   eps = 1.0
-! 
-!   if( d_ab < sig * 2.0**(1.0/6.0) ) then
-!     Fwca = 4.0 * eps * ( -12.0 * d_inv**13 * sig**12 + 6 * d_inv**7 * sig**6)
-!   else
-!     Fwca = 0.0
-!   end if
-! end subroutine computeWCAForce
-
-
-
-! !> getWallLubricationCorrection computes the correction to the lubrication
-! !! force between a spherical particle of radius R and a wall at distance h
-! !! The threshold gap hlub indicates when the lubrication corretion should be
-! !! applied i.e. when the regular force computation fails to properly resolve
-! !! the lubrication effects. hlub is typically chosen around 2*dx/3
-! real(kind=rk) pure function getWallLubricationCorrection( R, u_n, mu, h, hlub ) result(Flub)
-!   !> Particle radius
-!   real(kind=rk), intent(in) :: R
-!   !> Normal velocity of particle
-!   real(kind=rk), intent(in) :: u_n
-!   !> Dynamic viscosity
-!   real(kind=rk), intent(in) :: mu
-!   !> Gap between particle and wall
-!   real(kind=rk), intent(in) :: h
-!   !> Threshold gap at which to apply lubrication correction
-!   real(kind=rk), intent(in) :: hlub
-!   ! ---------------------------------------------------- !
-!   Flub = 6.0*PI*mu*R**2*(1.0/h - 1.0/hlub)*u_n
-! 
-! end function getWallLubricationCorrection
-
 
 end module mus_particle_interactions_module

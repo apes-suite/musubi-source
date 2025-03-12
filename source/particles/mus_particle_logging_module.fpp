@@ -1,3 +1,28 @@
+! Copyright (c) 2025 Tristan Vlogman <t.g.vlogman@utwente.nl>
+!
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions are met:
+!
+! 1. Redistributions of source code must retain the above copyright notice,
+! this list of conditions and the following disclaimer.
+!
+! 2. Redistributions in binary form must reproduce the above copyright notice,
+! this list of conditions and the following disclaimer in the documentation
+! and/or other materials provided with the distribution.
+!
+! THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF SIEGEN “AS IS” AND ANY EXPRESS
+! OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+! OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+! IN NO EVENT SHALL UNIVERSITY OF SIEGEN OR CONTRIBUTORS BE LIABLE FOR ANY
+! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+! **************************************************************************** !
+!> Routines containing routines for logging particle data.
+
 ?? include 'header/lbm_macros.inc'
 
 module mus_particle_logging_module
@@ -41,6 +66,7 @@ public :: closeParticleLog
 
 contains
 
+!> Main routine to log particle data for MEM particles
 subroutine mus_particles_logdata_MEM( particleGroup, params, t )
   !> Particle group to log
   type(mus_particle_group_type), intent(in) :: particleGroup
@@ -78,6 +104,7 @@ subroutine mus_particles_logdata_MEM( particleGroup, params, t )
   end do
 end subroutine mus_particles_logdata_MEM
 
+!> Main routine to log particle data for DPS particles
 subroutine mus_particles_logdata_DPS( particleGroup, params )
   !> Particle group to log
   type(mus_particle_group_type), intent(in) :: particleGroup
@@ -106,6 +133,7 @@ subroutine mus_particles_logdata_DPS( particleGroup, params )
   end do
 end subroutine mus_particles_logdata_DPS
 
+!> Routine to create a particle logunit based on particle ID
 pure function getParticleLogUnit( particleID, myRank ) result(logUnit)
     integer, intent(in) :: particleID
     integer, intent(in) :: myRank
@@ -116,6 +144,7 @@ pure function getParticleLogUnit( particleID, myRank ) result(logUnit)
 
 end function getParticleLogUnit
 
+!> Routine to log MEM particle data
 subroutine logParticleData_MEM( particle, logUnit, myRank, t )
     type(mus_particle_MEM_type), intent(in) :: particle
     integer, intent(in) :: logUnit
@@ -192,6 +221,7 @@ subroutine logParticleData_MEM( particle, logUnit, myRank, t )
     write(logUnit, '(A)')
 end subroutine logParticleData_MEM
 
+!> Routine to log DPS particle data
 subroutine logParticleData_DPS( particle, logUnit, myRank, t )
     type(mus_particle_DPS_type), intent(in) :: particle
     integer, intent(in) :: logUnit
@@ -267,6 +297,7 @@ subroutine logParticleData_DPS( particle, logUnit, myRank, t )
 
 end subroutine logParticleData_DPS
 
+!> Routine to initialize MEM particle log file (e.g. print header)
 subroutine initParticleLog_MEM( particleID, fileName, logUnit, fileExists )
   integer, intent(in) :: particleID
   character(*), intent(in) :: fileName
@@ -304,6 +335,7 @@ subroutine initParticleLog_MEM( particleID, fileName, logUnit, fileExists )
 
 end subroutine initParticleLog_MEM
 
+!> Routine to initialize DPS particle log file (e.g. print header)
 subroutine initParticleLog_DPS( particleID, fileName, logUnit, fileExists )
   integer, intent(in) :: particleID
   character(*), intent(in) :: fileName
@@ -377,6 +409,8 @@ subroutine openLogFile( fileName, logUnit, isNewFile )
     end if
 end subroutine openLogFile
 
+!> Debugging routine to create a list of elements along a line so 
+!! that the properties of these elements can be printed
 subroutine generateElemListLine( dir, xstart, length, scheme, geometry, elemList )
   ! Cartesian direction vector, i.e. dir = (/ 1,0,0 /) for line in x-direction
   integer, intent(in) :: dir(3)
@@ -431,6 +465,7 @@ subroutine generateElemListLine( dir, xstart, length, scheme, geometry, elemList
 
 end subroutine generateElemListLine
 
+!> Debugging routine to dump debug tracking data
 subroutine dumpdata(tracker, t, scheme, geometry, params)
   !> Tracker containing file name and elemList
   type(mus_particle_debugtracking_type), intent(inout) :: tracker
@@ -667,7 +702,7 @@ subroutine mus_particles_log_total_momentum(particleGroup, scheme, lev, params, 
 
 end subroutine mus_particles_log_total_momentum 
 
-
+!> Routine to dump particle timing data
 subroutine dump_particle_timing(proc_logUnit)
   !> Unit to log local timing data to
   integer, intent(in) :: proc_logUnit

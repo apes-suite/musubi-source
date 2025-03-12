@@ -1,6 +1,28 @@
-!> author: Tristan Vlogman
-!! This module provides the routines for mapping of continuous particles to
-!! the lattice.
+! Copyright (c) 2025 Tristan Vlogman <t.g.vlogman@utwente.nl>
+!
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions are met:
+!
+! 1. Redistributions of source code must retain the above copyright notice,
+! this list of conditions and the following disclaimer.
+!
+! 2. Redistributions in binary form must reproduce the above copyright notice,
+! this list of conditions and the following disclaimer in the documentation
+! and/or other materials provided with the distribution.
+!
+! THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF SIEGEN “AS IS” AND ANY EXPRESS
+! OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+! OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+! IN NO EVENT SHALL UNIVERSITY OF SIEGEN OR CONTRIBUTORS BE LIABLE FOR ANY
+! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+! **************************************************************************** !
+!> mus_particle_MEM module contains routines needed for the simulation of fully
+!! resolved Momentum Exchange Method particles
 
 ?? include 'header/lbm_macros.inc'
       
@@ -73,9 +95,7 @@ public :: make_pdf_tiny
 
 contains
 
-
-
-! -------- INITIALIZATION OF MEM PARTICLE ---------- !
+!> Routine to initialize a newly created MEM particle
 subroutine initParticle_MEM( particle, particleID, geometry, scheme, myRank, comm, rmflag  )
   !> Particle to initialize
   type(mus_particle_MEM_type), intent(inout) :: particle
@@ -154,9 +174,6 @@ subroutine initParticle_MEM( particle, particleID, geometry, scheme, myRank, com
 
 end subroutine initParticle_MEM
 
-
-
-! -------- ROUTINES FOR HYDRODYNAMIC FORCE COMPUTATION -------!
 !> ApplyHydrodynamicForces performs the momentum transfer
 !! from fluid TO particle
 subroutine applyHydrodynamicForces( this, scheme, stencil, params, rho_p_lat )
@@ -354,7 +371,7 @@ end subroutine applyHydrodynamicForces
 
 
 ! -------- ROUTINES FOR MAPPING PARTICLE TO LATTICE -------!
-! mapToLattice is the high-level routine performs a full re-mapping each time step
+!> mapToLattice is the high-level routine performs a full re-mapping each time step
 subroutine mapToLattice( this, particleGroup, scheme, stencil, &
     &                     geometry, params, rmflag              )
   type(mus_particle_MEM_type), intent(inout) :: this
@@ -470,37 +487,6 @@ subroutine mapToLattice( this, particleGroup, scheme, stencil, &
   ! Update the  solid node connectivity in kernel list and set prp_solid bit
   call updateSolidNodes(this, scheme, scheme%layout%fStencil) 
   
-  ! Add momentum of former fluid nodes which are now particle nodes
-  ! to this particle
-  ! do iElem = 1, this%exclusionList%nVals
-  !   if( .not.( any( this%exclusionList%val(iElem) &
-  !     & == this%exclusionListBuffer%val(1:this%exclusionListBuffer%nVals)))) then
-
-  !     elemPos = this%exclusionList%val(iElem)   
-  !     ! Compute momentum of this former fluid node
-  !     call computeCellMomentum( elemPos = elemPos, &
-  !                             & scheme  = scheme,  &
-  !                             & stencil = stencil, &
-  !                             & params  = params,  &
-  !                             & lev     = lev,     &
-  !                             & j_phy   = j_phy    )
-
-  !     ! Add momentum of former fluid node as an force to the particle
-  !     ! Translational momentum
-  !     Fj_phy = j_phy * inv_dt
-  !     this%F(1:3) = this%F(1:3) + Fj_phy
-  !     
-  !     ! Angular momentum
-  !     baryOfSurface = scheme%levelDesc(lev)%baryOfTotal(elemPos,1:3)
-  !     r_phy = baryOfSurface - this%pos(1:3) 
-
-  !     call cross_product(r_phy, Fj_phy, Mj_phy )
-  !     this%F(4:6) = this%F(4:6) + Mj_phy
-
-  !   end if
-
-  ! end do
-
   ! Set pdf values of solid nodes to tiny for visualization
   call make_pdf_tiny(scheme, this, lev)
   
@@ -552,28 +538,6 @@ subroutine mapToLattice( this, particleGroup, scheme, stencil, &
 
     ! Compute average density from neighboring fluid nodes
     rho_lat(iElem) = particleGroup%rho0_lat
-    ! call getAverageNeighborDensity( elemPos = elemPos,       &
-    !                               & scheme  = scheme,        &
-    !                               & stencil = stencil,       &
-    !                               & lev     = lev,           &
-    !                               & rho_lat = rho_lat(iElem) )
-
-    ! --- STEP 2: Subtract momentum of this new fluid node from --- !
-    ! ---         particle momentum                             --- !
-
-    ! j_phy = dx**3 * rho_lat(iElem) * params%physics%rho0         &
-    !       &  * vel_surf_lat(:,iElem) * params%physics%fac(lev)%vel
-
-    ! Fj_phy = j_phy * inv_dt
-    ! this%F(1:3) = this%F(1:3) - Fj_phy
-    ! 
-    ! ! Angular momentum
-    ! r_phy = baryOfSurface - baryOfOrigin
-
-    ! call cross_product(r_phy, Fj_phy, Mj_phy )
-    ! this%F(4:6) = this%F(4:6) - Mj_phy
-
-
   end do
 
   ! Clear the prp_solid bit for all elements
@@ -1658,44 +1622,6 @@ subroutine getAverageNeighborDensity(elemPos, scheme, stencil, lev, rho_lat )
 
 end subroutine getAverageNeighborDensity
 
-
-subroutine computeCellDensity(elemPos, scheme, stencil, lev, rho_lat )
-  !> Position of this element in the levelDesc total list
-  integer(kind=long_k) :: elemPos
-  !> Scheme for access to level descriptor
-  type(mus_scheme_type), intent(inout) :: scheme
-  !> fluid stencil
-  type(tem_stencilHeader_type), intent(in) :: stencil
-  !> Level that particle is on
-  integer, intent(in) :: lev
-  !> Output: average density, in lattice units
-  real(kind=rk) :: rho_lat
-  ! --------------------------------------------!
-  integer :: iDir, idx_idir
-  integer :: nSize, nNext
-  real(kind=rk) :: pdf_val
-  ! --------------------------------------------!
-  nSize  = scheme%pdf( lev )%nSize
-  nNext  = scheme%pdf( lev )%nNext
-
-  rho_lat = 0.0_rk
-
-  do iDir = 1, stencil%QQ
-    idx_idir = scheme%varSys%method%val(               &
-    &               scheme%stateVarMap%varPos%val(1) ) &
-    &                     %state_varPos(iDir)
-
-    ! Get the pdf value in this direction
-    pdf_val =  scheme%state(lev)%val(                                   &
-      &   ?IDX?(idx_idir, elemPos, scheme%varSys%nScalars, nSize), nNext)
-
-    rho_lat = rho_lat + pdf_val
-  end do
-
-
-end subroutine computeCellDensity
-
-
 !> make_pdf_tiny sets the state vector (particle distribution function) values
 !! to some tiny value. This is done for visualization purposes. It has no effect
 !! on the flow as the particle elements do not participate in the 
@@ -1774,43 +1700,5 @@ subroutine findParticleFromElem( particleGroup, elemPos, thisParticleIndex, &
   end do
 
 end subroutine findParticleFromElem
-
-
-subroutine resetConnectivity(elemList, N, lev, scheme)
-  !> list containing elements for which to reset connectivity in scheme%pdf%neigh
-  integer(kind=long_k), intent(in) :: elemList(:)
-  !> number of values in elemList
-  integer, intent(in) :: N 
-  !> scheme for access to levelDesc and pdf%neigh
-  type(mus_scheme_type), intent(inout) :: scheme
-
-  integer :: nElems, nSize, lev
-  integer :: QQN ! number of stencil directions
-  integer(kind=long_k) :: zeroPos, elemPos, neighPos
-  integer :: iElem, iDir
-  ! integer :: iElem, iDir, zeroPos, elemPos, neighPos
-  integer :: i
-
-  ! First get the number of stencil directions and the elems in scheme%pdf
-  QQN = scheme%layout%fStencil%QQN
-  nElems = scheme%pdf( lev )%nElems_local
-  nSize  = scheme%pdf( lev )%nSize
-
-  do iElem = 1, N
-    elemPos = elemList(iElem)   ! position of element in state array
-    do iDir = 1,QQN
-      ! reset connectivity of scheme%pdf%neigh to that in levelDesc
-      neighPos = scheme%levelDesc( lev )                                   &
-        &              %neigh(1)                                           &
-        &              %nghElems( ?NgDir?( iDir, scheme%layout%fStencil ), &
-        &                          elemPos                                 )
-
-      scheme%pdf( lev )%neigh( ?NGPOS?( iDir, elemPos, nElems )) =    &
-        &  ?IDX?( iDir, neighPos, scheme%varSys%nScalars, nSize )
-    end do
-  end do
-
-end subroutine resetConnectivity
-
 
 end module mus_particle_MEM_module

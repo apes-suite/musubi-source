@@ -1,3 +1,29 @@
+! Copyright (c) 2025 Tristan Vlogman <t.g.vlogman@utwente.nl>
+!
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions are met:
+!
+! 1. Redistributions of source code must retain the above copyright notice,
+! this list of conditions and the following disclaimer.
+!
+! 2. Redistributions in binary form must reproduce the above copyright notice,
+! this list of conditions and the following disclaimer in the documentation
+! and/or other materials provided with the distribution.
+!
+! THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF SIEGEN “AS IS” AND ANY EXPRESS
+! OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+! OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+! IN NO EVENT SHALL UNIVERSITY OF SIEGEN OR CONTRIBUTORS BE LIABLE FOR ANY
+! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+! **************************************************************************** !
+!> mus_particle_module contains the main control routines for LBM-DEM simulations 
+!! of particles in a flow. 
+
 ?? include 'header/lbm_macros.inc'
 
 module mus_particle_module
@@ -56,9 +82,6 @@ use mus_particle_comm_type_module,     only : init_mus_particles_comm_type,     
                                             & mus_particles_initParticleInfoMPItype,      &
                                             & print_particles_comm,                       &
                                             & print_particles_pIDvectorbuffer,            &
-                                            & find_particle_comm_procs,                   &
-                                            & find_particle_comm_procs2,                  &
-                                            & find_particle_comm_procs3,                  &
                                             & find_particle_comm_procs4,                  &
                                             & mus_particles_communication_type,           &
                                             & MPI_pIDvector_type,                         & 
@@ -99,9 +122,7 @@ use mus_particle_DPS_module,           only : initParticle_DPS,                 
                                             & interpolateFluidProps_onewaycoupled,            &
                                             & calcVelocityAndPressureGradient,  &
                                             & calcVelocityAndPressureGradient_onewaycoupled,  &
-                                            & TEST_transferMomentumToFluid_DPS, &
                                             & addParticleSourceToAuxField_DPS,  &
-                                            & Test_addParticleSourceToAuxField_DPS,  &
                                             & mus_particles_DPS_interpolateFluidProperties, &
                                             & mus_particles_DPS_interpolateFluidProperties_onewaycoupled
 use mus_particle_interpolation_module, only : init_particle_interpolator
@@ -112,8 +133,6 @@ use mus_particle_logging_module,       only : closeParticleLog, getParticleLogUn
                                             & generateElemListLine
 use mus_particle_logging_type_module,  only : mus_particle_logging_type, &
                                             & pgDebugLog,     &
-                                            & DEMDebugLog,     &
-                                            & debugTracker,     &
                                             & init_particle_logger
 use mus_particle_DEM_module,           only : DEMSubcycles_MEM, &
                                             & DEMSubcycles_DPS, &
@@ -129,7 +148,7 @@ implicit none
 !-- PARTICLE MODULE PROCEDURES --!
 contains
 
-! Swap index of the force buffer
+!> Swap index of the particle force buffer
 subroutine swapFBuff(this)
   type(mus_particle_MEM_type), intent(inout) :: this
 
@@ -145,14 +164,12 @@ subroutine swapFBuff(this)
   end if
 end subroutine swapFBuff
 
-
-
 ! *************************************************************************** !
-!-- MAIN PARTICLE CONTROL ROUTINES --!
 !> Initialization for particleGroup and all the particles in it
 !! Includes:
 !! * Assigning the required procedure pointers for particleGroup and particles
-!! * Particle communication routines
+!! * Initializing loggers
+!! * Initializing communication routines
 !! * Building the representation of the particles on the grid
 subroutine mus_particles_initialize( particleGroup, scheme, &
                                    & geometry, params       )
@@ -191,14 +208,6 @@ subroutine mus_particles_initialize( particleGroup, scheme, &
   TIDoffset = tem_firstIdAtLevel(lev)
   nu_lat = scheme%field(1)%fieldProp%fluid%viscKine%dataOnLvl(lev)%val(1)
   nu = nu_lat * params%physics%fac(lev)%visc
-
-  ! Initialize elemList in debug logger
-  call generateElemListLine( dir = debugTracker%dir1,         &
-                           & xstart   = debugTracker%xstart,  &
-                           & length   = debugTracker%length1, &
-                           & scheme   = scheme,               &
-                           & geometry = geometry,             &
-                           & elemList = debugTracker%elemList )
   
   ! ------ SET PROCEDURES TO USE FOR PARTICLEGROUP ------ !
   select case( trim(particleGroup%particle_kind) )

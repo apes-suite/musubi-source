@@ -1,3 +1,29 @@
+! Copyright (c) 2025 Tristan Vlogman <t.g.vlogman@utwente.nl>
+!
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions are met:
+!
+! 1. Redistributions of source code must retain the above copyright notice,
+! this list of conditions and the following disclaimer.
+!
+! 2. Redistributions in binary form must reproduce the above copyright notice,
+! this list of conditions and the following disclaimer in the documentation
+! and/or other materials provided with the distribution.
+!
+! THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF SIEGEN “AS IS” AND ANY EXPRESS
+! OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+! OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+! IN NO EVENT SHALL UNIVERSITY OF SIEGEN OR CONTRIBUTORS BE LIABLE FOR ANY
+! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+! **************************************************************************** !
+!> Module containing some auxiliary routines for LBM-DEM 
+!! simulations for particles in a flow.
+
 module mus_particle_aux_module
 
 use mpi
@@ -77,6 +103,8 @@ subroutine findPartitionOfTreeID( sTreeID, geometry, procs, nProcs, &
 
 end subroutine findPartitionOfTreeID
 
+!> Routine which checks whether integer coordinate is local 
+!! on the current rank
 function coordLocalOnMyRank( coord, scheme, myRank )
   !> integer coordinate (x,y,z,level)
   integer, intent(in) :: coord(4)
@@ -104,6 +132,8 @@ function coordLocalOnMyRank( coord, scheme, myRank )
 
 end function
 
+!> Routine which checks whether a spatial position is local 
+!! on the current rank
 function positionLocalOnMyRank( pos, geometry, scheme, myRank )
   !> Cartesian position (x, y, z)
   real(kind=rk), intent(in) :: pos(3)
@@ -152,6 +182,7 @@ function treeIDlocalOnMyRank( TreeID, scheme, lev )
   end if
 end function
 
+!> Function which checks if element has remote neighbors
 logical function has_remote_neighbors( iElem, scheme, lev )
   !> Index of this element in the total list
   integer, intent(in) :: iElem
@@ -195,6 +226,7 @@ logical function has_remote_neighbors( iElem, scheme, lev )
   end do ! iDir
 end function has_remote_neighbors
 
+!> Checks if integer coordinate is in the total list of this rank
 function coordExistsOnMyRank( coord, scheme, myRank )
   !> integer coordinate (x,y,z,level)
   integer, intent(in) :: coord(4)
@@ -221,6 +253,7 @@ function coordExistsOnMyRank( coord, scheme, myRank )
   end if
 
 end function
+
 !> computes cross-product a x b = res
 subroutine cross_product(a,b,res)
     real(kind=rk), intent(in) :: a(3)
@@ -234,6 +267,7 @@ subroutine cross_product(a,b,res)
 
 end subroutine cross_product
 
+!> Convenience function to get barycenter of integer coordinate
 pure function getBaryOfCoord( coord, origin, dx ) result(bary)
   integer, intent(in) :: coord(3)
   real(kind=rk), intent(in) :: origin(3)
@@ -396,7 +430,7 @@ function followNeighPath( neighPath, startPos, neigh, nElems_fluid, zeroDir ) re
 
 end function followNeighPath
 
-! pure function findPropIndex(prp_bitpos, glob) result(propIndex)
+! Function to find the index of a property with prp_bitpos
 function findPropIndex(prp_bitpos, glob) result(propIndex)
   !> Property bit of property to find index for
   integer, intent(in) :: prp_bitpos
@@ -418,6 +452,8 @@ function findPropIndex(prp_bitpos, glob) result(propIndex)
 
 end function findPropIndex
 
+!> Routine to find the bounding box of the part of the spatial 
+!! domain on this process
 subroutine getProcessBoundingBox( scheme, geometry, boundingBox )
   !> Scheme for access to level descriptor
   type(mus_scheme_type), intent(in) :: scheme
@@ -522,6 +558,8 @@ subroutine getProcessBoundingBox( scheme, geometry, boundingBox )
   
 end subroutine getProcessBoundingBox
 
+!> Routine to aggregate local error flags and use MPI allreduce 
+!! to set a global flag if any of the local flags is true
 subroutine mus_particles_global_errorcheck( flag, comm )
   !> Error flag: at input this will be the local error code of 
   !! this rank only which is set to TRUE if there is an error and 

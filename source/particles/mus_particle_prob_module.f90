@@ -1,3 +1,40 @@
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions are met:
+!
+! 1. Redistributions of source code must retain the above copyright notice,
+! this list of conditions and the following disclaimer.
+!
+! 2. Redistributions in binary form must reproduce the above copyright notice,
+! this list of conditions and the following disclaimer in the documentation
+! and/or other materials provided with the distribution.
+!
+! THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF SIEGEN “AS IS” AND ANY EXPRESS
+! OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+! OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+! IN NO EVENT SHALL UNIVERSITY OF SIEGEN OR CONTRIBUTORS BE LIABLE FOR ANY
+! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+! **************************************************************************** !
+!> mus_particle_prob_module contains some helper routines for creating randomly 
+!! distributed initial positions of particles. These routines were taken from
+!! William Cody's code with reference:
+!!
+!!    William Cody,
+!!    Rational Chebyshev approximations for the error function,
+!!    Mathematics of Computation,
+!!    1969, pages 631-637.
+!!
+!!    William Cody,
+!!    Algorithm 715:
+!!    SPECFUN - A Portable FORTRAN Package of Special Function Routines
+!!    and Test Drivers,
+!!    ACM Transactions on Mathematical Software,
+!!    Volume 19, Number 1, 1993, pages 22-32.
+
 module mus_particle_prob_module
   use env_module,                        only : rk
   implicit none
@@ -12,14 +49,14 @@ module mus_particle_prob_module
 
   contains
 
-  subroutine normcdf( x, mu, sigma, cum, ccum )
-  !    This function evaluates the normal distribution function:
+  !> This function evaluates the normal distribution function:
   !
   !                                      / x
   !                     1               |       -((x-mu)/sigma )^2/2
   !          P(x) = -----------         |      e                      dt
   !                 sigma * sqrt(2 pi)  |
   !                                     /-oo
+  subroutine normcdf( x, mu, sigma, cum, ccum )
     !> Input: argument x to compute P(X <= x)
     real(kind=rk), intent(in) :: x
     !> Input: mean of the gaussian
@@ -63,46 +100,6 @@ module mus_particle_prob_module
   !    depends on the arithmetic system, the compiler, the intrinsic
   !    functions, and proper selection of the machine dependent
   !    constants.
-  !
-  !  Licensing:
-  !
-  !    This code is distributed under the GNU LGPL license.
-  !
-  !  Modified:
-  !
-  !    15 February 2021
-  !
-  !  Author:
-  !
-  !    William Cody
-  !
-  !  Reference:
-  !
-  !    William Cody,
-  !    Rational Chebyshev approximations for the error function,
-  !    Mathematics of Computation,
-  !    1969, pages 631-637.
-  !
-  !    William Cody,
-  !    Algorithm 715:
-  !    SPECFUN - A Portable FORTRAN Package of Special Function Routines
-  !    and Test Drivers,
-  !    ACM Transactions on Mathematical Software,
-  !    Volume 19, Number 1, 1993, pages 22-32.
-  !
-  !  Parameters:
-  !
-  !    Input, real ( kind = rk ) ARG, the upper limit of integration.
-  !
-  !    Output, real ( kind = rk ) CUM, CCUM, the Normal density CDF and
-  !    complementary CDF.
-  !
-  !  Local:
-  !
-  !    Local, real ( kind = rk ) EPS, the argument below which anorm(x)
-  !    may be represented by 0.5 and above which  x*x  will not underflow.
-  !    A conservative value is the largest machine number X
-  !    such that   1.0D+00 + X = 1.0D+00   to machine precision.
   !
     implicit none
 

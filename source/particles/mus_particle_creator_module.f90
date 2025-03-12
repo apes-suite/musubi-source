@@ -1,3 +1,30 @@
+! Copyright (c) 2025 Tristan Vlogman <t.g.vlogman@utwente.nl>
+!
+! Redistribution and use in source and binary forms, with or without
+! modification, are permitted provided that the following conditions are met:
+!
+! 1. Redistributions of source code must retain the above copyright notice,
+! this list of conditions and the following disclaimer.
+!
+! 2. Redistributions in binary form must reproduce the above copyright notice,
+! this list of conditions and the following disclaimer in the documentation
+! and/or other materials provided with the distribution.
+!
+! THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF SIEGEN “AS IS” AND ANY EXPRESS
+! OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+! OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+! IN NO EVENT SHALL UNIVERSITY OF SIEGEN OR CONTRIBUTORS BE LIABLE FOR ANY
+! DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+! (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+! LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+! ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+! (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+! SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+! **************************************************************************** !
+!> mus_particle_creator_module contains data types and routines for the particle 
+!! creator object which is used to initialize new particles at specified locations 
+!! at specified time steps.
+
 module mus_particle_creator_module
 ! Use statements
 use mpi
@@ -44,6 +71,8 @@ use mus_particle_blob_module,          only : mus_particle_blob_cylinder_type, &
 
 implicit none
 
+!> Data type used to create particles with certain properties at specified time 
+!! steps
 type mus_particle_creator_type
   ! ---------- PARTICLE DATA -----------!
   !> Number of particles in this particle creator object.
@@ -296,6 +325,7 @@ function getNewParticleID(particle_creator, iParticle)
 
 end function
 
+!> Routine to create new fully resolved MEM particles
 subroutine create_particles_MEM( particle_creator, particleGroup, scheme, &
                                & geometry, params, myRank                 )
   !> Particle creator object
@@ -358,6 +388,7 @@ subroutine create_particles_MEM( particle_creator, particleGroup, scheme, &
 
 end subroutine create_particles_MEM
 
+!> Routine to create new unresolved DPS particles
 subroutine create_particles_DPS( particle_creator, particleGroup, scheme, &
                                & geometry, params, myRank                 )
   !> Particle creator object
@@ -436,6 +467,7 @@ subroutine create_particles_DPS( particle_creator, particleGroup, scheme, &
 
 end subroutine create_particles_DPS
 
+!> Routine that checks if new particles should be created and creates them if so.
 subroutine check_and_create_new_particles_MEM( particle_creator, iter, particleGroup, &
   &                                        scheme, geometry, params, myRank               )
   !> Particle creator object
@@ -549,6 +581,7 @@ subroutine check_and_create_new_particles_MEM( particle_creator, iter, particleG
   end if
 end subroutine check_and_create_new_particles_MEM
 
+!> Routine that checks if new particles should be created and creates them if so.
 subroutine check_and_create_new_particles_DPS( particle_creator, iter, particleGroup, &
   &                                        scheme, geometry, params, myRank               )
   !> Particle creator object
@@ -665,6 +698,8 @@ function must_create_new_particles(iter, i_start, i_end, interval)
   end if
 end function
 
+!> Routine to initialize the particle creator object from a particle 
+!! blob cylinder object
 subroutine init_particle_creator_from_blob(                          &
         & particle_creator, particleblob, Nparticles, &
         & scheme, geometry, myRank                                   )
@@ -788,7 +823,8 @@ subroutine init_particle_creator_from_blob(                          &
 
 end subroutine init_particle_creator_from_blob
 
-
+!> Routine to initialize the particle creator object from a particle 
+!! blob prism object
 subroutine init_particle_creator_from_blob_prism(                          &
         & particle_creator, particleblob, Nparticles, &
         & scheme, geometry, myRank                                   )
@@ -914,6 +950,8 @@ subroutine init_particle_creator_from_blob_prism(                          &
 
 end subroutine init_particle_creator_from_blob_prism
 
+!> Routine to initialize particle creator object with random positions 
+!! inside a cylinder described by blob_cylinder type
 subroutine fill_blob_positions_gauss( particleblob, positions, Nparticles )
   !> Particleblob type
   type(mus_particle_blob_cylinder_type), intent(inout) :: particleblob
@@ -978,6 +1016,8 @@ subroutine fill_blob_positions_gauss( particleblob, positions, Nparticles )
 
 end subroutine fill_blob_positions_gauss
 
+!> Routine to initialize particle creator object with random positions 
+!! inside a prism described by blob_prism type
 subroutine fill_blob_positions_gauss_prism( particleblob, positions, Nparticles )
   !> Particleblob type
   type(mus_particle_blob_prism_type), intent(inout) :: particleblob
@@ -1055,7 +1095,7 @@ subroutine fill_blob_positions_gauss_prism( particleblob, positions, Nparticles 
 
 end subroutine fill_blob_positions_gauss_prism
 
-
+!> Print the data in particle creator object, used for debugging
 subroutine print_particle_creator(particle_creator, logUnit)
   !> Particle creator object
   type(mus_particle_creator_type), intent(inout) :: particle_creator
@@ -1104,6 +1144,7 @@ subroutine print_particle_creator(particle_creator, logUnit)
   write(logUnit,'(A)') "---------------------------------------"
 end subroutine print_particle_creator
 
+!> Print the positions in particle creator object, used for debugging
 subroutine print_particle_creator_positions(particle_creator, logUnit)
   !> Particle creator object
   type(mus_particle_creator_type), intent(inout) :: particle_creator
