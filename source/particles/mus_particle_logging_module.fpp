@@ -152,11 +152,10 @@ subroutine logParticleData_MEM( particle, logUnit, myRank, t )
     real(kind=rk), intent(in)  :: t
     ! --------------------------------------------!
     logical :: fileExists, fileIsOpen
-    logical :: logUnitTaken, readyToWrite
+    logical :: logUnitTaken
     integer :: existingLogUnit
     character(len=1024) :: filename
     integer :: i
-    real(kind=rk) :: F_coll
     ! --------------------------------------------!
 
     ! The desired file name determined by particleID and rank
@@ -229,7 +228,7 @@ subroutine logParticleData_DPS( particle, logUnit, myRank, t )
     real(kind=rk), intent(in)  :: t
     ! --------------------------------------------!
     logical :: fileExists, fileIsOpen
-    logical :: logUnitTaken, readyToWrite
+    logical :: logUnitTaken
     integer :: existingLogUnit
     character(len=1024) :: filename
     integer :: i
@@ -388,7 +387,6 @@ subroutine openLogFile( fileName, logUnit, isNewFile )
     logical, intent(out), optional :: isNewFile
     ! --------------------------------------------!
     logical :: fileExists, fileIsOpen
-    logical :: logUnitTaken, readyToWrite
     ! --------------------------------------------!
     ! Check if file with fileName already exists and whether it is already open
     inquire(file=trim(filename), exist=fileExists, opened=fileIsOpen, number=logUnit)
@@ -428,7 +426,6 @@ subroutine generateElemListLine( dir, xstart, length, scheme, geometry, elemList
   integer :: coord(4), lev
   integer(kind=long_k) :: ldPos, TreeID
   real(kind=rk) :: x(3), s, dx
-  logical :: wasAdded
   ! -------------------------------------------- !
   lev = geometry%tree%global%maxLevel
   dx = geometry%tree%global%BoundingCubeLength / 2**lev
@@ -484,7 +481,8 @@ subroutine dumpdata(tracker, t, scheme, geometry, params)
   integer :: elemOff
   integer :: iElem, i
   integer :: coord(4)
-  integer(kind=long_k) :: ldPos, TreeID, TIDoffset
+  integer :: ldPos
+  integer(kind=long_k) :: TIDoffset
   real(kind=rk) :: x(3), dx
   real(kind=rk) :: u_fluid(3)
   real(kind=rk) :: eps_f
@@ -512,7 +510,7 @@ subroutine dumpdata(tracker, t, scheme, geometry, params)
   call openLogFile( fileName, logUnit )
 
   do iElem = 1, tracker%elemList%nvals
-    ldPos = tracker%elemList%val(iElem)
+    ldPos = int(tracker%elemList%val(iElem))
     elemOff = (ldPos-1)*scheme%varSys%nAuxScalars
 
     ! Get cartesian coordinates of current element

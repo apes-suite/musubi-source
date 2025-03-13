@@ -99,9 +99,7 @@ subroutine mus_particles_initialize_communication( particleGroup, scheme, geomet
   ! --------------------------------------------------- !
   real(kind=rk) :: dpad, dx
   integer :: nProcs, maxParticles
-  integer :: iProc, newPos
   type(dyn_intarray_type) :: particleCommProcs
-  logical :: wasAdded
   integer :: lev
 
   ! --------------------------------------------------- !
@@ -302,7 +300,7 @@ subroutine exchangeParticlesToRemove(this, send, recv, comm, myRank, message_fla
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
@@ -466,7 +464,7 @@ subroutine exchangeParticlesToRemove_DPS(this, send, recv, comm, myRank, message
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
@@ -633,7 +631,7 @@ subroutine exchangeForces(this, send, recv, comm, myRank, message_flag )
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
@@ -897,7 +895,7 @@ subroutine DEM_exchangeForces_DPS(this, send, recv, comm, myRank, message_flag )
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iBuff
   integer :: proc, posOfProc, pos, recvcount
@@ -1040,7 +1038,7 @@ subroutine DEM_exchangeForces(this, send, recv, comm, myRank, message_flag )
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iBuff
   integer :: proc, posOfProc, pos, recvcount
@@ -1183,7 +1181,7 @@ subroutine DEM_exchangeWallPositions(this, send, recv, comm, myRank, message_fla
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iBuff, iParticle
   integer :: proc, posOfProc, pos, recvcount
@@ -1337,7 +1335,7 @@ subroutine DEM_exchangeWallPositions_DPS(this, send, recv, comm, myRank, message
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iBuff, iParticle
   integer :: proc, posOfProc, pos, recvcount
@@ -1480,11 +1478,10 @@ subroutine exchangePositions(this, send, recv, comm, myRank, message_flag )
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
-  integer :: i
   ! -------------------------------------------!
   
   ! ---  1: CONSTRUCT THE MESSAGES FOR EACH PROCESS --- !
@@ -1667,11 +1664,10 @@ subroutine exchangePositions_DPS(this, send, recv, comm, myRank, message_flag )
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
-  integer :: i
   ! -------------------------------------------!
   
   ! ---  1: CONSTRUCT THE MESSAGES FOR EACH PROCESS --- !
@@ -1849,11 +1845,10 @@ subroutine exchangeVelocities(this, send, recv, comm, myRank, message_flag )
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
-  integer :: i
   ! -------------------------------------------!
   
   ! ---  1: CONSTRUCT THE MESSAGES FOR EACH PROCESS --- !
@@ -2028,11 +2023,10 @@ subroutine exchangeVelocities_DPS(this, send, recv, comm, myRank, message_flag )
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
-  integer :: i
   ! -------------------------------------------!
   
   ! ---  1: CONSTRUCT THE MESSAGES FOR EACH PROCESS --- !
@@ -2196,11 +2190,10 @@ subroutine exchangeHydroForces_DPS(this, send, recv, comm, myRank, message_flag 
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
-  integer :: i
   ! -------------------------------------------!
   
   ! ---  1: CONSTRUCT THE MESSAGES FOR EACH PROCESS --- !
@@ -2370,11 +2363,10 @@ subroutine exchangeParticleStates(this, send, recv, comm, myRank, message_flag)
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
-  integer :: i
   ! -------------------------------------------!
   
   ! ---  1: CONSTRUCT THE MESSAGES FOR EACH PROCESS --- !
@@ -2569,10 +2561,10 @@ subroutine exchangeNewParticles_MEM(this, send, recv, comm, myRank, message_flag
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
-  integer :: iParticle, iBuff
-  integer :: proc, posOfProc, pos, recvcount
+  integer :: iParticle
+  integer :: proc, posOfProc, recvcount
 
   type(mus_particle_MEM_type) :: tmpParticle
   logical :: wasAdded
@@ -2776,10 +2768,10 @@ subroutine exchangeNewParticles_DPS(this, send, recv, comm, myRank, message_flag
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
-  integer :: iParticle, iBuff
-  integer :: proc, posOfProc, pos, recvcount
+  integer :: iParticle
+  integer :: proc, posOfProc, recvcount
 
   type(mus_particle_DPS_type) :: tmpParticle
   logical :: wasAdded
@@ -2974,11 +2966,10 @@ subroutine exchangeMomInc_DPS(this, send, recv, comm, myRank, message_flag )
   integer :: send_status( mpi_status_size, send%nprocs)
   ! integer :: status( mpi_status_size, max(send%nprocs, recv%nprocs) )
   integer :: ierr             !< error flag
-  integer :: iproc, ival
+  integer :: iproc
   !> starting index for a particular force contribution
   integer :: iParticle, iBuff
   integer :: proc, posOfProc, pos, recvcount
-  integer :: i
   integer :: previousOwner, newOwner
   ! -------------------------------------------!
   

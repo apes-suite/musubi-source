@@ -612,11 +612,11 @@ function computeLubForce_tangential(h, hc, mu, R, ut, utr) result(Flub)
   real(kind=rk) :: Flub(3)
   ! ------------------------------------------------ !
   if( h > hc ) then
-    Flub = -6*PI*R*mu*( ut*-div1_6*log10(h) & 
-    & + utr*( -div1_6*log10(h) - div1_12*h*log10(h) ) )
+    Flub = -6*PI*R*mu*( ut*(-div1_6*log10(h)) & 
+      &                + utr*( -div1_6*log10(h) - div1_12*h*log10(h) ) )
   else
-    Flub = -6*PI*R*mu*( ut*-div1_6*log10(hc) & 
-    & + utr*( -div1_6*log10(hc) - div1_12*hc*log10(hc) ) )
+    Flub = -6*PI*R*mu*( ut*(-div1_6*log10(hc)) & 
+      &                + utr*( -div1_6*log10(hc) - div1_12*hc*log10(hc) ) )
   end if
 end function computeLubForce_tangential
 
@@ -688,7 +688,8 @@ subroutine computeWallPosSum_MEM( this, BCinteraction, scheme, stencil, geometry
   real(kind=rk) :: x, y, z
   integer :: currentCoord(4)
   integer(kind=long_k) :: TreeID
-  integer :: lev, BCid
+  integer :: lev
+  integer(kind=long_k) :: BCid
   integer(kind=long_k) :: ldPos, neighPos
   integer(kind=long_k) :: posInBnd
   integer(kind=long_k) :: treePos
@@ -769,9 +770,9 @@ subroutine computeWallPosSum_MEM( this, BCinteraction, scheme, stencil, geometry
               ! bcID = 0 if no boundary in this direction
               ! bcID > 0 if boundary (wall or open)
               ! bcID < 0 if periodic boundary
-              if(bcID > 0) then
+              if(bcID > 0_long_k) then
               ! Check how particles should interact with this boundary
-              if( BCinteraction(bcID) == 1 ) then
+              if( BCinteraction(int(bcID)) == 1 ) then
                 ! If we hit an open boundary, exit the routine and remove this
                 ! particle from the group in a subsequent call to destroyParticle
                 ! and remove_particle_from_da_particle_MEM
@@ -850,7 +851,8 @@ subroutine computeWallPosSum_DPS( this, BCinteraction, scheme, stencil, geometry
   real(kind=rk) :: x, y, z
   integer :: currentCoord(4)
   integer(kind=long_k) :: TreeID
-  integer :: lev, BCid
+  integer :: lev
+  integer(kind=long_k) :: BCid
   integer(kind=long_k) :: ldPos, neighPos
   integer(kind=long_k) :: posInBnd
   integer(kind=long_k) :: treePos
@@ -927,9 +929,9 @@ subroutine computeWallPosSum_DPS( this, BCinteraction, scheme, stencil, geometry
               ! bcID = 0 if no boundary in this direction
               ! bcID > 0 if boundary (wall or open)
               ! bcID < 0 if periodic boundary
-              if(bcID > 0) then
+              if(bcID > 0_long_k) then
               ! Check how particles should interact with this boundary
-              if( BCinteraction(bcID) == 1 ) then
+              if( BCinteraction(int(bcID)) == 1 ) then
                 ! If we hit an open boundary, exit the routine and remove this
                 ! particle from the group in a subsequent call to destroyParticle
                 ! and remove_particle_from_da_particle_MEM
