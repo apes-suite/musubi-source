@@ -421,10 +421,11 @@ subroutine generateElemListLine( dir, xstart, length, scheme, geometry, elemList
   !> geometry
   type(mus_geom_type), intent(in) :: geometry
   !> output: element list
-  type(dyn_longArray_type), intent(inout) :: elemList
+  type(dyn_intArray_type), intent(inout) :: elemList
   ! -------------------------------------------- !
   integer :: coord(4), lev
-  integer(kind=long_k) :: ldPos, TreeID
+  integer(kind=long_k) :: TreeID
+  integer :: ldPos
   real(kind=rk) :: x(3), s, dx
   ! -------------------------------------------- !
   lev = geometry%tree%global%maxLevel

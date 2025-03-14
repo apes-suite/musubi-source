@@ -204,7 +204,8 @@ subroutine updateParticleOwner( this, scheme, geometry, myRank, &
   !> Number of procs in array procs
   integer, intent(in) :: nProcs
   ! ------------------------------------- !
-  integer(kind=long_k) :: TreeID, ldPos
+  integer(kind=long_k) :: TreeID
+  integer :: ldPos
   integer :: iElemProc 
   integer :: lev
   integer :: previousOwner

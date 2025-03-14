@@ -690,8 +690,8 @@ subroutine computeWallPosSum_MEM( this, BCinteraction, scheme, stencil, geometry
   integer(kind=long_k) :: TreeID
   integer :: lev
   integer(kind=long_k) :: BCid
-  integer(kind=long_k) :: ldPos, neighPos
-  integer(kind=long_k) :: posInBnd
+  integer :: ldPos, neighPos
+  integer :: posInBnd
   integer(kind=long_k) :: treePos
   integer :: nx, ny, nz, iDir
   integer(kind=long_k) :: elemProp
@@ -853,8 +853,8 @@ subroutine computeWallPosSum_DPS( this, BCinteraction, scheme, stencil, geometry
   integer(kind=long_k) :: TreeID
   integer :: lev
   integer(kind=long_k) :: BCid
-  integer(kind=long_k) :: ldPos, neighPos
-  integer(kind=long_k) :: posInBnd
+  integer :: ldPos, neighPos
+  integer :: posInBnd
   integer(kind=long_k) :: treePos
   integer :: nx, ny, nz, iDir
   integer(kind=long_k) :: elemProp

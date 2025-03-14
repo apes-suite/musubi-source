@@ -115,7 +115,8 @@ function coordLocalOnMyRank( coord, scheme, myRank )
   ! -----------------------------------------------!
   logical :: coordLocalOnMyRank
   integer :: lev
-  integer(kind=long_k) :: TreeID, ldPos
+  integer(kind=long_k) :: TreeID
+  integer :: ldPos
   ! -----------------------------------------------!
   lev = coord(4)
   TreeID = tem_IdOfCoord(coord = coord)
@@ -237,7 +238,8 @@ function coordExistsOnMyRank( coord, scheme, myRank )
   ! -----------------------------------------------!
   logical :: coordExistsOnMyRank
   integer :: lev
-  integer(kind=long_k) :: TreeID, ldPos
+  integer(kind=long_k) :: TreeID
+  integer :: ldPos
   ! -----------------------------------------------!
   lev = coord(4)
   TreeID = tem_IdOfCoord(coord = coord)

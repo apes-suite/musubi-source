@@ -170,20 +170,18 @@ type mus_particle_MEM_type
   !- Dynamic array containing indices of the currently covered fluid elements
   !- These need to be excluded in the loop over elements in the kernel
   !- Pertains to levelDesc total list (from which kernel lists are generated) 
-  type(dyn_longArray_type) :: exclusionList 
-  !type(dyn_intArray_type) :: exclusionList 
+  type(dyn_intArray_type) :: exclusionList 
   
   !> Buffer for exclusion list used in moveParticle routine 
   !  Used to determine newly uncovered fluid neighbors
-  type(dyn_longArray_type) :: exclusionListBuffer 
-  !type(dyn_intArray_type) :: exclusionListBuffer 
+  type(dyn_intArray_type) :: exclusionListBuffer 
 
   !> Number of fluid neighbors for this particle
   integer :: NfluidNeighbors
 
   !> Indices in levelDesc total list of elements that 
   !  need to be turned to fluid after moving particle
-  type(grw_longArray_type) :: makeFluidList 
+  type(grw_intArray_type) :: makeFluidList 
 
 end type mus_particle_MEM_type
 

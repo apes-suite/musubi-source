@@ -191,7 +191,7 @@ subroutine applyHydrodynamicForces( this, scheme, stencil, params, rho_p_lat )
   ! ------------------------------------------!
 
   integer :: lev                              
-  integer(kind=long_k) :: elemPos, neighPos, fluidPos
+  integer :: elemPos, neighPos, fluidPos
   ! integer :: elemPos, neighPos, fluidPos
   integer :: iDir, fluidDir, iField, idx_idir
   integer(kind=long_k) :: neighProp           
@@ -391,7 +391,7 @@ subroutine mapToLattice( this, particleGroup, scheme, stencil, &
   ! ------------------------------------------!
   ! property bits for neighbor element
   integer(kind=long_k) :: elemProp           
-  integer(kind=long_k) :: elemPos
+  integer :: elemPos
   integer :: iElem
   integer :: lev
   integer :: i ! used for implied do loops for printing
@@ -724,7 +724,8 @@ subroutine updateExclusionList(this, scheme, geometry, myRank, procs, nProcs, dx
   real(kind=rk) :: bary(3)
   real(kind=rk) :: rbary(3)          ! Vector from barycenter of coordOfOrigin to particle position
   integer :: currentCoord(4)      
-  integer(kind=long_k) :: TreeID, ldPos
+  integer(kind=long_k) :: TreeID
+  integer :: ldPos
   integer :: nx, ny, nz, lev
 
   ! These variables are used to check elements added to dynamic arrays
@@ -830,7 +831,8 @@ subroutine updateExistsOnProc( this, scheme, geometry, myRank, procs, nProcs, rm
   logical, intent(out) :: rmflag
   ! ------------------------------------------- !
   integer :: nx, ny, nz
-  integer(kind=long_k) :: TreeID, ldPos
+  integer(kind=long_k) :: TreeID
+  integer :: ldPos
   integer :: lev, upperBound
   integer :: coord(4)
   integer :: elemProc, iElemProc
@@ -932,7 +934,7 @@ subroutine updateSolidNodes(this, scheme, stencil)
   integer :: iElem, iDir, zeroPos
   integer :: lev 
   integer :: GetFromDir
-  integer(kind=long_k) :: elemPos
+  integer :: elemPos
   integer :: stateVarPos(stencil%QQ)
   integer :: nParticleElems                       
   integer :: nElems, nSize                        
@@ -1005,8 +1007,7 @@ subroutine updateFluidNeighbors(this, scheme, stencil)
   type(tem_stencilHeader_type), intent(in) :: stencil
 
   integer :: lev                           
-  integer(kind=long_k) :: elemPos, neighPos, fluidPos
-  ! integer :: elemPos, neighPos, fluidPos
+  integer :: elemPos, neighPos, fluidPos
   integer :: iDir, fluidDir, fluidInvDir
   integer(kind=long_k) :: neighProp       
   integer :: iElem, nElems, nSize                 
@@ -1073,8 +1074,7 @@ subroutine updateNewFluidNodes(this, scheme, stencil)
   type(tem_stencilHeader_type), intent(in) :: stencil
 
   integer :: lev                              
-  integer(kind=long_k) :: elemPos, neighPos, fluidPos
-  ! integer :: elemPos, neighPos, fluidPos
+  integer :: elemPos, neighPos, fluidPos
   integer :: iDir, inv_iDir, fluidDir, fluidInvDir
   integer(kind=long_k) :: neighProp          
   integer :: iElem, nElems, nSize                 
@@ -1159,7 +1159,7 @@ subroutine destroyParticle_MEM(this, particleGroup, scheme, params )
   type(mus_param_type), intent(in) :: params
   ! ---------------------------------------------------!
   integer :: lev
-  integer(kind=long_k) :: elemPos
+  integer :: elemPos
   integer :: iElem
   
   ! macroscopic quantities for intializing new fluid elems to eq PDF
@@ -1252,8 +1252,7 @@ subroutine applyVelocityBounceback(this, scheme, stencil, params)
   ! ------------------------------------------!
   ! All variables with suffix _lat in lattice units
   integer :: lev                              
-  integer(kind=long_k) :: elemPos, neighPos, fluidPos
-  ! integer :: elemPos, neighPos, fluidPos
+  integer :: elemPos, neighPos, fluidPos
   integer :: iDir, fluidDir, iField, idx_idir
   integer(kind=long_k) :: neighProp           
   integer :: iElem, nElems, nSize                 
@@ -1391,7 +1390,7 @@ subroutine checkForParticleOverlap(this, particleGroup, scheme, &
   integer :: lev, iElem
   integer :: collPartIndex, collPartID
   integer(kind=long_k) :: elemProp
-  integer(kind=long_k) :: elemPos
+  integer :: elemPos
 
   lev = this%coordOfOrigin(4)
   elemProp = 0_long_k
@@ -1441,7 +1440,7 @@ end subroutine checkForParticleOverlap
 subroutine setToEquilibrium(elemList, N, lev, scheme, rho, vel)
   !> list containing positions in state vector of elements 
   !! to set to equilibrium distribution
-  integer(kind=long_k), intent(in) :: elemList(:)
+  integer, intent(in) :: elemList(:)
   !> number of values in elemList
   integer, intent(in) :: N 
   !> level
@@ -1457,8 +1456,7 @@ subroutine setToEquilibrium(elemList, N, lev, scheme, rho, vel)
   integer :: nSize
   integer :: QQ,QQN ! number of stencil directions
   integer :: iElem, iDir, iField, zeroPos, idx_idir, offset
-  integer(kind=long_k) :: elemPos
-  ! integer :: elemPos, nElems
+  integer :: elemPos
   integer :: i, nNext
   
   ! write(stdOutUnit, '(A)') 'setToEquilibrium'
@@ -1519,7 +1517,7 @@ end subroutine setToEquilibrium
 !! a fluid cell with position elemPos in the total list
 subroutine computeCellMomentum( elemPos, scheme, stencil, params, lev, j_phy )
   !> Position of this element in the levelDesc total list
-  integer(kind=long_k) :: elemPos
+  integer, intent(in) :: elemPos
   !> Scheme for access to level descriptor
   type(mus_scheme_type), intent(inout) :: scheme
   !> fluid stencil
@@ -1564,7 +1562,7 @@ end subroutine computeCellMomentum
 
 subroutine getAverageNeighborDensity(elemPos, scheme, stencil, lev, rho_lat )
   !> Position of this element in the levelDesc total list
-  integer(kind=long_k), intent(in) :: elemPos
+  integer, intent(in) :: elemPos
   !> Scheme for access to level descriptor
   type(mus_scheme_type), intent(inout) :: scheme
   !> fluid stencil
@@ -1575,7 +1573,8 @@ subroutine getAverageNeighborDensity(elemPos, scheme, stencil, lev, rho_lat )
   real(kind=rk), intent(out) :: rho_lat
   ! --------------------------------------------!
   integer :: iDir, idx_idir
-  integer(kind=long_k) :: neighPos, neighProp
+  integer :: neighPos
+  integer(kind=long_k) :: neighProp
   integer :: nLocalElems
   integer :: Navg          ! counter how many elems in our average
   integer :: dens_pos, elemOff
@@ -1667,7 +1666,7 @@ subroutine findParticleFromElem( particleGroup, elemPos, thisParticleIndex, &
   !> Array of particles
   type(mus_particle_group_type), intent(in) :: particleGroup
   !> Index of element for which to find particle in state array
-  integer(kind=long_k), intent(in) :: elemPos
+  integer, intent(in) :: elemPos
   
   !> Index of particle that was found in particleGroup%particles 
   !  Returns 0 if not found

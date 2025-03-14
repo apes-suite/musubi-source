@@ -685,11 +685,12 @@ subroutine test_generateElemListLine(scheme, geometry, params)
   !> Params
   type(mus_param_type), intent(in) :: params
   ! ------------------------------ !
-  type(dyn_longArray_type) :: elemList
+  type(dyn_intArray_type) :: elemList
   integer :: dir(3)
   real(kind=rk) :: xstart(3), length
   integer :: iElem, lev, coord(4)
-  integer(kind=long_k) :: ldPos, TreeID, TIDoffset
+  integer(kind=long_k) :: TreeID, TIDoffset
+  integer :: ldPos
   real(kind=rk) :: x(3), dx
   ! ------------------------------ !
   lev = geometry%tree%global%maxlevel

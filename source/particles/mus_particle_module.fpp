@@ -970,7 +970,7 @@ subroutine testParticleConnectivity(scheme, particle, lev)
   integer :: iDir, iField, iElem, idx_idir, QQ
   integer :: nghElem, nghDir
   integer :: stateVectorPos, neighPos, ldNeighPos, ldNeighElem
-  integer(kind=long_k) :: elemPos
+  integer :: elemPos
 
   nElems = particle%exclusionList%nvals
   nStateElems = scheme%pdf( lev )%nElems_local
@@ -1184,8 +1184,7 @@ subroutine test_loopOverLocalLinks( this, scheme, stencil, params )
   ! ------------------------------------------!
 
   integer :: lev                              
-  integer(kind=long_k) :: elemPos, neighPos, fluidPos
-  ! integer :: elemPos, neighPos, fluidPos
+  integer :: elemPos, neighPos, fluidPos
   integer :: iDir, fluidDir, iField, idx_idir
   integer(kind=long_k) :: neighProp           
   integer :: iElem, nLocalElems
