@@ -159,13 +159,6 @@ subroutine DEMSubcycles_MEM( particleGroup, scheme, geometry, params, Nsubcycles
   integer :: iParticle
   integer :: myRank             ! This process rank
   integer :: lev
-
-  ! For debugging: log files for DEM code
-  character(len=1024) :: DEM_lfile
-  integer :: DEM_lunit
-  integer :: now, next, i
-  real(kind=rk) :: t
-  
   ! ------------------------------------------!
   lev = geometry%tree%global%maxLevel
   dt = params%physics%dtLvl(lev)
@@ -343,17 +336,12 @@ subroutine DEMSubcycles_DPS( particleGroup, scheme, geometry, &
   ! ------------------------------------------!
   real(kind=rk) :: dt, dx       ! LBM time step
   real(kind=rk) :: dt_sub       ! subcycle time step
-  real(kind=rk) :: Tc           ! collision time
   real(kind=rk) :: nu, nu_lat   ! dynamic viscosity for computing hydro forces
   integer :: ksub               ! iterator over subcycle loops
   integer :: iParticle
   integer :: myRank             ! This process rank
   integer :: lev
 
-  ! For debugging: log files for DEM code
-  character(len=1024) :: DEM_lfile
-  integer :: DEM_lunit
-  integer :: now, next, i
   real(kind=rk) :: t
   real(kind=rk) :: dt_sub_lat
   
@@ -369,8 +357,6 @@ subroutine DEMSubcycles_DPS( particleGroup, scheme, geometry, &
   nu_lat = scheme%field(1)%fieldProp%fluid%viscKine%dataOnLvl(lev)%val(1)
   nu = nu_lat * params%physics%fac(lev)%visc
 
-
-  DEM_lunit = newunit()
   ! ---- INITIALIZE SUBCYCLING LOOP ---- !
 
   ! Fill neighbor list for efficient collision detection during subcycles
@@ -538,19 +524,12 @@ subroutine DEMSubcycles_DPS_onewaycoupled( particleGroup, scheme, geometry, para
   ! ------------------------------------------!
   real(kind=rk) :: dt, dx       ! LBM time step
   real(kind=rk) :: dt_sub       ! subcycle time step
-  real(kind=rk) :: Tc           ! collision time
   real(kind=rk) :: nu, nu_lat   ! dynamic viscosity for computing hydro forces
   integer :: ksub               ! iterator over subcycle loops
   integer :: iParticle
   integer :: myRank             ! This process rank
   integer :: lev
 
-  ! For debugging: log files for DEM code
-  character(len=1024) :: DEM_lfile
-  integer :: DEM_lunit
-  integer :: now, next, i
-  real(kind=rk) :: t
-  real(kind=rk) :: tmp(3)
   real(kind=rk) :: dt_sub_lat
   
   ! ------------------------------------------!
@@ -566,7 +545,6 @@ subroutine DEMSubcycles_DPS_onewaycoupled( particleGroup, scheme, geometry, para
   nu = nu_lat * params%physics%fac(lev)%visc
 
 
-  DEM_lunit = newunit()
   ! ---- INITIALIZE SUBCYCLING LOOP ---- !
 
   ! Fill neighbor list for efficient collision detection during subcycles
@@ -942,7 +920,6 @@ subroutine DEM_computeLocalCollisionForces(particleGroup, myRank, eps, Tc, mu)
   real(kind=rk), intent(in) :: mu
   ! ------------------------------------------------------ !
   integer :: iParticle, jParticle
-  integer :: F_DEM_next
   logical :: collision
   real(kind=rk) :: Fcoll(3)
   ! ------------------------------------------------------ !
@@ -1061,8 +1038,6 @@ subroutine DEM_computeRemoteCollisionForces(particleGroup, myRank, eps, Tc, mu)
   integer :: iParticle, jParticle
   integer :: otherRank             ! rank of the particle owned by other proc
   integer :: otherRankIndex        ! index of otherRank in send%proc
-  integer :: nBuffParticles            ! particles in force buffer
-  integer :: F_DEM_next
   integer :: iproc
   logical :: isRemoteCollision
   logical :: collision
@@ -1161,8 +1136,6 @@ subroutine DEM_computeRemoteCollisionForces_DPS( particleGroup, myRank, &
   integer :: iNgh
   integer :: otherRank             ! rank of the particle owned by other proc
   integer :: otherRankIndex        ! index of otherRank in send%proc
-  integer :: nBuffParticles            ! particles in force buffer
-  integer :: F_DEM_next
   integer :: iproc
   logical :: isRemoteCollision
   logical :: collision
@@ -1285,7 +1258,6 @@ subroutine computeHydroForces_DPS( particleGroup, nu, myRank )
   integer :: iParticle
   real(kind=rk) :: Fd(3), Fp(3), Flift(3)
   real(kind=rk) :: eps_p
-  integer :: i
   ! ------------------------------------------!
   do iParticle = 1, particleGroup%particles_DPS%nvals
     if(  particleGroup%particles_DPS%val(iParticle)%owner == myRank ) then 
@@ -1330,7 +1302,6 @@ subroutine DEM_computeExternalForces_DPS_oneway( particleGroup, nu, myRank )
   integer :: iParticle
   integer :: F_DEM_next
   real(kind=rk) :: Fd(3), Fp(3), Flift(3)
-  integer :: i
   ! ------------------------------------------!
   do iParticle = 1, particleGroup%particles_DPS%nvals
     if(  particleGroup%particles_DPS%val(iParticle)%owner == myRank ) then 
@@ -1437,7 +1408,6 @@ function computeWallForce_DPS( this, boundaryData, eps, kn, dn) result ( Fwall )
   !> Output: collision force on particleA = negative of collision force on particleB
   real(kind=rk) :: Fwall(3)
   ! ------------------------------------------!
-  real(kind=rk) :: e_dry
   real(kind=rk) :: Fwall_1D
   real(kind=rk) :: xwall
   integer :: iDir, iBnd, i
@@ -1537,7 +1507,7 @@ subroutine DEM_storeWallPositions_MEM( particleGroup, scheme, geometry, &
   real(kind=rk) :: wallPosSum(3) ! vector from center of particle to wall
 
   integer :: lev, myRank
-  integer :: owner, nParticles
+  integer :: owner
   logical :: foundWall, rmflag
   integer :: nWallPos
 

@@ -197,7 +197,6 @@ subroutine applyHydrodynamicForces( this, scheme, stencil, params, rho_p_lat )
   integer(kind=long_k) :: neighProp           
   integer :: iElem, nLocalElems, nSize                 
   integer :: stateVarPos(stencil%QQ)
-  integer :: i
   integer :: nNow, nNext
   real(kind=rk) :: dt, dx, inv_dx, inv_dt, inv_vel, pdf_val
   real(kind=rk) :: wq, MoBoFactor, movingBoundaryTerm
@@ -390,18 +389,14 @@ subroutine mapToLattice( this, particleGroup, scheme, stencil, &
 
   ! ------------------------------------------!
   ! property bits for neighbor element
-  integer(kind=long_k) :: elemProp           
   integer :: elemPos
   integer :: iElem
   integer :: lev
-  integer :: i ! used for implied do loops for printing
 
   logical :: overlapsOtherParticle                    
-  logical :: hasCollided                             
   
   ! macroscopic quantities for intializing new fluid elems to eq PDF
   real(kind=rk), allocatable :: rho_lat(:)            ! size (Nelems) 
-  real(kind=rk), allocatable :: fEq(:)                ! size (QQ * Nelems)
   real(kind=rk), allocatable :: vel_surf_lat(:,:)     ! size (3,Nelems)
 
   real(kind=rk) :: dt, dx
@@ -411,13 +406,10 @@ subroutine mapToLattice( this, particleGroup, scheme, stencil, &
 
   ! vector from particle origin to surface element, lattice units 
   real(kind=rk) :: r_lat(3)   
-  real(kind=rk) :: r_phy(3)   
+
   ! particle angular velocity vector in lattice units 
   real(kind=rk) :: om_lat(3)                          
-  ! momentum and corresponding force of new cells added to particle
-  real(kind=rk) :: j_phy(3), Fj_phy(3), Mj_phy(3)   
 
-  integer :: particleLogUnit
   ! ------------------------------------------!
   ! 0. Initialize parameters from scheme, stencil, etc.
   ! write(stdOutUnit,'(A)') 'Enter mapToLattice'
@@ -431,7 +423,6 @@ subroutine mapToLattice( this, particleGroup, scheme, stencil, &
   inv_dx = 1.0_rk / dx
   inv_dt = 1.0_rk / dt
   inv_vel = 1.0_rk / params%physics%fac(lev)%vel
-  j_phy   = 0.0_rk
 
   ! --- Update exclusionList using neighbor information --- !
   ! copy old exclusionList into exclusionListBuffer for creating makeFluidList later       
@@ -832,12 +823,10 @@ subroutine updateExistsOnProc( this, scheme, geometry, myRank, procs, nProcs, rm
   ! ------------------------------------------- !
   integer :: nx, ny, nz
   integer(kind=long_k) :: TreeID
-  integer :: ldPos
   integer :: lev, upperBound
   integer :: coord(4)
   integer :: elemProc, iElemProc
   integer :: iproc
-  character(len=1024) :: debugFileName
 
   logical :: oldExistsOnProc( 1:nProcs)
   ! ------------------------------------------- !
@@ -938,7 +927,6 @@ subroutine updateSolidNodes(this, scheme, stencil)
   integer :: stateVarPos(stencil%QQ)
   integer :: nParticleElems                       
   integer :: nElems, nSize                        
-  integer :: i
   ! ---------------------------------------------------------------------------
   !write(logUnit(1),*) 'Updating state array connectivity for particles ...'
   ! FOR PARTICLES:
@@ -1074,8 +1062,8 @@ subroutine updateNewFluidNodes(this, scheme, stencil)
   type(tem_stencilHeader_type), intent(in) :: stencil
 
   integer :: lev                              
-  integer :: elemPos, neighPos, fluidPos
-  integer :: iDir, inv_iDir, fluidDir, fluidInvDir
+  integer :: elemPos, neighPos
+  integer :: iDir, inv_iDir, fluidDir
   integer(kind=long_k) :: neighProp          
   integer :: iElem, nElems, nSize                 
   integer :: stateVarPos(stencil%QQ)
@@ -1164,7 +1152,6 @@ subroutine destroyParticle_MEM(this, particleGroup, scheme, params )
   
   ! macroscopic quantities for intializing new fluid elems to eq PDF
   real(kind=rk), allocatable :: rho(:)                ! size (Nelems) 
-  real(kind=rk), allocatable :: fEq(:)                ! size (QQ * Nelems)
   real(kind=rk), allocatable :: vel_surf_lat(:,:)     ! size (3,Nelems)
 
   real(kind=rk) :: dt, dx
@@ -1257,19 +1244,14 @@ subroutine applyVelocityBounceback(this, scheme, stencil, params)
   integer(kind=long_k) :: neighProp           
   integer :: iElem, nElems, nSize                 
   integer :: stateVarPos(stencil%QQ)
-  integer :: i
   integer :: nNow, nNext
-  real(kind=rk) :: dt, dx, inv_dx, inv_vel, pdf_val
+  real(kind=rk) :: dt, dx, inv_dx, inv_vel
   real(kind=rk) :: wq, MoBoFactor, movingBoundaryTerm
   real(kind=rk) :: u_surf_lat(3)             
   real(kind=rk) :: baryOfOrigin(3), baryOfSurface(3), cq(3)
 
   ! vector particle origin to surface elem and angular velocity
   real(kind=rk) :: r(3), r_lat(3), om_lat(3)
-  
-  ! force and torque per link.
-  real(kind=rk) :: F_q_lat(3),  dM_lat(3) 
-
   ! ------------------------------------------!
   ! write(stdOutUnit,'(A)') 'Inside applyParticleVelocityBounceback'
   lev = this%coordOfOrigin(4)
@@ -1457,7 +1439,7 @@ subroutine setToEquilibrium(elemList, N, lev, scheme, rho, vel)
   integer :: QQ,QQN ! number of stencil directions
   integer :: iElem, iDir, iField, zeroPos, idx_idir, offset
   integer :: elemPos
-  integer :: i, nNext
+  integer :: nNext
   
   ! write(stdOutUnit, '(A)') 'setToEquilibrium'
   ! --- Compute equilibrium distribution from prescribed rho, vel_arr
@@ -1572,7 +1554,7 @@ subroutine getAverageNeighborDensity(elemPos, scheme, stencil, lev, rho_lat )
   !> Output: average density, in lattice units
   real(kind=rk), intent(out) :: rho_lat
   ! --------------------------------------------!
-  integer :: iDir, idx_idir
+  integer :: iDir
   integer :: neighPos
   integer(kind=long_k) :: neighProp
   integer :: nLocalElems

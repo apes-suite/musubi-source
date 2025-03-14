@@ -502,8 +502,7 @@ subroutine test_computeWallForces(flag)
   !> Data for boundaries
   type( mus_particle_boundarydata_type)  :: boundaryData
   !> Particle position
-  real(kind=rk) :: xp(3)
-  real(kind=rk) :: Tc, eps, tol
+  real(kind=rk) :: eps, tol
   real(kind=rk) :: Fcoll(3), Fcoll_exact(3)
   real(kind=rk) :: kn, dn
   ! ---------------------------- !
@@ -689,7 +688,7 @@ subroutine test_generateElemListLine(scheme, geometry, params)
   integer :: dir(3)
   real(kind=rk) :: xstart(3), length
   integer :: iElem, lev, coord(4)
-  integer(kind=long_k) :: TreeID, TIDoffset
+  integer(kind=long_k) :: TIDoffset
   integer :: ldPos
   real(kind=rk) :: x(3), dx
   ! ------------------------------ !
@@ -785,7 +784,8 @@ subroutine test_compute_fluid_momentum( scheme, geometry, params, &
   ! ---------------------------------------- !
   real(kind=rk) :: totalMomentum(3)
   real(kind=rk) :: correctMomentum(3)
-  integer :: Nelems_global, iElem 
+  integer(kind=long_k) :: Nelems_global
+  integer :: iElem 
   integer :: elemOff
   integer :: lev
   integer :: dens_pos, vel_pos(3)

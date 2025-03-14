@@ -162,7 +162,6 @@ subroutine updateCoordOfOrigin_DPS( this, scheme, geometry, myRank )
   integer :: moveDir(3)
   integer :: lev
   integer :: newCoordOfOrigin(4)
-  integer(kind=long_k) :: TreeID
   ! --------------------------------!
   lev = this%coordOfOrigin(4)
   ! Check if particle has moved more than one lattice site
@@ -208,7 +207,6 @@ subroutine updateParticleOwner( this, scheme, geometry, myRank, &
   integer :: ldPos
   integer :: iElemProc 
   integer :: lev
-  integer :: previousOwner
   ! ------------------------------------- !
   lev = this%coordOfOrigin(4) 
 
@@ -755,7 +753,7 @@ subroutine incrementAuxField_DPS( particle, interpolator, scheme, &
       wght_z = interpolator%getWght_z( r_lat(3) )
 
       ! Calculate momentum increment on this cell in lattice units
-      j_lat = dt_DEM_lat * -particle%F(1:3)*wght_x*wght_y*wght_z / params%physics%fac(lev)%force
+      j_lat = dt_DEM_lat * (-particle%F(1:3)*wght_x*wght_y*wght_z) / params%physics%fac(lev)%force
 
       call add_Momentum_Increment_to_Auxfield(                                 &
                               & posInTotal         = nghPos,                   &
@@ -859,7 +857,6 @@ subroutine distributeParticleVolume( particle, interpolator, scheme, geometry, p
   integer :: elemOff, elemPos, nghPos, vol_frac_pos
   real(kind=rk) :: baryOfOrigin(3), rbary_lat(3), r_lat(3)
   real(kind=rk) :: geom_origin(3), dx
-  real(kind=rk) :: f(0:1,0:1,0:1)
   real(kind=rk) :: wght_x, wght_y, wght_z
   real(kind=rk) :: Vparticle
 
@@ -1014,7 +1011,7 @@ subroutine mus_particles_initFluidVolumeFraction( scheme, geometry, nElems )
   integer, intent(in) :: nElems
   ! ------------------------------------- !
   integer :: iElem, vol_frac_pos, elemOff
-  integer :: iParticle, lev
+  integer :: lev
   ! ------------------------------------- !
   lev = geometry%tree%global%maxLevel
   vol_frac_pos = scheme%varSys%method%val(scheme%derVarPos(1)%vol_frac)%auxField_varPos(1)
@@ -1032,8 +1029,9 @@ subroutine mapToLattice_DPS(particle, interpolator, scheme, geometry, params, &
                            & comm, particlelogInterval  )
   !> Array of particles
   type(mus_particle_DPS_type), intent(inout) :: particle
-  !> Interpolation data type. We don't interpolate stuff here but we use it to determine the 
-  !! directions we need to search for local elements in (only x, y for d2q9, x, y, z for d3q19)
+  !> Interpolation data type. We don't interpolate stuff here but we use it to
+  !! determine the directions we need to search for local elements in 
+  !! (only x, y for d2q9, x, y, z for d3q19)
   type(mus_particle_interpolator_type), intent(in) :: interpolator
   !> Scheme for access to leveldescriptor
   type(mus_scheme_type), intent(inout) :: scheme
@@ -1045,23 +1043,7 @@ subroutine mapToLattice_DPS(particle, interpolator, scheme, geometry, params, &
   type(mus_particles_communication_type), intent(inout) :: comm
   !> Log the particle data to file every this many iterations
   integer, intent(in) :: particleLogInterval
-  ! -----------------------------------!
-  integer :: particleLogUnit
-  ! -----------------------------------!
-
-  ! First log the particle data
-  ! if( mod(params%general%simcontrol%now%iter, particleLogInterval ) == 0  ) then
-  !   if( particle%owner == params%general%proc%rank ) then
-
-  !     particleLogUnit = getParticleLogUnit( particle%particleID, params%general%proc%rank )
-
-  !     call logParticleData( particle = particle,                         &
-  !                         & logUnit  = particleLogUnit,                            &
-  !                         & myRank   = params%general%proc%rank,                   &
-  !                         & t        = params%general%simcontrol%now%sim           )
-  !     call closeParticleLog(particleLogUnit)
-  !   end if
-  ! end if
+  ! ---------------------------------------------------------------- !
 
   ! Update coordOfOrigin and particle owner
   call updateCoordOfOrigin_DPS( this =  particle,                   &
@@ -1101,11 +1083,7 @@ subroutine mapParticlesToLattice_DPS(particleGroup, scheme, geometry, params)
   !> Params for access to dt, dx, etc.
   type(mus_param_type), intent(in) :: params
   ! -----------------------------------!
-  integer :: iParticle, particleLogUnit
-  ! Ranks that are the previous and current owner of a particle
-  ! Used to check if owner changed, in which case we need to synchronize 
-  ! particle%momInc
-  integer :: previousOwner, newOwner
+  integer :: iParticle
   ! -----------------------------------!
   
   !$OMP PARALLEL
@@ -1269,7 +1247,6 @@ subroutine mus_particles_DPS_interpolateFluidProperties( particle, interpolator,
   procedure(calcVelAndPGradFunc) :: calc_vel_and_p_grad
   ! ------------------------------------------!
   integer :: lev
-  integer :: vel_pos(3), dens_pos, vol_frac_pos
   real(kind=rk) :: vel_tmp(3), rho_tmp, eps_f_tmp
   real(kind=rk) :: grad_p_tmp(3), curl_u_tmp(3)
   real(kind=rk) :: dx
@@ -1468,7 +1445,6 @@ subroutine interpolateFluidProps_onewaycoupled(xp, coord_xp, scheme, geom_origin
   real(kind=rk) :: del_x, del_y, del_z, wght
   real(kind=rk) :: r_lat(3), bary(3)
   real(kind=rk) :: u_tmp(3), rho_tmp
-  logical :: failedToGrabValue
   ! ------------------------------------------!
   lev = coord_xp(4)
   dens_pos     = scheme%varSys%method%val(scheme%derVarPos(1)%density)%auxField_varPos(1)
@@ -1567,7 +1543,7 @@ integer :: coord(4)
 integer :: vel_pos(3), dens_pos
 real(kind=rk) :: del_x, del_y, del_z, wght
 real(kind=rk) :: r_lat(3), bary(3)
-real(kind=rk) :: u_tmp(3), rho_tmp, eps_f_tmp
+real(kind=rk) :: u_tmp(3), rho_tmp
 logical :: failedToGrabValue
 ! ------------------------------------------!
 dens_pos     = scheme%varSys%method%val(scheme%derVarPos(1)%density)%auxField_varPos(1)
@@ -1649,7 +1625,6 @@ subroutine mus_particles_DPS_interpolateFluidProperties_onewaycoupled( particle,
   type(mus_param_type), intent(in) :: params
   ! ------------------------------------------!
   integer :: lev
-  integer :: vel_pos(3), dens_pos, vol_frac_pos
   real(kind=rk) :: vel_tmp(3), rho_tmp, eps_f_tmp
   real(kind=rk) :: grad_p_tmp(3), curl_u_tmp(3)
   real(kind=rk) :: dx
@@ -1729,7 +1704,7 @@ subroutine calcVelocityAndPressureGradient(coord, scheme, grad_p, curl_u, err, p
   integer :: elemPos, nghPos, elemOff, lev, Nelems_fluid
   integer :: iDir, QQN
   integer :: invDir
-  integer :: cq(3), cqInv(3), neighborCoord(4) 
+  integer :: cq(3) 
   real(kind=rk) :: wq 
   real(kind=rk) :: rho_tmp, u_tmp(3), curl_tmp(3)
   real(kind=rk) :: rho_coord, u_coord(3)
@@ -1858,7 +1833,7 @@ subroutine calcVelocityAndPressureGradient_onewaycoupled(coord, scheme, grad_p, 
   integer :: elemPos, nghPos, elemOff, lev, Nelems_fluid
   integer :: iDir, QQN
   integer :: invDir
-  integer :: cq(3), cqInv(3), neighborCoord(4) 
+  integer :: cq(3)
   real(kind=rk) :: wq 
   real(kind=rk) :: rho_tmp, u_tmp(3), curl_tmp(3)
   real(kind=rk) :: rho_coord, u_coord(3)
@@ -1985,8 +1960,6 @@ subroutine calcVelocityAndPressureGradient_onewaycoupled_old(coord, scheme, grad
   real(kind=rk) :: rho_tmp, u_tmp(3), curl_tmp(3)
   real(kind=rk) :: rho_coord, u_coord(3)
   logical :: failedToGrabValue
-
-  integer(kind=long_k) :: TreeID
   ! ------------------------------------------!
   lev = coord(4)
   QQ = scheme%layout%fStencil%QQ 
@@ -2196,7 +2169,6 @@ subroutine grabValueAtCoord_onewaycoupled(coord, scheme, vel_pos, dens_pos, rho,
   ! ------------------------------------------!
   integer(kind=long_k) :: TreeID
   integer :: ldPos, elemOff, lev
-  integer :: i
   ! ------------------------------------------!
   lev = coord(4)
   err = .FALSE.
@@ -2294,7 +2266,7 @@ subroutine applyDragForce_DPS_noeps( particle, eps_p, nu, Fd )
   !> Output: drag force on particle
   real(kind=rk), intent(out) :: Fd(3)
   ! ------------------------------------------!
-  real(kind=rk) :: umag, Re, Cd0, Cd, A, B
+  real(kind=rk) :: umag, Re, Cd0
   real(kind=rk) :: u_rel(3)
   ! ------------------------------------------!
   ! 1) Compute Reynolds number

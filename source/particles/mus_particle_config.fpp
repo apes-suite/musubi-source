@@ -1704,7 +1704,7 @@ end subroutine mus_load_particles
     !> Handle to parent table in which the "shape" table exists 
     integer, intent(in) :: parent
     ! --------------------------------------- !
-    integer :: thandle, iError
+    integer :: iError
     logical :: flag, read_succesful
     ! --------------------------------------- !
     read_succesful = .TRUE.
