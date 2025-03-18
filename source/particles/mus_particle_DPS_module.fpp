@@ -1338,7 +1338,6 @@ subroutine interpolateFluidProps(xp, coord_xp, scheme, geom_origin, dx, &
   real(kind=rk) :: del_x, del_y, del_z, wght
   real(kind=rk) :: r_lat(3), bary(3)
   real(kind=rk) :: u_tmp(3), rho_tmp, eps_f_tmp
-  logical :: failedToGrabValue
   ! ------------------------------------------!
   lev = coord_xp(4)
   vol_frac_pos = scheme%varSys%method%val(scheme%derVarPos(1)%vol_frac)%auxField_varPos(1)
@@ -1625,7 +1624,7 @@ subroutine mus_particles_DPS_interpolateFluidProperties_onewaycoupled( particle,
   type(mus_param_type), intent(in) :: params
   ! ------------------------------------------!
   integer :: lev
-  real(kind=rk) :: vel_tmp(3), rho_tmp, eps_f_tmp
+  real(kind=rk) :: vel_tmp(3), rho_tmp
   real(kind=rk) :: grad_p_tmp(3), curl_u_tmp(3)
   real(kind=rk) :: dx
   logical :: failedToGrabValue

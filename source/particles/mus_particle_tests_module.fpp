@@ -94,12 +94,12 @@ subroutine mus_particles_runtests( particleGroup, scheme, geometry, params )
   type(mus_param_type), intent(in) :: params
   ! ------------------------------------------!
   integer :: logUnit
-  integer :: iParticle
   integer :: myRank, nProcs
   character(len=1024) :: fileName 
-  real(kind=rk) :: xp(3)
-  logical :: flag_computeDisplacement, flag_computeWallForces
-  logical :: flag_fillNeighborlist, flag_peskin, flag_compute_fluid_momentum
+  ! real(kind=rk) :: xp(3)
+  ! integer :: iParticle
+  ! logical :: flag_computeDisplacement, flag_computeWallForces
+  ! logical :: flag_fillNeighborlist, flag_peskin, flag_compute_fluid_momentum
   ! ------------------------------------------!
   myRank = params%general%proc%rank 
   nProcs = params%general%proc%comm_size 

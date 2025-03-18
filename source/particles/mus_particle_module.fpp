@@ -182,32 +182,17 @@ subroutine mus_particles_initialize( particleGroup, scheme, &
   !> Params for access to dt, dx, etc.
   type(mus_param_type), intent(in) :: params
   !---------------------------------------------------!
-  integer :: lev, nBCs, BCid, nProcs
-  integer :: i
-  integer :: debugLogUnit
-  integer :: iParticle, iproc, iBC
-  logical :: rmflag       ! .TRUE. if particle should be removed from group
-  real(kind=rk) :: dt, dpad
-  type(dyn_intarray_type) :: particleCommProcs
+  integer :: lev, nBCs, BCid
+  integer :: iParticle, iBC
+  real(kind=rk) :: dt
   
-  real(kind=double_k) :: tstart, tend, telapsed
-
   ! For cubic periodic validation cases only
   integer :: bnd_coord(4)
   real(kind=rk) :: bnd(3), dx
-  integer :: coord(4)
-  integer(kind=long_k) :: TreeID, TIDoffset
-
-  real(kind=rk) :: nu_lat, nu, Fd(3)
-
-  integer :: logUnit
   ! --------------------------------------------------!
   lev = geometry%tree%global%maxLevel
   dt = params%physics%dtLvl(lev) 
   dx = params%physics%dxLvl(lev) 
-  TIDoffset = tem_firstIdAtLevel(lev)
-  nu_lat = scheme%field(1)%fieldProp%fluid%viscKine%dataOnLvl(lev)%val(1)
-  nu = nu_lat * params%physics%fac(lev)%visc
   
   ! ------ SET PROCEDURES TO USE FOR PARTICLEGROUP ------ !
   select case( trim(particleGroup%particle_kind) )
@@ -425,8 +410,6 @@ subroutine mus_particles_move_DPS(particleGroup, scheme, geometry, params)
     !> Params for access to dt, dx, etc.
     type(mus_param_type), intent(in) :: params
     !---------------------------------------------------!
-    integer :: iParticle
-    !---------------------------------------------------!
 
     call DEMSubcycles_DPS( particleGroup = particleGroup,             &
                            & scheme        = scheme,                  &
@@ -447,8 +430,6 @@ subroutine mus_particles_move_DPS_onewaycoupled(particleGroup, scheme, geometry,
     type(mus_geom_type), intent(in) :: geometry
     !> Params for access to dt, dx, etc.
     type(mus_param_type), intent(in) :: params
-    !---------------------------------------------------!
-    integer :: iParticle
     !---------------------------------------------------!
 
     call DEMSubcycles_DPS_onewaycoupled( particleGroup = particleGroup,           &
@@ -477,7 +458,6 @@ subroutine mus_particles_mapping_MEM(particleGroup, scheme, geometry, params)
 
     !---------------------------------------------------!
     integer :: iParticle, lev
-    integer :: i
     real(kind=rk) :: dt, dx
     logical :: removeFromMyRank
     
@@ -536,7 +516,7 @@ subroutine mus_particles_mapping_DPS(particleGroup, scheme, geometry, params)
   !> Params for access to dt, dx, etc.
   type(mus_param_type), intent(in) :: params
   ! -----------------------------------!
-  integer :: iParticle, particleLogUnit
+  integer :: iParticle
   ! -----------------------------------!
   
   do iParticle = 1, particleGroup%particles_DPS%nvals 
@@ -649,7 +629,6 @@ subroutine mus_particles_applyHydrodynamicForces_MEM( &
 
   integer :: iParticle, lev
   ! integer :: particleLogUnit
-  integer :: i
   logical :: rmflag       ! .TRUE. if particle should be removed from group
   real(kind=rk) :: dt
   !---------------------------------------------------!
@@ -780,20 +759,9 @@ subroutine mus_particles_applyHydrodynamicForces_DPS( particleGroup, scheme, &
   !> Params for access to dt, dx, etc.
   type(mus_param_type), intent(in) :: params
   ! ------------------------------------------!
-  integer :: iParticle, i, lev
-  real(kind=rk) :: dx, geom_origin(3)
-  real(kind=rk) :: rho_p, u_p(3), eps, nu_lat, nu, umag
-  real(kind=rk) :: Re, Cd
+  integer :: iParticle
   ! ------------------------------------------!
-  ! write(stdOutUnit,*) 'mus_particles_DPS_applyHydrodynamicForces'
-  lev = geometry%tree%global%maxLevel
-  dx = params%physics%dxLvl(lev) 
-  geom_origin = geometry%tree%global%origin
   
-  ! Get viscosity values
-  nu_lat = scheme%field(1)%fieldProp%fluid%viscKine%dataOnLvl(lev)%val(1)
-  nu = nu_lat * params%physics%fac(lev)%visc
-
   do iParticle = 1, particleGroup%particles_DPS%nvals
     if( particleGroup%particles_DPS%val(iParticle)%owner == params%general%proc%rank ) then
       ! First interpolate the fluid properties at the position of the particle
@@ -828,20 +796,8 @@ subroutine mus_particles_applyHydrodynamicForces_DPS_onewaycoupled( particleGrou
   !> Params for access to dt, dx, etc.
   type(mus_param_type), intent(in) :: params
   ! ------------------------------------------!
-  integer :: iParticle, i, lev
-  real(kind=rk) :: dx, geom_origin(3)
-  real(kind=rk) :: rho_p, u_p(3), eps, nu_lat, nu, umag
-  real(kind=rk) :: Re, Cd
+  integer :: iParticle
   ! ------------------------------------------!
-  ! write(stdOutUnit,*) 'mus_particles_DPS_applyHydrodynamicForces'
-  lev = geometry%tree%global%maxLevel
-  dx = params%physics%dxLvl(lev) 
-  geom_origin = geometry%tree%global%origin
-  
-  ! Get viscosity values
-  nu_lat = scheme%field(1)%fieldProp%fluid%viscKine%dataOnLvl(lev)%val(1)
-  nu = nu_lat * params%physics%fac(lev)%visc
-
   do iParticle = 1, particleGroup%particles_DPS%nvals
     if( particleGroup%particles_DPS%val(iParticle)%owner == params%general%proc%rank ) then
       ! First interpolate the fluid properties at the position of the particle
@@ -969,7 +925,7 @@ subroutine testParticleConnectivity(scheme, particle, lev)
   integer :: nElems, nStateElems, nSize, nScalars
   integer :: iDir, iField, iElem, idx_idir, QQ
   integer :: nghElem, nghDir
-  integer :: stateVectorPos, neighPos, ldNeighPos, ldNeighElem
+  integer :: stateVectorPos, neighPos, ldNeighPos
   integer :: elemPos
 
   nElems = particle%exclusionList%nvals
@@ -1051,7 +1007,8 @@ subroutine printTotalElemList(scheme, geometry, lev, proc, logUnit)
   integer, intent(in) :: proc
   integer, intent(in) :: logUnit
   ! --------------------------------------------!
-  integer :: iElem, posInBnd, bcID
+  integer :: iElem, posInBnd
+  integer(kind=long_k) :: bcID
   integer :: iDir
   integer(kind=long_k) :: elemTreeID
   integer(kind=long_k) :: elemProp
@@ -1184,8 +1141,8 @@ subroutine test_loopOverLocalLinks( this, scheme, stencil, params )
   ! ------------------------------------------!
 
   integer :: lev                              
-  integer :: elemPos, neighPos, fluidPos
-  integer :: iDir, fluidDir, iField, idx_idir
+  integer :: elemPos, neighPos
+  integer :: iDir, iField
   integer(kind=long_k) :: neighProp           
   integer :: iElem, nLocalElems
   integer :: nLinks

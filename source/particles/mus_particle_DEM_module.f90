@@ -977,7 +977,6 @@ subroutine DEM_computeLocalCollisionForces_DPS( particleGroup, myRank, &
   ! ------------------------------------------------------ !
   integer :: iParticle, jParticle
   integer :: iNgh
-  integer :: F_DEM_next
   logical :: collision
   real(kind=rk) :: Fcoll(3)
   ! ------------------------------------------------------ !

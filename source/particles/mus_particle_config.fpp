@@ -979,27 +979,18 @@ subroutine mus_load_particles(particleGroup, conf, chunkSize, scheme, geometry, 
   !> Layout kind (e.g. d2q9 or d3q19) to load correct interpolation routines 
   character(len=labelLen) :: layout
 
-  type(mus_particle_MEM_type), allocatable :: particleBuffer_MEM(:)
-  integer :: nParticles, nChunks, nChunkVals
   integer :: particleLogInterval, particleBufferSize
   integer :: intBuffer 
   integer :: iError
-  integer :: iParticle, iStart, iChunk
-  integer :: iVal, nVals
   !> Handle to particle table
   integer :: p_thandle
 
-  !> Handle to domain_bnd table
-  integer :: domain_bnd_handle, boundaries_handle, bnd_kind_handle
   integer :: lev
-  real(kind=rk) :: realBuffer, dx
+  real(kind=rk) :: dx
 
-  logical :: wasAdded
   logical :: predefined
   logical :: flag
   character(len=labelLen) :: particle_kind
-  character(len=labelLen) :: stringBuffer
-  character(len=labelLen) :: bnd_kind
   character(len=labelLen) :: blob_type
   ! -----------------------------------------!
   schemeKind = scheme%header%kind
@@ -1285,263 +1276,6 @@ end subroutine mus_load_particles
 ?? copy :: loadParticleData_txt(particle_DPS)
 ?? copy :: loadParticleCreatorData_txt(particle_DPS)
 ?? copy :: loadParticleDataChunk_txt(particle_DPS)
-
-!  subroutine load_particle_data_MEM( conf, parent, particles,     &
-!                                   &  nParticles, chunkSize  )
-!    type(flu_State), intent(in) :: conf
-!
-!    !> Handle to parent table if position, velocity tables etc are inside
-!    !! another table
-!    integer, intent(in), optional :: parent
-!
-!    !> Dynamic particle array to append particles read from file to
-!    type(dyn_particle_MEM_array_type), intent(inout) :: particles
-!
-!    !> Total number of particles to read
-!    integer, intent(in) :: nParticles
-!    
-!    ! Number of particles to read as one "chunk"
-!    integer, intent(in) :: chunkSize
-!    !--------------------------------------------!
-!    type(mus_particle_MEM_type), allocatable :: particleBuffer_MEM(:)
-!    integer :: iStart, iChunk, iParticle
-!    integer :: nChunks, nChunkVals
-!    logical :: wasAdded
-!    !--------------------------------------------!
-!    nChunks = nParticles/chunkSize + 1 
-!    iStart = 1
-!    allocate( particleBuffer_MEM(chunkSize) )
-!
-!    chunkLoop: do iChunk = 1, nChunks
-!      ! Load one chunk into the particleBuffer
-!      ! write(stdOutUnit,*) 'loading chunk ', iChunk
-!      ! Note: loading position values also sets the particle ID's!
-!      call mus_load_particle_data_chunk( conf           = conf,           & 
-!                                       & parent         = parent,      &
-!                                       & particleBuffer = particleBuffer_MEM, &
-!                                       & nChunkVals     = nChunkVals,     &
-!                                       & key            = 'position',     &
-!                                       & iStart         = iStart          )
-!
-!      call mus_load_particle_data_chunk( conf           = conf,           & 
-!                                       & parent         = parent,      &
-!                                       & particleBuffer = particleBuffer_MEM, &
-!                                       & nChunkVals     = nChunkVals,     &
-!                                       & key            = 'velocity',     &
-!                                       & iStart         = iStart          )
-!      
-!      call mus_load_particle_data_chunk( conf           = conf,           & 
-!                                       & parent         = parent,      &
-!                                       & particleBuffer = particleBuffer_MEM, &
-!                                       & nChunkVals     = nChunkVals,     &
-!                                       & key            = 'force',        &
-!                                       & iStart         = iStart          )
-!
-!      call mus_load_particle_data_chunk( conf           = conf,           & 
-!                                       & parent         = parent,      &
-!                                       & particleBuffer = particleBuffer_MEM, &
-!                                       & nChunkVals     = nChunkVals,     &
-!                                       & key            = 'radius',       &
-!                                       & iStart         = iStart          )
-!
-!      call mus_load_particle_data_chunk( conf           = conf,           & 
-!                                       & parent         = parent,      &
-!                                       & particleBuffer = particleBuffer_MEM, &
-!                                       & nChunkVals     = nChunkVals,     &
-!                                       & key            = 'mass',         &
-!                                       & iStart         = iStart          )
-!
-!
-!      ! nChunkVals is the number of particles actually read from the lua file
-!      ! Can be less than chunkSize if there are fewer than chunkSize particles
-!      ! left in lua table
-!      ! write(stdOutUnit,*) 'nChunkVals = ', nChunkVals
-!    
-!      !-- SET PARTICLE ROTATIONAL INERTIA --!
-!      do iParticle = 1, nChunkVals
-!        particleBuffer_MEM( iParticle )%rotInertia & 
-!          & = 0.4 * particleBuffer_MEM( iParticle )%mass &
-!          &       * particleBuffer_MEM( iParticle )%radius**2 
-!
-!      end do
-!
-!      ! Append particles in particleBuffer to particleGroup
-!      ! write(stdOutUnit,*) 'Loading particles: nChunkVals = ', nChunkVals
-!      do iParticle = 1, nChunkVals
-!        wasAdded = .FALSE.
-!        ! write(stdOutUnit,*) 'Appending particle'
-!
-!        call append_DA_particle_MEM( me        = particles,                       &
-!                                   & particle  = particleBuffer_MEM(iParticle),   &
-!                                   & length    = 1,                               &
-!                                   & wasAdded  = wasAdded                         ) 
-!
-!      end do
-!
-!      iStart = iStart + chunkSize
-!    end do chunkLoop
-!
-!    deallocate( particleBuffer_MEM )
-!
-!  end subroutine load_particle_data_MEM
-
-  subroutine mus_load_particle_data_chunk( conf, parent, particleBuffer, &
-                                         & nChunkVals, key, iStart       )
-    
-    type(flu_State), intent(in) :: conf
-
-    !> Handle to parent table if position, velocity tables etc are inside
-    !! another table
-    integer, intent(in), optional :: parent
-
-    ! Buffer to hold the data read from chunk
-    type(mus_particle_MEM_type), allocatable, intent(inout) :: particleBuffer(:)
-    
-    ! Number of values actually read from table
-    ! If entire buffer is filled, nChunkVals = size(particleBuffer)
-    integer, intent(out) :: nChunkVals
-
-    ! key = 'position', 'velocity', 'radius' or 'mass'
-    character(len=*), intent(in) :: key
-    ! Index to start reading the lua array at
-    integer, intent(in) :: iStart
-
-    !--------------------------------------------!
-    integer :: iError
-    integer :: vErr(6)
-    real(kind=rk) :: vecBuffer(6)
-    real(kind=rk) :: realBuffer
-
-    integer :: nChunk
-
-    integer :: nVals
-    integer :: thandle
-    integer :: iParticle, iChunk
-    logical :: wasAdded
-    !--------------------------------------------!
-    iError = 0
-    nChunkVals = 0
-    
-    if( .NOT.( allocated( particleBuffer ) ) ) then
-      write(stdOutUnit,*) 'ERROR mus_load_particle_data_chunk:'
-      call tem_abort( 'particleBuffer not allocated')
-    end if
-
-    ! Number of elements to read = size of particleBuffer
-    nChunk = size(particleBuffer)
-
-    ! Determine whether we're loading a vector or scalar quantity
-    if( key == 'position' .OR. key == 'velocity' .OR. key == 'force' ) then
-      ! initialize vector particle quantity
-      ! call aot_table_open(L = conf, thandle = thandle, key = key)
-      call aot_table_open(L       = conf,    &
-        &                 thandle = thandle, &
-        &                 parent  = parent,  &
-        &                 key     = key      )
-      if (thandle /= 0) then
-        ! get the number of position vectors, should be equal to Nparticles
-        nVals = aot_table_length(L=conf, thandle=thandle)
-        
-        ! Loop over all the position vals
-        iChunk = 1
-        do iParticle=iStart, iStart + nChunk - 1
-
-          ! Check to make sure we haven't reached the end of the lua table
-          if( iParticle > nVals ) exit 
-
-          ! Get the entire position vector
-          call aot_get_val( L = conf, thandle = thandle, &
-                          & pos = iParticle, val = vecBuffer, &
-                          & ErrCode = vErr, &
-                          & default = [0.0_double_k, 0.0_double_k, &
-                          &            0.0_double_k, 0.0_double_k, &
-                          &            0.0_double_k, 0.0_double_k ])
-          
-          if (btest(iError, aoterr_Fatal)) then
-            write(*,*) 'FATAL Error occured, while retrieving particle pos'
-            if (btest(iError, aoterr_NonExistent)) write(*,*) &
-              &  'Variable not existent!'
-            if (btest(iError, aoterr_WrongType)) write(*,*) &
-              &  'Variable has wrong type!'
-          else
-            if (btest(iError, aoterr_NonExistent)) write(*,*) &
-              &  'Variable not set in' &
-              &  // ' config, Using default value!'
-          end if
-
-          ! Copy property to the particleBuffer
-          if( key == 'position' ) then
-            particleBuffer(iChunk)%pos(1:6) = vecBuffer(1:6)
-            particleBuffer(iChunk)%particleID = iParticle
-          else if( key == 'velocity' ) then
-            particleBuffer(iChunk)%vel(1:6) = vecBuffer(1:6)
-          else if( key == 'force' ) then
-            particleBuffer(iChunk)%Fext(1:6) = vecBuffer(1:6)
-          end if
-
-          iChunk = iChunk + 1
-
-          ! Increment nChunkVals to signify we've read another chunk
-          nChunkVals = nChunkVals + 1
-        end do
-        
-      end if
-      call aot_table_close(L = conf, thandle = thandle)
-
-
-    else if ( key == 'radius' .OR. key == 'mass' ) then
-      ! initialize scalar particle quantity
-      ! call aot_table_open(L = conf, thandle = thandle, key = key)
-      call aot_table_open(L       = conf,    &
-        &                 thandle = thandle, &
-        &                 parent  = parent,  &
-        &                 key     = key      )
-      if (thandle /= 0) then
-        ! get the number of position vectors, should be equal to Nparticles
-        nVals = aot_table_length(L=conf, thandle=thandle)
-        
-        iChunk = 1
-        do iParticle = iStart, iStart + nChunk - 1
-          
-          ! Check to make sure we haven't reached the end of the lua table
-          if( iParticle > nVals ) exit 
-          
-          call aot_get_val(L = conf, thandle = thandle, &
-            &              val = realBuffer, ErrCode = iError, &
-            &              pos = iParticle)
-          if (btest(iError, aoterr_Fatal)) then
-            write(*,*) 'FATAL Error occured, while retrieving radius'
-            if (btest(iError, aoterr_NonExistent)) write(*,*) &
-              &  'Variable not existent!'
-            if (btest(iError, aoterr_WrongType)) write(*,*) &
-              &  'Variable has wrong type!'
-          else
-            if (btest(iError, aoterr_NonExistent)) write(*,*) &
-              &  'Variable not set in' &
-              &  // ' config, Using default value!'
-          end if
-
-          ! Copy property to the particleBuffer
-          if( key == 'radius' ) then
-            particleBuffer(iChunk)%radius = realBuffer
-          else if ( key == 'mass' ) then
-            particleBuffer(iChunk)%mass = realBuffer
-          end if
-          
-          iChunk = iChunk + 1
-          nChunkVals = nChunkVals + 1
-        
-        end do
-      end if
-      call aot_table_close(L = conf, thandle = thandle)
-
-    else
-      write(stdOutUnit,'(A)') &
-        & 'Error MUS_LOAD_PARTICLE_DATA: unrecognized property'
-    end if ! particle property
-
-
-  end subroutine mus_load_particle_data_chunk
   
   subroutine mus_finalize_particleGroup( particleGroup )
 
@@ -1580,12 +1314,9 @@ end subroutine mus_load_particles
     logical, intent(out) :: flag
     ! ---------------------------------------------------- !
     integer :: shape_thandle, iError
-    character(len=LabelLen) :: shape_kind
-    real(kind=rk) :: vel(6), force(6), radius, mass
     real(kind=rk) :: default_force(6)
     real(kind=rk) :: default_vel(6)
     logical :: read_is_successful
-    logical :: init_particles_to_fluid_vel
     ! ---------------------------------------------------- !
     default_force = 0.0_rk
     default_vel = 0.0_rk
@@ -1785,7 +1516,7 @@ end subroutine mus_load_particles
     !> Handle to parent table in which the "shape" table exists 
     integer, intent(in) :: parent
     ! --------------------------------------- !
-    integer :: thandle, iError
+    integer :: iError
     logical :: flag, read_succesful
     ! --------------------------------------- !
     read_succesful = .TRUE.

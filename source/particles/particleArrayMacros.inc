@@ -709,7 +709,6 @@ end type
     integer :: nVals
     integer :: thandle
     integer :: iParticle, iChunk
-    logical :: wasAdded
     !--------------------------------------------!
     iError = 0
     nChunkVals = 0
