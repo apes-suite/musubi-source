@@ -984,6 +984,7 @@ subroutine mus_load_particles(particleGroup, conf, chunkSize, scheme, geometry, 
   integer :: iError
   !> Handle to particle table
   integer :: p_thandle
+  integer :: Nparticles
 
   integer :: lev
   real(kind=rk) :: dx
