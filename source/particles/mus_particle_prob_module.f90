@@ -36,7 +36,7 @@
 !!    Volume 19, Number 1, 1993, pages 22-32.
 
 module mus_particle_prob_module
-  use env_module,                        only : rk
+  use env_module, only : rk
   implicit none
 
   public
@@ -44,10 +44,11 @@ module mus_particle_prob_module
   type mus_particle_prob_dist_type
     real(kind=rk) :: mu
     real(kind=rk) :: sigma
-    
   end type mus_particle_prob_dist_type
 
-  contains
+
+contains
+
 
   !> This function evaluates the normal distribution function:
   !
@@ -245,44 +246,19 @@ module mus_particle_prob_module
     if ( ccum < tiny ( ccum ) ) then
       ccum = 0.0D+00
     end if
-
-    return
-  end
+  end subroutine cumnor
 
 
-  subroutine r8_swap ( x, y )
+  !> Swap two reals of kind rk
+  subroutine r8_swap (left, right)
+    real(kind = rk), intent(inout) :: left
+    real(kind = rk), intent(inout) :: right
 
-  !*****************************************************************************80
-  !
-  !! R8_SWAP swaps two R8 values.
-  !
-  !  Licensing:
-  !
-  !    This code is distributed under the GNU LGPL license.
-  !
-  !  Modified:
-  !
-  !    01 May 2000
-  !
-  !  Author:
-  !
-  !    John Burkardt
-  !
-  !  Parameters:
-  !
-  !    Input/output, real ( kind = rk ) X, Y.  On output, the values of X and
-  !    Y have been interchanged.
-  !
-    implicit none
-    real ( kind = rk ) x
-    real ( kind = rk ) y
-    real ( kind = rk ) z
+    real(kind = rk) :: tmp
 
-    z = x
-    x = y
-    y = z
-
-    return
-  end
+    tmp = left
+    left = right
+    right = tmp
+  end subroutine r8_swap
 
 end module mus_particle_prob_module
