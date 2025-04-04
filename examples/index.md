@@ -53,3 +53,6 @@ The example setups are structured according to the physics supported by Musubi:
 - Advection-Diffusion equations (Scalar transport equations)
     - [Nernst-Planck equation for ionic species transport](nernst_planck/index.html)
 - [Poisson equation](poisson/index.html)
+- Fluid Particle coupling 
+    - [fully resolved model](particles/index.html)
+    - [unresolved model](particles/index.html)
