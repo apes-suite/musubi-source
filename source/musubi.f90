@@ -64,7 +64,7 @@ program musubi
   ! include modules for coupled LBM-DEM simulations of solid particles
   use mus_particle_type_module,      only: mus_particle_group_type
   use mus_particle_config_module,    only: mus_finalize_particleGroup, &
-                                         & mus_load_particles
+    &                                      mus_load_particles
   use mus_particle_module,           only: mus_particles_initialize
   use mus_particle_timer_module,     only: mus_init_particleTimer
 
@@ -112,32 +112,34 @@ program musubi
   call mus_init_bcTimer( geometry%boundary%nBCtypes )
 
   ! initialize musubi
-  call mus_initialize( scheme        = scheme,                     &
-    &                  solverData    = solverData,                 &
-    &                  geometry      = geometry,                   &
-    &                  params        = params,                     &
-    &                  control       = control,                    &
-    &                  particle_kind = particleGroup%particle_kind )
+  call mus_initialize( scheme        = scheme,     &
+    &                  solverData    = solverData, &
+    &                  geometry      = geometry,   &
+    &                  params        = params,     &
+    &                  control       = control     )
 
-  call mus_load_particles( particleGroup = particleGroup, &
-                        & conf = params%general%solver%conf(1), &
-                        & chunkSize = 100,  &
-                        & scheme = scheme, &
-                        & geometry = geometry, &
-                        & myRank = params%general%proc%rank )
+  call mus_load_particles(                              &
+    &    particleGroup = particleGroup,                 &
+    &    particle_kind = trim(params%particle_kind),    &
+    &    conf          = params%general%solver%conf(1), &
+    &    chunkSize     = 100,                           &
+    &    scheme        = scheme,                        &
+    &    geometry      = geometry,                      &
+    &    myRank        = params%general%proc%rank       )
  
-  if( particleGroup%particle_kind /= 'none' ) then
-    call mus_particles_initialize( particleGroup = particleGroup, &
-                                 & scheme        = scheme,        &
-                                 & geometry      = geometry,      &
-                                 & params        = params         )   
+  if ( trim(params%particle_kind) /= 'none' ) then
+    call mus_particles_initialize(        &
+      &    particleGroup = particleGroup, &
+      &    scheme        = scheme,        &
+      &    geometry      = geometry,      &
+      &    params        = params         )   
   end if
 
   call mpi_barrier( MPI_COMM_WORLD, ierr )
 
 
   ! do main loop
-  if(particleGroup%particle_kind == 'none') then
+  if ( trim(params%particle_kind) == 'none') then
     call mus_solve( scheme     = scheme,     &
       &             solverData = solverData, &
       &             geometry   = geometry,   &
@@ -145,13 +147,13 @@ program musubi
       &             control    = control,    &
       &             adapt      = adapt       )
   else
-    call mus_solve_particles( scheme     = scheme,          &
-                &             solverData = solverData,      &
-                &             geometry   = geometry,        &
-                &             params     = params,          &
-                &             control    = control,         &
-                &             adapt      = adapt,           &
-                &             particleGroup = particleGroup )
+    call mus_solve_particles( scheme        = scheme,       &
+      &                       solverData    = solverData,   &
+      &                       geometry      = geometry,     &
+      &                       params        = params,       &
+      &                       control       = control,      &
+      &                       adapt         = adapt,        &
+      &                       particleGroup = particleGroup )
   end if
 
   ! finialize musubi
@@ -163,7 +165,7 @@ program musubi
     &                globIBM      = geometry%globIBM            )
 
   ! De-allocate particleGroup object
-  if( particleGroup%particle_kind /= 'none' ) then
+  if ( params%particle_kind /= 'none' ) then
     call mus_finalize_particleGroup( particleGroup )
   end if
 

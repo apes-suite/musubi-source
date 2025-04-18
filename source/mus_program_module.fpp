@@ -114,7 +114,7 @@ contains
   !> This routine load musubi configuration file and initialize construction
   !! flow, auxilary and main control routines
   subroutine mus_initialize( scheme, geometry, params, control, &
-                           & solverData, particle_kind          )
+    &                        solverData                         )
     ! -------------------------------------------------------------------------
     !> scheme type
     type( mus_scheme_type ),    intent(inout) :: scheme
@@ -127,8 +127,6 @@ contains
     !> contains pointer to scheme, physics types.
     !! passed to init_Scheme to build varSys
     type( mus_varSys_solverData_type ), target :: solverData
-    !> Particle kind, used to set appropriate compute routine
-    character(len=labelLen), intent(in) :: particle_kind
     ! ------------------------------------------------------------------------!
     integer :: iLevel, maxLevel
     ! ------------------------------------------------------------------------!
@@ -212,7 +210,7 @@ contains
     call mus_init_control( params%controlRoutine, control, &
       &                    geometry%tree%global%minLevel,  &
       &                    geometry%tree%global%maxLevel,  &
-      &                    particle_kind                   )
+      &                    params%particle_kind            )
 
     call tem_horizontalSpacer(fUnit = logUnit(1))
   end subroutine mus_initialize

@@ -205,8 +205,8 @@ contains
     
     ! For coupled LBM-DEM simulations with solid particles
     ! load data for particles from 'particles' table in musubi.lua, if present
-    call mus_load_particlekind( particleGroup = particleGroup,                &
-                              & conf          = params%general%solver%conf(1) )
+    call mus_load_particlekind( particle_kind = params%particle_kind,         &
+      &                         conf          = params%general%solver%conf(1) )
 
     call tem_horizontalSpacer(fUnit = logUnit(1))
 

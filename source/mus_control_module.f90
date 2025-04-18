@@ -161,7 +161,7 @@ contains
   !! - `multiLevel`: full multilevel, multiLevel routine
   !! - if nothing is given, the full multilevel, multiLevel routine is chosen
   subroutine mus_init_control( controlRoutine, me, minLevel, &
-                             & maxLevel, particle_kind       )
+    &                          maxLevel, particle_kind       )
     ! -------------------------------------------------------------------- !
     character(len=labelLen), intent(in) :: controlRoutine
     !> contains function pointer to point control routine

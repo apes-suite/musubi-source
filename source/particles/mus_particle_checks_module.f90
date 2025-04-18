@@ -141,8 +141,8 @@ module mus_particle_checks_module
     processMomentum = 0.0_rk
 
     ! Loop over particles and sum the momentum of particles owned by this process
-    if( particleGroup%particle_kind == 'DPS'             &
-      & .OR. particleGroup%particle_kind == 'DPS_twoway' ) then
+    if( params%particle_kind == 'DPS'             &
+      & .OR. params%particle_kind == 'DPS_twoway' ) then
       do iParticle = 1, particleGroup%particles_DPS%nvals
         if( particleGroup%particles_DPS%val(iParticle)%owner == myRank) then
           mp =  particleGroup%particles_DPS%val(iParticle)%mass

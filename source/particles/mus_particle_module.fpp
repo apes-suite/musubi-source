@@ -216,7 +216,7 @@ subroutine mus_particles_initialize( particleGroup, scheme, &
   dx = params%physics%dxLvl(lev) 
   
   ! ------ SET PROCEDURES TO USE FOR PARTICLEGROUP ------ !
-  select case( trim(particleGroup%particle_kind) )
+  select case( trim(params%particle_kind) )
     case('MEM')
       particleGroup%applyHydrodynamicForces => mus_particles_applyHydrodynamicForces_MEM
       particleGroup%moveParticles => mus_particles_move
@@ -346,7 +346,7 @@ subroutine mus_particles_initialize( particleGroup, scheme, &
   !-- Initialize the individual particles in this group --!
   iParticle = 1
 
-  select case ( trim(particleGroup%particle_kind) )
+  select case ( trim(params%particle_kind) )
     case ('MEM')
       open( pgDebugLog%lu, file=pgDebugLog%lfile, status='old', position='append' )
       write( pgDebugLog%lu, *) "Initial particles in group: ", &

@@ -350,10 +350,6 @@ module mus_particle_type_module
       type(mus_particle_interpolator_type) :: interpolator
       ! ------------------------- !
   
-      !> Kind of particles to simulate. At present this can be
-      !! * Momentum-exchange Method (particle_kind = 'MEM')
-      character(len=labelLen) :: particle_kind
-  
       ! Number of particles in this group
       integer :: nParticles
     
@@ -998,15 +994,16 @@ contains
   end subroutine printParticleGroup2_MEM
 
 
-  subroutine printParticleGroupData(particleGroup, logUnit)
+  subroutine printParticleGroupData(particleGroup, particle_kind, logUnit)
     !> Particle group to print
     type(mus_particle_group_type), intent(in) :: particleGroup
+    character(len=*), intent(in) :: particle_kind
     !> Unit to write output to
     integer, intent(in) :: logUnit
     !------------------------------------------------------------------------
     !------------------------------------------------------------------------
     write(logUnit,*) '-------- PARTICLEGROUP DATA ---------'
-    write(logUnit,*) 'particle_kind = ', trim(particleGroup%particle_kind)
+    write(logUnit,*) 'particle_kind = ', trim(particle_kind)
     write(logUnit,*) 'nParticles = ', particleGroup%nParticles
     write(logUnit,*) 'enableCollisions = ', particleGroup%enableCollisions
     if( particleGroup%enableCollisions ) then

@@ -99,6 +99,7 @@ module mus_particle_config_module
   use tem_grow_array_module, only: append, destroy, empty
   use tem_aux_module, only: tem_abort
   use tem_timer_module, only: tem_startTimer, tem_stopTimer
+  use tem_logging_module, only: logUnit
 
   use flu_kinds_module, only: double_k
   use aotus_module, only: flu_State, open_config_file,   &
@@ -133,7 +134,6 @@ module mus_particle_config_module
     &   destroy_da_particle_MEM,      &
     &   init_da_particle_DPS,         &
     &   append_da_particle_DPS,       &
-    &   printParticleGroupData,       &
     &   destroy_da_particle_DPS,      &
     &   maxContainerSize
   use mus_particle_boundary_module, only: &
@@ -164,7 +164,6 @@ module mus_particle_config_module
     &   init_particle_creator_from_blob,       &
     &   init_particle_creator_from_blob_prism, &
     &   particle_creator
-
 
   implicit none
 
@@ -269,8 +268,8 @@ contains
           interpolator%bnd_z(1) = 0
           interpolator%bnd_z(2) = 0
         case default
-          write(stdOutUnit,*) 'ERROR mus_load_particle_interpolation layout kind unknown'
-          write(stdOutUnit,*) 'ABORTING'
+          write(logUnit(1),*) 'ERROR mus_load_particle_interpolation layout kind unknown'
+          write(logUnit(1),*) 'ABORTING'
           call tem_abort()
         end select
 
@@ -282,7 +281,7 @@ contains
         &               ErrCode = iError         )
 
       if (btest(iError, aoterr_Fatal)) then
-        write(stdOutUnit,*) 'FATAL Error occured, while retrieving particle interpolation kind:'
+        write(logUnit(1),*) 'FATAL Error occured, while retrieving particle interpolation kind:'
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
         if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
       end if
@@ -332,8 +331,8 @@ contains
             interpolator%getWght_z => intp_1D_peskin
           end if
         case default
-          write(stdOutUnit,*) 'ERROR mus_load_particle_interpolation layout kind unknown'
-          write(stdOutUnit,*) 'ABORTING'
+          write(logUnit(1),*) 'ERROR mus_load_particle_interpolation layout kind unknown'
+          write(logUnit(1),*) 'ABORTING'
           call tem_abort()
       end select
 
@@ -367,7 +366,7 @@ contains
       call aot_get_val(L = conf, thandle = thandle, key = 'name', &
         &              val = stringBuffer, ErrCode = iError           )
       if (btest(iError, aoterr_Fatal)) then
-        write(stdOutUnit,*) 'FATAL Error occured, while retrieving tracker{name}:'
+        write(logUnit(1),*) 'FATAL Error occured, while retrieving tracker{name}:'
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
         if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
       end if
@@ -378,7 +377,7 @@ contains
       call aot_get_val(L = conf, thandle = thandle, key = 'trackertype', &
         &              val = stringBuffer, ErrCode = iError           )
       if (btest(iError, aoterr_Fatal)) then
-        write(stdOutUnit,*) 'FATAL Error occured, while retrieving tracker{trackertype}:'
+        write(logUnit(1),*) 'FATAL Error occured, while retrieving tracker{trackertype}:'
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
         if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
       end if
@@ -508,7 +507,7 @@ contains
         &              val = realBuffer, ErrCode = iError               )
 
       if (btest(iError, aoterr_Fatal)) then
-        write(stdOutUnit,*) 'FATAL Error occured, while retrieving tracker{length1}:'
+        write(logUnit(1),*) 'FATAL Error occured, while retrieving tracker{length1}:'
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
         if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
       end if
@@ -518,7 +517,7 @@ contains
       call aot_get_val(L = conf, thandle = thandle, key = 'length2', &
         &              val = realBuffer, ErrCode = iError               )
       if (btest(iError, aoterr_Fatal)) then
-        write(stdOutUnit,*) 'FATAL Error occured, while retrieving tracker{length2}:'
+        write(logUnit(1),*) 'FATAL Error occured, while retrieving tracker{length2}:'
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
         if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
       end if
@@ -529,7 +528,7 @@ contains
       tracker%active = .TRUE.
 
       ! Print tracker data to make sure it was loaded correctly
-      call printDebugTrackerData( debugTracker = tracker, logUnit = stdOutUnit )
+      call printDebugTrackerData( debugTracker = tracker, logUnit = logUnit(6) )
 
     else
       ! Cannot find debug tracking part of particles table.
@@ -664,7 +663,7 @@ contains
     else
         ! If boundaries_handle == 0 then turn off useBnd to indicate we are not
         ! considering any particle-boundary interactions in this simulation.
-        write(stdOutUnit,*) "Particle boundary data NOT loaded, particles will be removed ", &
+        write(logUnit(1),*) "Particle boundary data NOT loaded, particles will be removed ", &
         & "from simulation upon exiting domain"
         pgBndData%useBnd = .FALSE.
     end if ! boundaries_handle /= 0
@@ -706,8 +705,8 @@ contains
         buff = default_val
         flag = .FALSE.
       else
-        write(stdOutUnit,*) 'ERROR: mus_load_real failed to retrieve key ', trim(key)
-        write(stdOutUnit,*) 'ABORTING!'
+        write(logUnit(1),*) 'ERROR: mus_load_real failed to retrieve key ', trim(key)
+        write(logUnit(1),*) 'ABORTING!'
         flag = .FALSE.
         call tem_abort()
       end if ! present(default_val)
@@ -812,10 +811,10 @@ contains
         &              val = buff, ErrCode = iError, default = default_val )
 
       if (btest(iError, aoterr_Fatal)) then
-        write(stdOutUnit,*) 'mus_load_int failed to retrieve key ', trim(key)
+        write(logUnit(1),*) 'mus_load_int failed to retrieve key ', trim(key)
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
         if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
-        write(stdOutUnit,*) 'using default value of ', default_val
+        write(logUnit(1),*) 'using default value of ', default_val
         flag = .FALSE.
       else
         flag = .TRUE.
@@ -825,10 +824,10 @@ contains
         &              val = buff, ErrCode = iError )
 
       if (btest(iError, aoterr_Fatal)) then
-        write(stdOutUnit,*) 'ERROR: mus_load_int failed to retrieve key ', trim(key)
+        write(logUnit(1),*) 'ERROR: mus_load_int failed to retrieve key ', trim(key)
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
         if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
-        write(stdOutUnit,*) 'ABORTING!'
+        write(logUnit(1),*) 'ABORTING!'
         flag = .FALSE.
         call tem_abort()
       end if
@@ -836,20 +835,29 @@ contains
 
   end subroutine mus_load_int
 
-  subroutine mus_load_particlekind(particleGroup, conf)
+  !> Get the particle kind from the configuration
+  !!
+  !! Resulting string is one of:
+  !! * Momentum-exchange method (kind = 'MEM')
+  !! * Discrete Particle Simulations (kind = 'DPS')
+  !! * One-way coupled Discrete Particle Simulations (kind = 'DPS_oneway')
+  !! or 'none', if there are no particle to be modeled
+  subroutine mus_load_particlekind(particle_kind, conf)
     !> particleGroup to add particles loaded from the lua script to
-    type(mus_particle_group_type), intent(inout) :: particleGroup
+    character(len=*), intent(inout) :: particle_kind
     !> configuration
     type(flu_State) :: conf
     ! -----------------------------------------!
     integer :: p_thandle
     integer :: iError
-    character(len=labelLen) :: particle_kind
     ! -----------------------------------------!
     !-- Open particle table if it exists --!
     call aot_table_open( L=conf, thandle=p_thandle, key='particles' )
 
+    particle_kind = 'none'
+
     if( p_thandle > 0 ) then
+
       ! Set default particle kind to Momentum Exchange Method (MEM)
       particle_kind = 'DPS'
 
@@ -866,15 +874,33 @@ contains
         &               ErrCode = iError         )
 
       if (btest(iError, aoterr_Fatal)) then
-        write(stdOutUnit,*) 'FATAL Error occured, while retrieving particle kind:'
+        write(logUnit(1),*) 'FATAL Error occured, while retrieving particle kind:'
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
         if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
       end if
 
-      particleGroup%particle_kind = particle_kind
-    else
-      particleGroup%particle_kind = 'none'
     end if
+
+    select case(trim(particle_kind))
+    case('MEM', 'MEM_unittest')
+      write(logUnit(1),*) 'MEM particle modelling:', &
+        &                 trim(particle_kind)
+    case('DPS', 'DPS_twoway', 'DPS_oneway', 'DPS_unittest')
+      write(logUnit(1),*) 'DPS particle modelling:', &
+        &                 trim(particle_kind)
+    case('none')
+      write(logUnit(1),*) 'NO particle modelling'
+
+    case default
+      write(logUnit(1),*) 'ERROR: unknown particle model: ', &
+        &                 trim(particle_kind)
+      write(logUnit(1),*) 'particles.kind needs to be one of:'
+      write(logUnit(1),*) ' * MEM, MEM_unittest'
+      write(logUnit(1),*) ' * DPS, DPS_oneway, DPS_twoway, DPS_unittest'
+      write(logUnit(1),*) ' * none'
+      write(logUnit(1),*) 'Aborting...'
+      call tem_abort()
+    end select
 
   end subroutine mus_load_particlekind
 
@@ -971,9 +997,12 @@ contains
   !> Routine to load the particle data from the musubi.lua file
   !! meant to be called from within mus_load_config after the lua
   !! file has already been opened
-  subroutine mus_load_particles(particleGroup, conf, chunkSize, scheme, geometry, myRank)
+  subroutine mus_load_particles( particleGroup, particle_kind, conf, &
+    &                            chunkSize, scheme, geometry, myRank )
     !> particleGroup to add particles loaded from the lua script to
     type(mus_particle_group_type), intent(inout) :: particleGroup
+    !> Kind of particle modelling to use
+    character(len=*), intent(in) :: particle_kind
     !> configuration
     type(flu_State) :: conf
     !> Size of the number of particles to be read in one chunk from the lua table
@@ -1002,7 +1031,6 @@ contains
 
     logical :: predefined
     logical :: flag
-    character(len=labelLen) :: particle_kind
     character(len=labelLen) :: blob_type
     ! -----------------------------------------!
     schemeKind = scheme%header%kind
@@ -1014,39 +1042,16 @@ contains
     !-- Open particle table if it exists --!
     call aot_table_open( L=conf, thandle=p_thandle, key='particles' )
 
-    if( p_thandle > 0 ) then
+    if ((p_thandle > 0) .and. (trim(particle_kind) /= 'none')) then
 
-      if(myRank == 0) then
-        write(stdOutUnit,*) '---- PARTICLE MUSUBI SETTINGS ----'
-      end if
-      ! Set default particle kind to Momentum Exchange Method (MEM)
-      particle_kind = 'MEM'
-
-      ! -- GET PARTICLE KIND TO USE --!
-      ! Available kinds:
-      ! * Momentum-exchange method (kind = 'MEM')
-      ! * Discrete Particle Simulations (kind = 'DPS')
-      ! * One-way coupled Discrete Particle Simulations (kind = 'DPS_oneway')
-      call aot_get_val( L       = conf,          &
-        &               thandle = p_thandle,     &
-        &               key     = 'kind',        &
-        &               val     = particle_kind, &
-        &               default = 'MEM',         &
-        &               ErrCode = iError         )
-
-      if (btest(iError, aoterr_Fatal)) then
-        write(stdOutUnit,*) 'FATAL Error occured, while retrieving particle kind:'
-        if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
-        if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
-      end if
-
-      particleGroup%particle_kind = particle_kind
+      write(logUnit(1),*) '---- PARTICLE MUSUBI SETTINGS ----'
 
       ! Check to make sure particle kind is compatible with fluid kind
-      flag = check_particle_scheme_kind_compatibility( particle_kind = particleGroup%particle_kind, &
-                                                     & scheme_kind   = schemeKind                   )
+      flag = check_particle_scheme_kind_compatibility( &
+        &      particle_kind = particle_kind,          &
+        &      scheme_kind   = schemeKind              )
       if( .NOT. flag) then
-        write(stdOutUnit,*) 'ERROR: particle kind is not compatible with schemeKind! ABORTING!'
+        write(logUnit(1),*) 'ERROR: particle kind is not compatible with schemeKind! ABORTING!'
         call tem_abort()
       end if
 
@@ -1149,12 +1154,12 @@ contains
 
       ! See if we are using a predefined shape to load a "blob" of particles
       ! or if we are loading each particle position individually.
-      call aot_get_val( L       = conf,          &
-        &               thandle = p_thandle,     &
-        &               key     = 'predefined',  &
-        &               val     = predefined,    &
-        &               default = .FALSE.,       &
-        &               ErrCode = iError         )
+      call aot_get_val( L       = conf,         &
+        &               thandle = p_thandle,    &
+        &               key     = 'predefined', &
+        &               val     = predefined,   &
+        &               default = .FALSE.,      &
+        &               ErrCode = iError        )
 
       call aot_get_val( L       = conf,                   &
         &               thandle = p_thandle,              &
@@ -1170,17 +1175,15 @@ contains
 
         case('DPS', 'DPS_twoway', 'DPS_oneway', 'DPS_unittest')
           ! ------ LOAD INTERPOLATION STENCIL -------!
-          call mus_load_particle_interpolation(                             &
-                                & conf         = conf,                      &
-                                & p_thandle    = p_thandle,                 &
-                                & layout       = layout,                    &
-                                & interpolator = particleGroup%interpolator )
-          if(myRank == 0) then
-            write(stdOutUnit,*) '-- Settings for interpolation of fluid props --'
-            call printParticleInterpolator(                                 &
-                               & interpolator = particleGroup%interpolator, &
-                               & logUnit      = stdOutUnit                  )
-          end if
+          call mus_load_particle_interpolation(            &
+            &    conf         = conf,                      &
+            &    p_thandle    = p_thandle,                 &
+            &    layout       = layout,                    &
+            &    interpolator = particleGroup%interpolator )
+          write(logUnit(1),*) '-- Settings for interpolation of fluid props --'
+          call printParticleInterpolator(                   &
+            &    interpolator = particleGroup%interpolator, &
+            &    logUnit      = logUnit(1)                  )
 
           call init_da_particle_DPS(particleGroup%particles_DPS, 1)
         end select
@@ -1189,44 +1192,42 @@ contains
       ! Now load the particle positions into the particle creator. We can do this
       ! using either predefined shape (called a particleblob) or by loading
       ! individual positions from the lua file.
-      if(predefined) then
+      if (predefined) then
         ! Load parameters of the cylindrical particleblob (length, radius, etc.)
         call mus_load_predefined_particleblob( conf         = conf,         &
-                                             & parent       = p_thandle,    &
-                                             & blob_type    = blob_type,    &
-                                             & flag         = flag          )
+          &                                    parent       = p_thandle,    &
+          &                                    blob_type    = blob_type,    &
+          &                                    flag         = flag          )
 
-        if(myRank == 0) then
-          select case(blob_type)
-          case('cylinder')
-            call print_particleblob( particleblob = particleblob, &
-                                   & logUnit      = stdOutUnit    )
-          case('prism')
-            call print_particleblob_prism( particleblob = particleblob_prism, &
-                                         & logUnit      = stdOutUnit          )
-          end select
-        end if
+        select case(blob_type)
+        case('cylinder')
+          call print_particleblob( particleblob = particleblob, &
+            &                      logUnit      = logUnit(1)    )
+        case('prism')
+          call print_particleblob_prism( particleblob = particleblob_prism, &
+            &                            logUnit      = logUnit(1)          )
+        end select
 
         ! Now initialize the particle creator using the data inside particleBlob
         select case(blob_type)
         case('cylinder')
           ! Generate the particle initial positions inside this blob
-          call init_particle_creator_from_blob(                                &
-                                        & particle_creator = particle_creator, &
-                                        & particleblob     = particleblob,     &
-                                        & Nparticles       = nParticles,       &
-                                        & scheme           = scheme,           &
-                                        & geometry         = geometry,         &
-                                        & myRank           = myRank            )
+          call init_particle_creator_from_blob(       &
+            &    particle_creator = particle_creator, &
+            &    particleblob     = particleblob,     &
+            &    Nparticles       = nParticles,       &
+            &    scheme           = scheme,           &
+            &    geometry         = geometry,         &
+            &    myRank           = myRank            )
         case('prism')
           ! Generate the particle initial positions inside this blob
-          call init_particle_creator_from_blob_prism(                          &
-                                      & particle_creator = particle_creator,   &
-                                      & particleblob     = particleblob_prism, &
-                                      & Nparticles       = nParticles,         &
-                                      & scheme           = scheme,             &
-                                      & geometry         = geometry,           &
-                                      & myRank           = myRank              )
+          call init_particle_creator_from_blob_prism(   &
+            &    particle_creator = particle_creator,   &
+            &    particleblob     = particleblob_prism, &
+            &    Nparticles       = nParticles,         &
+            &    scheme           = scheme,             &
+            &    geometry         = geometry,           &
+            &    myRank           = myRank              )
         end select
 
       else
@@ -1234,32 +1235,32 @@ contains
         ! individually
         select case(particle_kind)
           case( 'MEM', 'MEM_unittest' )
-            write(stdOutUnit,*) 'Loading particle kind: MEM'
+            write(logUnit(1),*) 'Loading particle kind: MEM'
             ! Load the individual particle initial positions from lua script
-            call load_particle_mem_creator_data(                               &
-                                        & conf             = conf,             &
-                                        & parent           = p_thandle,        &
-                                        & particle_creator = particle_creator, &
-                                        & Nparticles       = Nparticles,       &
-                                        & chunksize        = chunkSize,        &
-                                        & scheme           = scheme,           &
-                                        & geometry         = geometry,         &
-                                        & myrank           = myrank            )
+            call load_particle_mem_creator_data(        &
+              &    conf             = conf,             &
+              &    parent           = p_thandle,        &
+              &    particle_creator = particle_creator, &
+              &    Nparticles       = Nparticles,       &
+              &    chunksize        = chunkSize,        &
+              &    scheme           = scheme,           &
+              &    geometry         = geometry,         &
+              &    myrank           = myrank            )
 
           case('DPS', 'DPS_twoway', 'DPS_oneway', 'DPS_unittest')
             ! Load the individual particle initial positions from lua script
-            call load_particle_dps_creator_data(                               &
-                                        & conf             = conf,             &
-                                        & parent           = p_thandle,        &
-                                        & particle_creator = particle_creator, &
-                                        & Nparticles       = Nparticles,       &
-                                        & chunksize        = chunkSize,        &
-                                        & scheme           = scheme,           &
-                                        & geometry         = geometry,         &
-                                        & myrank           = myrank            )
+            call load_particle_dps_creator_data(        &
+              &    conf             = conf,             &
+              &    parent           = p_thandle,        &
+              &    particle_creator = particle_creator, &
+              &    Nparticles       = Nparticles,       &
+              &    chunksize        = chunkSize,        &
+              &    scheme           = scheme,           &
+              &    geometry         = geometry,         &
+              &    myrank           = myrank            )
 
           case default
-            write(stdOutUnit,*) 'FATAL Error occurred, particle kind unknown:'
+            write(logUnit(1),*) 'FATAL Error occurred, particle kind unknown:'
             call tem_abort()
         end select ! particle kind
 
@@ -1269,15 +1270,11 @@ contains
 
     else
       particleGroup%nParticles = 0
-      particleGroup%particle_kind = 'none'
-      if(myRank == 0) write(stdOutUnit,*) 'mus_load_particles: no particle table found'
+      write(logUnit(1),*) 'mus_load_particles: no particle table found'
     end if ! particle table exists
 
-    if(myRank == 0) then
-      call mus_particles_print_config( particleGroup = particleGroup, &
-                                    & logUnit = stdOutUnit, &
-                                    & myRank = myRank )
-    end if
+    call mus_particles_print_config( particleGroup = particleGroup, &
+      &                              logUnit = logUnit(1)           )
 
   end subroutine mus_load_particles
 
@@ -1299,11 +1296,9 @@ contains
 
   end subroutine mus_finalize_particleGroup
 
-  subroutine mus_particles_print_config(particleGroup, logUnit, myRank)
+  subroutine mus_particles_print_config(particleGroup, logUnit)
     type(mus_particle_group_type), intent(in) :: particleGroup
     integer, intent(in) :: logUnit
-    !> This process rank
-    integer, intent(in) :: myRank
     ! ------------------------------------ !
     write(logUnit,'(A)') '---- PARTICLEGROUP SETTINGS ----'
     write(logUnit,'(A,L2)')    'enableCollisions = ', particleGroup%enableCollisions

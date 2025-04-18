@@ -119,9 +119,9 @@ subroutine mus_particles_initialize_communication( particleGroup, scheme, geomet
   ! NOTE: this is not necessary for DPS simulations - there the procs to 
   ! communicate with will be the same as for the fluid since particles are
   ! smaller than a lattice site.
-  select case( trim(particleGroup%particle_kind) )
+  select case( trim(params%particle_kind) )
     case( 'MEM' )
-      if( particleGroup%particle_kind /= 'none') then
+      if( params%particle_kind /= 'none') then
         dpad = particleGroup%halo_distance
         call find_particle_comm_procs4( prunedProcs    = particleCommProcs,        &
                                       & scheme   = scheme,                   &
@@ -138,7 +138,7 @@ subroutine mus_particles_initialize_communication( particleGroup, scheme, geomet
         nProcs = 0
       end if
     case( 'DPS', 'DPS_unittest', 'DPS_twoway' )
-      if( particleGroup%particle_kind /= 'none') then
+      if( params%particle_kind /= 'none') then
         ! For DPS the procs to communicate particles with are the same as the 
         ! procs in send + recv buffer for fluid elements
         dpad = particleGroup%halo_distance
@@ -157,7 +157,7 @@ subroutine mus_particles_initialize_communication( particleGroup, scheme, geomet
         nProcs = 0
       end if
     case( 'DPS_oneway' )
-      if( particleGroup%particle_kind /= 'none') then
+      if( params%particle_kind /= 'none') then
         dpad = dx
         call find_particle_comm_procs4( prunedProcs = particleCommProcs,        &
                                       & scheme      = scheme,                   &
