@@ -28,125 +28,146 @@
 
 module mus_particle_module
 
-use mpi
+  use mpi
+  
+  use env_module, only : rk, double_k, long_k, stdOutUnit, newunit
 
-use env_module,                        only : rk, double_k, long_k, stdOutUnit, newunit
-use tem_param_module,                  only : rho0_lat => rho0, cs2, cs2inv
-use tem_logging_module,                only : logUnit
-use tem_aux_module,                    only : tem_abort
-use tem_geometry_module,               only : tem_CoordOfReal, tem_PosOfId
-use tem_topology_module,               only : tem_IdOfCoord, tem_coordOfId, tem_FirstIdAtLevel
-use tem_construction_module,           only : tem_levelDesc_type
-use tem_varSys_module,                 only : tem_varSys_type
-use tem_varMap_module,                 only : tem_varMap_type
-use tem_stencil_module,                only : tem_stencilHeader_type,  &
-                                            & tem_stencil_findIndexOfDir
-use tem_property_module,               only : prp_solid, prp_particle, &
-                                            & prp_hasBnd, prp_sendHalo
-use tem_dyn_array_module,              only : init, append, destroy,             &
-                                            & empty, dyn_intArray_type,          &
-                                            & dyn_longArray_type, PosOfVal_long, &
-                                            & SortPosOfVal_long
-use tem_grow_array_module,             only : init, append, destroy, empty,   &
-                                            & grw_int2darray_type,            &
-                                            & grw_logical2darray_type,        &
-                                            & grw_intarray_type,              &
-                                            & grw_longarray_type,             &
-                                            & grw_real2darray_type
+  use tem_param_module,        only: rho0_lat => rho0, cs2, cs2inv
+  use tem_logging_module,      only: logUnit
+  use tem_aux_module,          only: tem_abort
+  use tem_geometry_module,     only: tem_CoordOfReal, tem_PosOfId
+  use tem_topology_module,     only: tem_IdOfCoord, tem_coordOfId, &
+    &                                tem_FirstIdAtLevel
+  use tem_construction_module, only: tem_levelDesc_type
+  use tem_varSys_module,       only: tem_varSys_type
+  use tem_varMap_module,       only: tem_varMap_type
+  use tem_stencil_module,      only: tem_stencilHeader_type,  &
+    &                                tem_stencil_findIndexOfDir
+  use tem_property_module,     only: prp_solid, prp_particle, &
+    &                                prp_hasBnd, prp_sendHalo
+  use tem_dyn_array_module,    only: init, append, destroy,             &
+    &                                empty, dyn_intArray_type,          &
+    &                                dyn_longArray_type, PosOfVal_long, &
+    &                                SortPosOfVal_long
+  use tem_grow_array_module,   only: init, append, destroy, empty, &
+    &                                grw_int2darray_type,          &
+    &                                grw_logical2darray_type,      &
+    &                                grw_intarray_type,            &
+    &                                grw_longarray_type,           &
+    &                                grw_real2darray_type
+  
+  use mus_geom_module,        only: mus_geom_type
+  use mus_scheme_type_module, only: mus_scheme_type
+  use mus_param_module,       only: mus_param_type
 
-use mus_geom_module,                   only : mus_geom_type
-use mus_scheme_type_module,            only : mus_scheme_type
-use mus_param_module,                  only : mus_param_type
-use mus_particle_type_module,          only : mus_particle_MEM_type,                 &
-                                            & mus_particle_DPS_type,                 &
-                                            & init_da_particle_DPS,                 &
-                                            & mus_particle_group_type,               &
-                                            & allocateProcessMasks,                  &
-                                            & printParticleGroup,                    &
-                                            & printParticleGroup2_MEM,                   &
-                                            & printParticleGroup2_DPS,               &
-                                            & printpIDlist,                          &
-                                            & remove_particle_from_da_particle_MEM,  &
-                                            & remove_particle_from_da_particle_DPS
-use mus_particle_comm_type_module,     only : init_mus_particles_comm_type,               &
-                                            & mus_particles_comm_init_vectorbuffer,       &
-                                            & mus_particles_comm_init_wallbuffer,         &
-                                            & mus_particles_comm_init_statebuffer,        &
-                                            & mus_particles_comm_init_posbuffer,          &
-                                            & mus_particles_comm_init_IDbuffer,           &
-                                            & mus_particles_comm_init_particlebuffer,     &
-                                            & mus_particles_initForceContributionMPItype, &
-                                            & mus_particles_initParticleStateMPItype,     &
-                                            & mus_particles_initPositionUpdateMPItype,    &
-                                            & mus_particles_initWallPosMPItype,           &
-                                            & mus_particles_initParticleInfoMPItype,      &
-                                            & print_particles_comm,                       &
-                                            & print_particles_pIDvectorbuffer,            &
-                                            & find_particle_comm_procs4,                  &
-                                            & mus_particles_communication_type,           &
-                                            & MPI_pIDvector_type,                         & 
-                                            & MPI_particleState_type,                     & 
-                                            & MPI_particleInfo_type 
-use mus_particle_comm_module,          only : exchangeForces,                             &
-                                            & exchangeParticlesToRemove,                  &
-                                            & exchangeParticlesToRemove_DPS,                  &
-                                            & exchangeVelocities,                         &
-                                            & exchangeParticleStates,                     &
-                                            & exchangeNewParticles_MEM,                       &
-                                            & exchangeNewParticles_DPS,                   &
-                                            & exchangeHydroForces_DPS,                    &
-                                            & mus_particles_initialize_communication
-use mus_particle_MEM_module,           only : mapToLattice,                    &
-                                            & initParticle_MEM,                &
-                                            & applyHydrodynamicForces,         &
-                                            & updateCoordOfOrigin,             &
-                                            & updateExclusionList,             &
-                                            & updateSolidNodes,                &
-                                            & updateFluidNeighbors,            &
-                                            & updateNewFluidNodes,             &
-                                            & destroyParticle_MEM,             &
-                                            & applyVelocityBounceback,         &
-                                            & checkForParticleOverlap,         &
-                                            & setToEquilibrium,                &
-                                            & make_pdf_tiny                   
-use mus_particle_DPS_module,           only : initParticle_DPS,                 &
-                                            & mapToLattice_DPS,                 &
-                                            & applyDragForce_DPS,               &
-                                            & applyDragForce_DPS_noeps,         &
-                                            & applyLiftForce_DPS,               &
-                                            & applyPressureForce_DPS,               &
-                                            & transferMomentumToFluid_DPS,      &
-                                            & mus_particles_updateFluidVolumeFraction,      &
-                                            & transferMomentumToFluid_DPS_twoway, &
-                                            & interpolateFluidProps,            &
-                                            & interpolateFluidProps_onewaycoupled,            &
-                                            & calcVelocityAndPressureGradient,  &
-                                            & calcVelocityAndPressureGradient_onewaycoupled,  &
-                                            & addParticleSourceToAuxField_DPS,  &
-                                            & mus_particles_DPS_interpolateFluidProperties, &
-                                            & mus_particles_DPS_interpolateFluidProperties_onewaycoupled
-use mus_particle_interpolation_module, only : init_particle_interpolator
-use mus_particle_aux_module,           only : findPartitionOfTreeID,            &
-                                            & cross_product, &
-                                            & getProcessBoundingBox 
-use mus_particle_logging_module,       only : closeParticleLog, getParticleLogUnit, &
-                                            & generateElemListLine
-use mus_particle_logging_type_module,  only : mus_particle_logging_type, &
-                                            & pgDebugLog,     &
-                                            & init_particle_logger
-use mus_particle_DEM_module,           only : DEMSubcycles_MEM, &
-                                            & DEMSubcycles_DPS, &
-                                            & DEMSubcycles_DPS_onewaycoupled
-use mus_particle_boundary_module,      only : pgBndData
-use mus_particle_creator_module,       only : create_particles_DPS, particle_creator
+  use mus_particle_type_module, only:         &
+    &   mus_particle_MEM_type,                &
+    &   mus_particle_DPS_type,                &
+    &   init_da_particle_DPS,                 &
+    &   mus_particle_group_type,              &
+    &   allocateProcessMasks,                 &
+    &   printParticleGroup,                   &
+    &   printParticleGroup2_MEM,              &
+    &   printParticleGroup2_DPS,              &
+    &   printpIDlist,                         &
+    &   remove_particle_from_da_particle_MEM, &
+    &   remove_particle_from_da_particle_DPS
+
+  use mus_particle_comm_type_module, only:          &
+    &   init_mus_particles_comm_type,               &
+    &   mus_particles_comm_init_vectorbuffer,       &
+    &   mus_particles_comm_init_wallbuffer,         &
+    &   mus_particles_comm_init_statebuffer,        &
+    &   mus_particles_comm_init_posbuffer,          &
+    &   mus_particles_comm_init_IDbuffer,           &
+    &   mus_particles_comm_init_particlebuffer,     &
+    &   mus_particles_initForceContributionMPItype, &
+    &   mus_particles_initParticleStateMPItype,     &
+    &   mus_particles_initPositionUpdateMPItype,    &
+    &   mus_particles_initWallPosMPItype,           &
+    &   mus_particles_initParticleInfoMPItype,      &
+    &   print_particles_comm,                       &
+    &   print_particles_pIDvectorbuffer,            &
+    &   find_particle_comm_procs4,                  &
+    &   mus_particles_communication_type,           &
+    &   MPI_pIDvector_type,                         & 
+    &   MPI_particleState_type,                     & 
+    &   MPI_particleInfo_type
+
+  use mus_particle_comm_module, only:  &
+    &   exchangeForces,                &
+    &   exchangeParticlesToRemove,     &
+    &   exchangeParticlesToRemove_DPS, &
+    &   exchangeVelocities,            &
+    &   exchangeParticleStates,        &
+    &   exchangeNewParticles_MEM,      &
+    &   exchangeNewParticles_DPS,      &
+    &   exchangeHydroForces_DPS,       &
+    &   mus_particles_initialize_communication
+
+  use mus_particle_MEM_module, only: &
+    &   mapToLattice,                &
+    &   initParticle_MEM,            &
+    &   applyHydrodynamicForces,     &
+    &   updateCoordOfOrigin,         &
+    &   updateExclusionList,         &
+    &   updateSolidNodes,            &
+    &   updateFluidNeighbors,        &
+    &   updateNewFluidNodes,         &
+    &   destroyParticle_MEM,         &
+    &   applyVelocityBounceback,     &
+    &   checkForParticleOverlap,     &
+    &   setToEquilibrium,            &
+    &   make_pdf_tiny                   
+
+  use mus_particle_DPS_module, only:                   &
+    &   initParticle_DPS,                              &
+    &   mapToLattice_DPS,                              &
+    &   applyDragForce_DPS,                            &
+    &   applyDragForce_DPS_noeps,                      &
+    &   applyLiftForce_DPS,                            &
+    &   applyPressureForce_DPS,                        &
+    &   transferMomentumToFluid_DPS,                   &
+    &   mus_particles_updateFluidVolumeFraction,       &
+    &   transferMomentumToFluid_DPS_twoway,            &
+    &   interpolateFluidProps,                         &
+    &   interpolateFluidProps_onewaycoupled,           &
+    &   calcVelocityAndPressureGradient,               &
+    &   calcVelocityAndPressureGradient_onewaycoupled, &
+    &   addParticleSourceToAuxField_DPS,               &
+    &   mus_particles_DPS_interpolateFluidProperties,  &
+    &   mus_particles_DPS_interpolateFluidProperties_onewaycoupled
+
+  use mus_particle_interpolation_module, only: init_particle_interpolator
+
+  use mus_particle_aux_module, only: &
+    &   findPartitionOfTreeID,       &
+    &   cross_product,               &
+    &   getProcessBoundingBox 
+
+  use mus_particle_logging_module, only: &
+    &   closeParticleLog,                &
+    &   getParticleLogUnit,              &
+    &   generateElemListLine
+
+  use mus_particle_logging_type_module, only: &
+    &   mus_particle_logging_type,            &
+    &   pgDebugLog,                           &
+    &   init_particle_logger
+
+  use mus_particle_DEM_module, only: &
+    &   DEMSubcycles_MEM,            &
+    &   DEMSubcycles_DPS,            &
+    &   DEMSubcycles_DPS_onewaycoupled
+
+  use mus_particle_boundary_module, only: pgBndData
+  use mus_particle_creator_module, only: create_particles_DPS, particle_creator
+
+  implicit none
 
 
-
-
-implicit none
-
-!-- PARTICLE MODULE PROCEDURES --!
 contains
+
 
 !> Swap index of the particle force buffer
 subroutine swapFBuff(this)

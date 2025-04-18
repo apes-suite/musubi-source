@@ -172,28 +172,28 @@ contains
         & = scheme%state(iLevel)%val(:, scheme%pdf(iLevel)%nNext)
     end do
 
-    if( trim(scheme%header%kind) == 'fluid_GNS' &
-    & .OR. trim(scheme%header%kind) == 'fluid_incompressible_GNS' ) then
-      call mus_particles_initFluidVolumeFraction(                             &
-                              & scheme   = scheme,                            &
-                              & geometry = geometry,                          &
-                              & nElems   = scheme%pdf(maxLevel)%nElems_local  )
+    if ( trim(scheme%header%kind) == 'fluid_GNS' &
+      & .OR. trim(scheme%header%kind) == 'fluid_incompressible_GNS' ) then
+      call mus_particles_initFluidVolumeFraction(                            &
+        &                       scheme   = scheme,                           &
+        &                       geometry = geometry,                         &
+        &                       nElems   = scheme%pdf(maxLevel)%nElems_local )
     end if
 
     ! initialize each field boundary by looping over the field inside
     ! init_boundary_field
-    call mus_init_boundary( field        = scheme%field,          &
-      &                     pdf          = scheme%pdf,            &
-      &                     state        = scheme%state,          &
-      &                     auxField     = scheme%auxField,       &
-      &                     tree         = geometry%tree,         &
-      &                     leveldesc    = scheme%levelDesc,      &
-      &                     layout       = scheme%layout,         &
-      &                     schemeHeader = scheme%header,         &
-      &                     varSys       = scheme%varSys,         &
-      &                     derVarPos    = scheme%derVarPos,      &
-      &                     globBC       = scheme%globBC,         &
-      &                     bc_prop      = geometry%boundary      )
+    call mus_init_boundary( field        = scheme%field,     &
+      &                     pdf          = scheme%pdf,       &
+      &                     state        = scheme%state,     &
+      &                     auxField     = scheme%auxField,  &
+      &                     tree         = geometry%tree,    &
+      &                     leveldesc    = scheme%levelDesc, &
+      &                     layout       = scheme%layout,    &
+      &                     schemeHeader = scheme%header,    &
+      &                     varSys       = scheme%varSys,    &
+      &                     derVarPos    = scheme%derVarPos, &
+      &                     globBC       = scheme%globBC,    &
+      &                     bc_prop      = geometry%boundary )
 
     call tem_horizontalSpacer(fUnit = logUnit(1))
 
@@ -214,7 +214,6 @@ contains
       &                    geometry%tree%global%maxLevel,  &
       &                    particle_kind                   )
 
-
     call tem_horizontalSpacer(fUnit = logUnit(1))
   end subroutine mus_initialize
 ! **************************************************************************** !
@@ -225,17 +224,17 @@ contains
   subroutine mus_solve( scheme, geometry, params, control, solverData, adapt )
     ! ------------------------------------------------------------------------!
     !> scheme type
-    type( mus_scheme_type ),    intent(inout) :: scheme
+    type( mus_scheme_type ), intent(inout) :: scheme
     !> Treelmesh data
-    type( mus_geom_type ),      intent(inout) :: geometry
+    type( mus_geom_type ), intent(inout) :: geometry
     !> Global parameters
-    type( mus_param_type ),     intent(inout) :: params
+    type( mus_param_type ), intent(inout) :: params
     !> control routine
-    type( mus_control_type ),   intent(in)    :: control
+    type( mus_control_type ), intent(in)    :: control
     !> contains pointer to scheme, physics types
     type( mus_varSys_solverData_type ), target :: solverData
     !> mesh adaptation
-    type(tem_adapt_type),       intent(inout) :: adapt
+    type(tem_adapt_type), intent(inout) :: adapt
     ! ------------------------------------------------------------------------!
     integer :: minLevel, maxLevel
     ! ------------------------------------------------------------------------!
@@ -259,7 +258,7 @@ contains
         &           restart_triggered  = params%restart_triggered,  &
         &                    geometry  = geometry                   )
 
-      if( tem_status_run_end(params%general%simControl%status) .or.            &
+      if ( tem_status_run_end(params%general%simControl%status) .or. &
         & tem_status_run_terminate(params%general%simControl%status) ) then
         exit mainLoop
       end if
@@ -269,14 +268,14 @@ contains
 
       ! Iterate through the elements in a level-wise fashion
       ! and advance the time steps
-      call control%do_computation( scheme    = scheme,     &
-        &                          geometry  = geometry,   &
-        &                          params    = params,     &
-        &                          iLevel    = minLevel    )
+      call control%do_computation( scheme    = scheme,   &
+        &                          geometry  = geometry, &
+        &                          params    = params,   &
+        &                          iLevel    = minLevel  )
 
-      call do_balance
+      call do_balance()
 
-    enddo mainloop
+    end do mainloop
     write(logUnit(6),"(A)") 'Finished main loop.'
     ! Finish main loop
     ! --------------------------------------------------------------------------
@@ -285,12 +284,12 @@ contains
 
   contains
 
-    subroutine do_balance
+    subroutine do_balance()
       real(kind=rk) :: total_density
       logical :: balance_triggered
 
       ! Perform the dynamic load balancing if interval has been reached
-      if( params%general%balance%dynamic ) then
+      if ( params%general%balance%dynamic ) then
         call tem_timeControl_check( me   = params%general%balance%timeControl, &
           &                         now  = params%general%simControl%now,      &
           &                         comm = params%general%proc%comm,           &
@@ -347,7 +346,7 @@ contains
             &                          solverData = solverData          )
           call tem_stopTimer( timerHandle =  mus_timerHandles%balance )
 
-          if( geometry%globIBM%nIBMs > 0 )then
+          if ( geometry%globIBM%nIBMs > 0 ) then
             call mus_finishIBM( me      = geometry%globIBM, &
               &                 params  = params,           &
               &                 useTime = .true.            )
@@ -362,7 +361,7 @@ contains
         end if ! balance triggered
       end if !dynamic
 
-    end subroutine
+    end subroutine do_balance
 
   end subroutine mus_solve
 ! **************************************************************************** !
