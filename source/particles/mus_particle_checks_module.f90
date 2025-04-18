@@ -28,13 +28,13 @@
 module mus_particle_checks_module
   ! use statements go here
   use mpi
-  use env_module,                        only : rk, rk_mpi, long_k, stdOutUnit
-  use tem_property_module,            only : prp_solid, prp_particle, &
-                                          & prp_hasBnd, prp_sendHalo
-  use mus_geom_module,                   only : mus_geom_type
-  use mus_param_module,                  only : mus_param_type
-  use mus_scheme_type_module,            only : mus_scheme_type
-  use mus_particle_type_module,          only : mus_particle_group_type
+  use env_module,               only: rk, rk_mpi, long_k
+  use tem_property_module,      only: prp_solid, prp_particle, &
+    &                                 prp_hasBnd, prp_sendHalo
+  use mus_geom_module,          only: mus_geom_type
+  use mus_param_module,         only: mus_param_type
+  use mus_scheme_type_module,   only: mus_scheme_type
+  use mus_particle_type_module, only: mus_particle_group_type
   implicit none
 
   public :: iMomNow
@@ -95,7 +95,6 @@ module mus_particle_checks_module
       u(3) = scheme%auxField(lev)%val(elemOff + vel_pos(3))
       cellMomentum = rho*u
       processMomentum = processMomentum + cellMomentum
-      ! write(stdOutUnit,*) "rho = ", rho*params%physics%rho0
       
     end do
 

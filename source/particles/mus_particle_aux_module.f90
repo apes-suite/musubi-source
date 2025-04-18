@@ -28,20 +28,21 @@ module mus_particle_aux_module
 
   use mpi
 
-  use env_module,                     only : rk, long_k, stdOutUnit
-  use tem_geometry_module,            only : tem_PosOfId
-  use tem_global_module,              only : tem_global_type
-  use tem_propHead_module,            only : tem_propHead_type 
-  use tem_aux_module,                 only : tem_abort
-  use tem_stencil_module,             only : tem_stencil_findIndexOfDir
-  use tem_property_module,            only : prp_hasBnd, prp_hasRemoteNgh, &
-    &                                        prp_sendHalo
-  use tem_topology_module,            only : tem_firstIdAtLevel,        &
-    &                                        tem_coordOfId, tem_IdOfCoord
-  use tem_geometry_module,            only : tem_CoordOfReal
-  use tem_construction_module,        only : tem_levelNeighbor_type
-  use mus_geom_module,                only : mus_geom_type
-  use mus_scheme_type_module,         only : mus_scheme_type
+  use env_module,              only: rk, long_k
+  use tem_geometry_module,     only: tem_PosOfId
+  use tem_global_module,       only: tem_global_type
+  use tem_propHead_module,     only: tem_propHead_type 
+  use tem_aux_module,          only: tem_abort
+  use tem_logging_module,      only: logUnit
+  use tem_stencil_module,      only: tem_stencil_findIndexOfDir
+  use tem_property_module,     only: prp_hasBnd, prp_hasRemoteNgh, &
+    &                                prp_sendHalo
+  use tem_topology_module,     only: tem_firstIdAtLevel,        &
+    &                                tem_coordOfId, tem_IdOfCoord
+  use tem_geometry_module,     only: tem_CoordOfReal
+  use tem_construction_module, only: tem_levelNeighbor_type
+  use mus_geom_module,         only: mus_geom_type
+  use mus_scheme_type_module,  only: mus_scheme_type
 
   implicit none
 
@@ -337,7 +338,7 @@ contains
       &                                          cxDir   = cxDir           )
 
     ! if( any( cartIndices < 0 ) ) then
-    !   write(stdOutUnit,*) "ERROR getCartesianStencilIndices: could not find dirs"
+    !   write(logUnit(1),*) "ERROR getCartesianStencilIndices: could not find dirs"
     !   call tem_abort()
     ! end if
 
@@ -484,9 +485,9 @@ contains
     integer iProp
     ! ---------------------------------------------------------------------- !
     propIndex = -1
-    write(stdOutUnit,*) 'findPropIndex glob%nproperties = ', glob%nProperties
+    write(logUnit(1),*) 'findPropIndex glob%nproperties = ', glob%nProperties
     do iProp = 1, glob%nProperties 
-      write(stdOutUnit,*) 'glob%property(iProp) = ', glob%property(iProp)%label
+      write(logUnit(1),*) 'glob%property(iProp) = ', glob%property(iProp)%label
       if( glob%property( iProp )%bitpos == prp_bitpos ) then
         propIndex = iProp
       end if

@@ -32,7 +32,7 @@ module mus_particle_DEM_module
 use mpi,                               only : MPI_COMM_WORLD
 use omp_lib
 
-use env_module,                        only : rk, long_k, stdOutUnit, newUnit
+use env_module,                        only : rk, long_k, newUnit
 use tem_param_module,                  only : PI
 use tem_logging_module,                only : logUnit
 use tem_aux_module,                    only : tem_abort
@@ -782,7 +782,7 @@ subroutine updateVelocityVerlet_DPS( this, dt )
   ! Check for infty forces
   if( any( this%F_DEM(this%F_DEM_now,1:6) > infty )&
     & .OR. any( this%F_DEM(this%F_DEM_next,1:6) > infty ) ) then
-    write(stdOutUnit,*) "ERROR updateVelocityVerlet: infty force"
+    write(logUnit(1),*) "ERROR updateVelocityVerlet: infty force"
     call tem_abort()
   end if
 
@@ -951,7 +951,7 @@ subroutine DEM_computeLocalCollisionForces(particleGroup, myRank, eps, Tc, mu)
 
         ! Set particle%hasCollided to true if collision has taken place
         if(collision) then
-          ! write(stdOutUnit,*) "Local collision"
+          ! write(logUnit(1),*) "Local collision"
           particleGroup%particles_MEM%val(iParticle)%hasCollided = .TRUE.
           particleGroup%particles_MEM%val(jParticle)%hasCollided = .TRUE.
         end if ! hasCollided
@@ -1010,7 +1010,7 @@ subroutine DEM_computeLocalCollisionForces_DPS( particleGroup, myRank, &
 
         ! Set particle%hasCollided to true if collision has taken place
         if(collision) then
-          ! write(stdOutUnit,*) "Local collision"
+          ! write(logUnit(1),*) "Local collision"
           particleGroup%particles_DPS%val(iParticle)%hasCollided = .TRUE.
           particleGroup%particles_DPS%val(jParticle)%hasCollided = .TRUE.
         end if ! hasCollided
@@ -1103,7 +1103,7 @@ subroutine DEM_computeRemoteCollisionForces(particleGroup, myRank, eps, Tc, mu)
               & Fcoll         = Fcoll,                                                &
               & particleID    = particleGroup%particles_MEM%val(iParticle)%particleID )
           else
-            write(stdOutUnit,*) "ERROR DEM_computeRemoteCollisionForces_MEM: could not identify remote particle"
+            write(logUnit(1),*) "ERROR DEM_computeRemoteCollisionForces_MEM: could not identify remote particle"
             call tem_abort()
           end if
 
@@ -1209,7 +1209,7 @@ subroutine DEM_computeRemoteCollisionForces_DPS( particleGroup, myRank, &
                   & Fcoll         = Fcoll,                                                &
                   & particleID    = particleGroup%particles_DPS%val(iParticle)%particleID )
           else
-            write(stdOutUnit,*) "ERROR DEM_computeRemoteCollisionForces_DPS: could not identify remote particle"
+            write(logUnit(1),*) "ERROR DEM_computeRemoteCollisionForces_DPS: could not identify remote particle"
             call tem_abort()
           end if
 

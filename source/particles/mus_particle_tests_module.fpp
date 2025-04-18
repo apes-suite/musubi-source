@@ -30,9 +30,10 @@ module mus_particle_tests_module
 
 use mpi
 
-use env_module,                        only : rk, long_k, stdOutUnit, newUnit
+use env_module,                        only : rk, long_k, newUnit
 use tem_param_module,                  only : div1_3, div1_6, PI, cs2inv, cs4inv
 use tem_aux_module,                    only : tem_abort
+use tem_logging_module,                only : logUnit
 use tem_dyn_array_module,              only : init, append, destroy,             &
                                             & empty, dyn_intArray_type,          &
                                             & dyn_longArray_type
@@ -93,7 +94,7 @@ subroutine mus_particles_runtests( particleGroup, scheme, geometry, params )
   type(mus_geom_type), intent(in) :: geometry
   type(mus_param_type), intent(in) :: params
   ! ------------------------------------------!
-  integer :: logUnit
+  integer :: plogunit
   integer :: myRank, nProcs
   character(len=1024) :: fileName 
   ! real(kind=rk) :: xp(3)
@@ -105,13 +106,13 @@ subroutine mus_particles_runtests( particleGroup, scheme, geometry, params )
   nProcs = params%general%proc%comm_size 
   write(fileName,'(A11,I1,A4)') 'testresults',myRank,'.txt'
   
-  call openLogFile(fileName, logUnit)
+  call openLogFile(fileName, plogunit)
 
-  call test_global_errorcheck(myRank, logUnit)
+  call test_global_errorcheck(myRank, plogunit)
 
   ! Only root process opens and writes to the log file
   ! if(myRank == 0) then
-  !   call openLogFile( fileName, logUnit )
+  !   call openLogFile( fileName, plogunit )
   ! end if
 
   ! xp = (/ 0.51_rk, 0.47_rk, 0.000001_rk /)
@@ -122,7 +123,7 @@ subroutine mus_particles_runtests( particleGroup, scheme, geometry, params )
   !                                 & comm = MPI_COMM_WORLD, &
   !                                 & myRank = myRank, &
   !                                 & nProcs = nProcs, &
-  !                                 & logUnit = logUnit, &
+  !                                 & plogunit = plogunit, &
   !                                 & flag = flag_compute_fluid_momentum)
 
   ! call test_compute_particle_momentum( lev = geometry%tree%global%maxLevel, &
@@ -130,7 +131,7 @@ subroutine mus_particles_runtests( particleGroup, scheme, geometry, params )
   !                                    & comm = MPI_COMM_WORLD, &
   !                                    & myRank = myRank, &
   !                                    & nProcs = nProcs, &
-  !                                    & logUnit = logUnit, &
+  !                                    & plogunit = plogunit, &
   !                                    & flag = flag_compute_fluid_momentum)
 
   ! do iParticle = 1, particleGroup%particles_DPS%nvals, 1
@@ -139,21 +140,21 @@ subroutine mus_particles_runtests( particleGroup, scheme, geometry, params )
     !                            & scheme   = scheme,                                     &
     !                            & geometry = geometry,                                   &
     !                            & params   = params,                                     &
-    !                            & logUnit  = logUnit                                     )
+    !                            & plogunit  = plogunit                                     )
 
     ! call test_interpolation_delta_DPS_d2q9( xp           = xp,                         &
     !                                  & interpolator = particleGroup%interpolator, &
     !                                  & scheme       = scheme,                     &
     !                                  & geometry     = geometry,                   &
     !                                  & params       = params,                     &
-    !                                  & logUnit      = logUnit                     )
+    !                                  & plogunit      = plogunit                     )
     
   ! end do
   ! call test_computeDisplacement(flag_computeDisplacement)
-  ! write( logUnit, * ) "test_computeDisplacement: ", flag_computeDisplacement
+  ! write( plogunit, * ) "test_computeDisplacement: ", flag_computeDisplacement
 
   ! call test_computeWallForces(flag_computeWallForces)
-  ! write( logUnit, * ) "test_computeWallForces: ", flag_computeWallForces
+  ! write( plogunit, * ) "test_computeWallForces: ", flag_computeWallForces
 
   ! call test_DEM_fillNeighborList( flag_fillNeighborList )
 
@@ -161,7 +162,7 @@ subroutine mus_particles_runtests( particleGroup, scheme, geometry, params )
   !                                              & scheme = scheme, &
   !                                              & geometry = geometry, &
   !                                              & params = params, &
-  !                                              & logUnit = logUnit )
+  !                                              & plogunit = plogunit )
 
   ! call test_generateElemListLine( scheme = scheme, &
   !                               & geometry = geometry, &
@@ -171,14 +172,14 @@ subroutine mus_particles_runtests( particleGroup, scheme, geometry, params )
   !                                              & scheme = scheme, &
   !                                              & geometry = geometry, &
   !                                              & params = params, &
-  !                                              & logUnit = logUnit )
+  !                                              & plogunit = plogunit )
 
-  close(logUnit)
+  close(plogunit)
   
 end subroutine mus_particles_runtests
 
 
-subroutine test_interpolation_delta_DPS_d3q19(xp, interpolator, scheme, geometry, params, logUnit)
+subroutine test_interpolation_delta_DPS_d3q19(xp, interpolator, scheme, geometry, params, plogunit)
   !> Query point (x,y,z) to interpolate fluid properties to 
   real(kind=rk), intent(in) :: xp(3)
   !> Object containing interpolation information
@@ -190,7 +191,7 @@ subroutine test_interpolation_delta_DPS_d3q19(xp, interpolator, scheme, geometry
   !> Params for access to dt, dx, etc.
   type(mus_param_type), intent(in) :: params
   !> Unit to write output to
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogunit
   ! ----------------------------------------!
   integer :: lev
   integer :: vel_pos(3), dens_pos, vol_frac_pos
@@ -248,23 +249,23 @@ subroutine test_interpolation_delta_DPS_d3q19(xp, interpolator, scheme, geometry
                             & eps_f_xp     = eps_f_tmp )
 
 
-  write(logUnit,'(A)') 'Interpolated values: '
-  write(logUnit,'(A,E17.9)') 'eps_intp = ', eps_f_tmp
-  write(logUnit,'(A,E17.9)') 'rho_intp = ', rho_tmp
-  write(logUnit,'(A,E17.9)') 'ux_intp   = ', vel_tmp(1)
-  write(logUnit,'(A,E17.9)') 'uy_intp   = ', vel_tmp(2)
-  write(logUnit,'(A,E17.9)') 'uz_intp   = ', vel_tmp(3)
+  write(plogunit,'(A)') 'Interpolated values: '
+  write(plogunit,'(A,E17.9)') 'eps_intp = ', eps_f_tmp
+  write(plogunit,'(A,E17.9)') 'rho_intp = ', rho_tmp
+  write(plogunit,'(A,E17.9)') 'ux_intp   = ', vel_tmp(1)
+  write(plogunit,'(A,E17.9)') 'uy_intp   = ', vel_tmp(2)
+  write(plogunit,'(A,E17.9)') 'uz_intp   = ', vel_tmp(3)
 
-  write(logUnit,'(A)') 'Actual values: '
-  write(logUnit,'(A,E17.9)') 'eps_intp = ', xp(1) + 2*xp(2) + 3*xp(3)
-  write(logUnit,'(A,E17.9)') 'rho_intp = ', 1.0_rk
-  write(logUnit,'(A,E17.9)') 'ux_intp   = ', xp(3)
-  write(logUnit,'(A,E17.9)') 'uy_intp   = ', xp(1) 
-  write(logUnit,'(A,E17.9)') 'uz_intp   = ', xp(2) 
+  write(plogunit,'(A)') 'Actual values: '
+  write(plogunit,'(A,E17.9)') 'eps_intp = ', xp(1) + 2*xp(2) + 3*xp(3)
+  write(plogunit,'(A,E17.9)') 'rho_intp = ', 1.0_rk
+  write(plogunit,'(A,E17.9)') 'ux_intp   = ', xp(3)
+  write(plogunit,'(A,E17.9)') 'uy_intp   = ', xp(1) 
+  write(plogunit,'(A,E17.9)') 'uz_intp   = ', xp(2) 
   
 end subroutine test_interpolation_delta_DPS_d3q19
 
-subroutine test_interpolation_delta_DPS_d2q9(xp, interpolator, scheme, geometry, params, logUnit)
+subroutine test_interpolation_delta_DPS_d2q9(xp, interpolator, scheme, geometry, params, plogunit)
   !> Query point (x,y,z) to interpolate fluid properties to 
   real(kind=rk), intent(in) :: xp(3)
   !> Object containing interpolation information
@@ -276,7 +277,7 @@ subroutine test_interpolation_delta_DPS_d2q9(xp, interpolator, scheme, geometry,
   !> Params for access to dt, dx, etc.
   type(mus_param_type), intent(in) :: params
   !> Unit to write output to
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogunit
   ! ----------------------------------------!
   integer :: lev
   integer :: vel_pos(3), dens_pos, vol_frac_pos
@@ -334,24 +335,24 @@ subroutine test_interpolation_delta_DPS_d2q9(xp, interpolator, scheme, geometry,
                             & eps_f_xp     = eps_f_tmp )
 
 
-  write(logUnit,'(A)') 'Interpolated values: '
-  write(logUnit,'(A,E17.9)') 'eps_intp = ', eps_f_tmp
-  write(logUnit,'(A,E17.9)') 'rho_intp = ', rho_tmp
-  write(logUnit,'(A,E17.9)') 'ux_intp   = ', vel_tmp(1)
-  write(logUnit,'(A,E17.9)') 'uy_intp   = ', vel_tmp(2)
-  write(logUnit,'(A,E17.9)') 'uz_intp   = ', vel_tmp(3)
+  write(plogunit,'(A)') 'Interpolated values: '
+  write(plogunit,'(A,E17.9)') 'eps_intp = ', eps_f_tmp
+  write(plogunit,'(A,E17.9)') 'rho_intp = ', rho_tmp
+  write(plogunit,'(A,E17.9)') 'ux_intp   = ', vel_tmp(1)
+  write(plogunit,'(A,E17.9)') 'uy_intp   = ', vel_tmp(2)
+  write(plogunit,'(A,E17.9)') 'uz_intp   = ', vel_tmp(3)
 
-  write(logUnit,'(A)') 'Actual values: '
-  write(logUnit,'(A,E17.9)') 'eps_intp = ', xp(1) + 2*xp(2)
-  write(logUnit,'(A,E17.9)') 'rho_intp = ', 1.0_rk
-  write(logUnit,'(A,E17.9)') 'ux_intp   = ', xp(1) + xp(2)
-  write(logUnit,'(A,E17.9)') 'uy_intp   = ', xp(1) 
-  write(logUnit,'(A,E17.9)') 'uz_intp   = ', xp(2) 
+  write(plogunit,'(A)') 'Actual values: '
+  write(plogunit,'(A,E17.9)') 'eps_intp = ', xp(1) + 2*xp(2)
+  write(plogunit,'(A,E17.9)') 'rho_intp = ', 1.0_rk
+  write(plogunit,'(A,E17.9)') 'ux_intp   = ', xp(1) + xp(2)
+  write(plogunit,'(A,E17.9)') 'uy_intp   = ', xp(1) 
+  write(plogunit,'(A,E17.9)') 'uz_intp   = ', xp(2) 
   
 end subroutine test_interpolation_delta_DPS_d2q9
 
 
-subroutine test_calcVelocityAndPressureGradient_DPS(xp, scheme, geometry, params, logUnit)
+subroutine test_calcVelocityAndPressureGradient_DPS(xp, scheme, geometry, params, plogunit)
   !> Query point (x,y,z) to interpolate fluid properties to 
   real(kind=rk), intent(in) :: xp(3)
   !> Scheme for access to fluid data
@@ -361,7 +362,7 @@ subroutine test_calcVelocityAndPressureGradient_DPS(xp, scheme, geometry, params
   !> Params for access to dt, dx, etc.
   type(mus_param_type), intent(in) :: params
   !> Unit to write output to
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogunit
   ! ----------------------------------------!
   integer :: lev
   integer :: vel_pos(3), dens_pos, vol_frac_pos
@@ -428,7 +429,7 @@ subroutine test_calcVelocityAndPressureGradient_DPS(xp, scheme, geometry, params
                                       & err    = err         )
 
   if(err) then
-    write(stdOutUnit,*) "Test calcVelocityAndPressureGradient FAILED, aborting"
+    write(logUnit(1),*) "Test calcVelocityAndPressureGradient FAILED, aborting"
     call tem_abort()
   end if
 
@@ -436,16 +437,16 @@ subroutine test_calcVelocityAndPressureGradient_DPS(xp, scheme, geometry, params
   ! grad_p_tmp = grad_p_tmp*params%physics%fac(lev)%press*(1.0/dx) 
   ! curl_u_tmp = curl_u_tmp*dt
 
-  write(logUnit,*) "test_calcVelocityAndPressureGradient_DPS"
-  write(logUnit,*) "grad p = "
-  write(logUnit,*) grad_p_tmp
-  write(logUnit,*) "curl u = "
-  write(logUnit,*) curl_u_tmp
+  write(plogunit,*) "test_calcVelocityAndPressureGradient_DPS"
+  write(plogunit,*) "grad p = "
+  write(plogunit,*) grad_p_tmp
+  write(plogunit,*) "curl u = "
+  write(plogunit,*) curl_u_tmp
 
-  write(logUnit,*) "analytic grad p = "
-  write(logUnit,*) 1.0_rk
-  write(logUnit,*) "analytic curl u = "
-  write(logUnit,*) 2.0_rk
+  write(plogunit,*) "analytic grad p = "
+  write(plogunit,*) 1.0_rk
+  write(plogunit,*) "analytic curl u = "
+  write(plogunit,*) 2.0_rk
   
 end subroutine test_calcVelocityAndPressureGradient_DPS
 ! ------------- TESTS FOR mus_particle_boundary_module ---------------- !
@@ -484,11 +485,11 @@ subroutine test_computeDisplacement(flag)
     flag = .TRUE.
   else
     flag = .FALSE.
-    write(stdOutUnit,*) "test_computeDisplacement FAILED"
-    write(stdOutUnit,*) "x1 = ", x1
-    write(stdOutUnit,*) "x2 = ", x2
-    write(stdOutUnit,*) "calculated displacement = ", r12
-    write(stdOutUnit,*) "Error = ", abs(r12 - r12_exact) 
+    write(logUnit(1),*) "test_computeDisplacement FAILED"
+    write(logUnit(1),*) "x1 = ", x1
+    write(logUnit(1),*) "x2 = ", x2
+    write(logUnit(1),*) "calculated displacement = ", r12
+    write(logUnit(1),*) "Error = ", abs(r12 - r12_exact) 
 
   end if
 
@@ -546,13 +547,13 @@ subroutine test_computeWallForces(flag)
 
   ! if( all( abs( Fcoll - Fcoll_exact) < tol )  ) then
   !   flag = .TRUE.
-  !   write(stdOutUnit,*) "test_computeWallForces SUCCEEDED"
-  !   write(stdOutUnit,*) "calculated force = ", Fcoll
+  !   write(logUnit(1),*) "test_computeWallForces SUCCEEDED"
+  !   write(logUnit(1),*) "calculated force = ", Fcoll
   ! else
   !   flag = .FALSE.
-  !   write(stdOutUnit,*) "test_computeWallForces FAILED"
-  !   write(stdOutUnit,*) "calculated force = ", Fcoll
-  !   write(stdOutUnit,*) "Error = ", abs(Fcoll - Fcoll_exact) 
+  !   write(logUnit(1),*) "test_computeWallForces FAILED"
+  !   write(logUnit(1),*) "calculated force = ", Fcoll
+  !   write(logUnit(1),*) "Error = ", abs(Fcoll - Fcoll_exact) 
   ! end if
 
   ! ---- TEST #2 damping forces ---- !
@@ -571,13 +572,13 @@ subroutine test_computeWallForces(flag)
 
   if( all( abs( Fcoll - Fcoll_exact) < tol )  ) then
     flag = .TRUE.
-    write(stdOutUnit,*) "test_computeWallForces SUCCEEDED"
-    write(stdOutUnit,*) "calculated force = ", Fcoll
+    write(logUnit(1),*) "test_computeWallForces SUCCEEDED"
+    write(logUnit(1),*) "calculated force = ", Fcoll
   else
     flag = .FALSE.
-    write(stdOutUnit,*) "test_computeWallForces FAILED"
-    write(stdOutUnit,*) "calculated force = ", Fcoll
-    write(stdOutUnit,*) "Error = ", abs(Fcoll - Fcoll_exact) 
+    write(logUnit(1),*) "test_computeWallForces FAILED"
+    write(logUnit(1),*) "calculated force = ", Fcoll
+    write(logUnit(1),*) "Error = ", abs(Fcoll - Fcoll_exact) 
   end if
 
    
@@ -655,9 +656,9 @@ subroutine test_DEM_fillNeighborList(flag)
 
   ! Check if adding the particles went OK
   do iParticle = 1, 4
-    write(stdOutUnit,*) "Particle ", iParticle
-    write(stdOutUnit,*) "pos ", particleGroup%particles_DPS%val(iParticle)%pos(1:3)
-    write(stdOutUnit,*) "radius ", particleGroup%particles_DPS%val(iParticle)%radius
+    write(logUnit(1),*) "Particle ", iParticle
+    write(logUnit(1),*) "pos ", particleGroup%particles_DPS%val(iParticle)%pos(1:3)
+    write(logUnit(1),*) "radius ", particleGroup%particles_DPS%val(iParticle)%radius
   end do
 
   call DEM_fillNeighborList( particleGroup = particleGroup, &
@@ -665,10 +666,10 @@ subroutine test_DEM_fillNeighborList(flag)
 
   ! Print out the neighbor lists
   do iParticle = 1, 4
-    write(stdOutUnit,*) "Particle ", iParticle
-    write(stdOutUnit,*) "Neighbor list: "
+    write(logUnit(1),*) "Particle ", iParticle
+    write(logUnit(1),*) "Neighbor list: "
     do iNgh = 1, particleGroup%particles_DPS%val(iParticle)%DEM_neighborList%nvals
-      write(stdOutUnit,*) particleGroup%particles_DPS%val(iParticle) &
+      write(logUnit(1),*) particleGroup%particles_DPS%val(iParticle) &
         &                                            %DEM_neighborList%val(iNgh)
     end do
   end do
@@ -717,17 +718,17 @@ subroutine test_generateElemListLine(scheme, geometry, params)
     x = getBaryOfCoord( coord  = coord,                       &
                       & origin = geometry%tree%global%origin, &
                       & dx     = dx                           )
-    write(stdOutUnit, *) "x = ", x 
+    write(logUnit(1), *) "x = ", x 
     
   end do
   
 end subroutine test_generateElemListLine
 
-subroutine test_intp1D_peskin(flag, logUnit)
+subroutine test_intp1D_peskin(flag, plogunit)
   ! logical to indicate whether test passed
   ! set to TRUE if test is successful
   logical :: flag
-  integer :: logUnit
+  integer :: plogunit
   ! -------------------- !
   ! query points r_lat
   real(kind=rk) :: a, b, c
@@ -748,10 +749,10 @@ subroutine test_intp1D_peskin(flag, logUnit)
   wb = intp_1D_peskin( r_lat = b )
   wc = intp_1D_peskin( r_lat = c )
 
-  write(logUnit,*) "test_intp1D_peskin"
-  write(logUnit,*) "wa = ", wa
-  write(logUnit,*) "wb = ", wb
-  write(logUnit,*) "wc = ", wc
+  write(plogunit,*) "test_intp1D_peskin"
+  write(plogunit,*) "wa = ", wa
+  write(plogunit,*) "wb = ", wb
+  write(plogunit,*) "wc = ", wc
 
   if( abs(wa - 0.4_rk) < tol      .AND. &
     & abs(wb - 0.091592_rk) < tol .AND. &
@@ -764,7 +765,7 @@ subroutine test_intp1D_peskin(flag, logUnit)
 end subroutine test_intp1D_peskin
 
 subroutine test_compute_fluid_momentum( scheme, geometry, params, &
-                                      & comm, myRank, nProcs, logUnit, flag )
+                                      & comm, myRank, nProcs, plogunit, flag )
   !> Scheme for access to auxField
   type(mus_scheme_type), intent(inout) :: scheme
   !> Geometry for access to global number of elems
@@ -778,7 +779,7 @@ subroutine test_compute_fluid_momentum( scheme, geometry, params, &
   !> Number of MPI processes in communicator
   integer, intent(in) :: nProcs
   !> Unit to log test result to
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogunit
   !> flag gets set to TRUE if test succeeded, FALSE if it failed
   logical, intent(out) :: flag
   ! ---------------------------------------- !
@@ -827,21 +828,21 @@ subroutine test_compute_fluid_momentum( scheme, geometry, params, &
   if(myRank == 0) then
     if( any(abs(totalMomentum - correctMomentum) > tol) ) then
       flag = .FALSE.
-      write(logUnit, *) "test_compute_fluid_momentum FAILED"
-      write(logUnit, *) "totalMomentum = ", totalMomentum
-      write(logUnit, *) "correctMomentum = ", correctMomentum
+      write(plogunit, *) "test_compute_fluid_momentum FAILED"
+      write(plogunit, *) "totalMomentum = ", totalMomentum
+      write(plogunit, *) "correctMomentum = ", correctMomentum
     else
       flag = .TRUE.
-      write(logUnit, *) "test_compute_fluid_momentum SUCCEEDED"
-      write(logUnit, *) "totalMomentum = ", totalMomentum
-      write(logUnit, *) "correctMomentum = ", correctMomentum
+      write(plogunit, *) "test_compute_fluid_momentum SUCCEEDED"
+      write(plogunit, *) "totalMomentum = ", totalMomentum
+      write(plogunit, *) "correctMomentum = ", correctMomentum
     end if
   end if
 
 end subroutine test_compute_fluid_momentum
 
 subroutine test_compute_particle_momentum(lev, params, comm, myRank, nProcs, &
-                                         &  logUnit, flag                    )
+                                         &  plogunit, flag                    )
   integer, intent(in) :: lev
   !> Params for access to dt, dx, etc.
   type(mus_param_type), intent(in) :: params
@@ -852,7 +853,7 @@ subroutine test_compute_particle_momentum(lev, params, comm, myRank, nProcs, &
   !> Number of MPI processes in communicator
   integer, intent(in) :: nProcs
   !> Unit to log test result to
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogunit
   !> flag gets set to TRUE if test succeeded, FALSE if it failed
   logical, intent(out) :: flag
   ! ------------------------------------------ !
@@ -889,7 +890,7 @@ subroutine test_compute_particle_momentum(lev, params, comm, myRank, nProcs, &
                                & length    = 1,                               &
                                & wasadded  = wasadded                         )
   end do
-  write(stdOutUnit,*) "Mock particle nvals = ", particleGroup%particles_DPS%nvals
+  write(logUnit(1),*) "Mock particle nvals = ", particleGroup%particles_DPS%nvals
 
   call compute_particle_momentum( particleGroup = particleGroup, &
                                 & lev = lev, &
@@ -904,31 +905,31 @@ subroutine test_compute_particle_momentum(lev, params, comm, myRank, nProcs, &
   if(myRank == 0) then
     if( any(abs(totalMomentum - correctMomentum) > tol) ) then
       flag = .FALSE.
-      write(logUnit, *) "test_compute_particle_momentum FAILED"
-      write(logUnit, *) "totalMomentum = ", totalMomentum
-      write(logUnit, *) "correctMomentum = ", correctMomentum
+      write(plogunit, *) "test_compute_particle_momentum FAILED"
+      write(plogunit, *) "totalMomentum = ", totalMomentum
+      write(plogunit, *) "correctMomentum = ", correctMomentum
     else
       flag = .TRUE.
-      write(logUnit, *) "test_compute_particle_momentum SUCCEEDED"
-      write(logUnit, *) "totalMomentum = ", totalMomentum
-      write(logUnit, *) "correctMomentum = ", correctMomentum
+      write(plogunit, *) "test_compute_particle_momentum SUCCEEDED"
+      write(plogunit, *) "totalMomentum = ", totalMomentum
+      write(plogunit, *) "correctMomentum = ", correctMomentum
     end if
   end if
 
 end subroutine test_compute_particle_momentum
 
-subroutine test_global_errorcheck(myRank, logUnit)
+subroutine test_global_errorcheck(myRank, plogunit)
   integer, intent(in) :: myRank
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogunit
   ! --------------------------------- !
   logical :: flag1, flag2
   ! --------------------------------- !
   ! First test: set local error flag to FALSE for all processes
   ! in this case the flag should remain false after global errorcheck
   flag1 = .FALSE.
-  write(logUnit,*) "Rank", myRank, "flag 1 before global errorcheck: ", flag1
+  write(plogunit,*) "Rank", myRank, "flag 1 before global errorcheck: ", flag1
   call mus_particles_global_errorcheck(flag1, MPI_COMM_WORLD)
-  write(logUnit,*) "Rank", myRank, "flag 1 after global errorcheck: ", flag1
+  write(plogunit,*) "Rank", myRank, "flag 1 after global errorcheck: ", flag1
 
   ! Second test: set local error flag to TRUE on one process (the root)
   ! in this case the flag should be true on all procs after global errorcheck
@@ -938,13 +939,13 @@ subroutine test_global_errorcheck(myRank, logUnit)
     flag2 = .FALSE.
   end if
 
-  write(logUnit,*) "Rank", myRank, "flag 2 before global errorcheck: ", flag2
+  write(plogunit,*) "Rank", myRank, "flag 2 before global errorcheck: ", flag2
   call mus_particles_global_errorcheck(flag2, MPI_COMM_WORLD)
-  write(logUnit,*) "Rank", myRank, "flag 2 after global errorcheck: ", flag2
+  write(plogunit,*) "Rank", myRank, "flag 2 after global errorcheck: ", flag2
 
   ! Test if both flags are what they should be after the global errorcheck
   if( (.NOT. flag1) .AND. flag2 ) then
-    write(logUnit,*) "test_global_errorcheck on rank", myRank, " success!"
+    write(plogunit,*) "test_global_errorcheck on rank", myRank, " success!"
   end if
 
 end subroutine test_global_errorcheck

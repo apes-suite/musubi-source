@@ -27,8 +27,9 @@
 
 module mus_particle_logging_module
 use MPI
-use env_module,                       only : rk, long_k, stdOutUnit, newunit, labelLen
+use env_module,                       only : rk, long_k, newunit, labelLen
 use tem_aux_module,                   only : tem_abort
+use tem_logging_module,               only : logUnit
 use tem_dyn_array_module,             only : init, append, destroy,             &
                                            & empty, dyn_intArray_type,          &
                                            & dyn_longArray_type
@@ -89,12 +90,12 @@ subroutine mus_particles_logdata_MEM( particleGroup, params, t )
 
         if( present(t) ) then
           call logParticleData( particle = particleGroup%particles_MEM%val(iParticle), &
-                              & logUnit  = particleLogUnit,                            &
+                              & plogUnit  = particleLogUnit,                           &
                               & myRank   = params%general%proc%rank,                   &
                               & t        = t                                           )
         else
           call logParticleData( particle = particleGroup%particles_MEM%val(iParticle), &
-                              & logUnit  = particleLogUnit,                            &
+                              & plogUnit  = particleLogUnit,                           &
                               & myRank   = params%general%proc%rank,                   &
                               & t        = params%general%simcontrol%now%sim           )
         end if
@@ -124,7 +125,7 @@ subroutine mus_particles_logdata_DPS( particleGroup, params )
                             & params%general%proc%rank )
 
         call logParticleData( particle = particleGroup%particles_DPS%val(iParticle), &
-                            & logUnit  = particleLogUnit,                            &
+                            & plogUnit = particleLogUnit,                            &
                             & myRank   = params%general%proc%rank,                   &
                             & t        = params%general%simcontrol%now%sim           )
         call closeParticleLog(particleLogUnit)
@@ -134,20 +135,19 @@ subroutine mus_particles_logdata_DPS( particleGroup, params )
 end subroutine mus_particles_logdata_DPS
 
 !> Routine to create a particle logunit based on particle ID
-pure function getParticleLogUnit( particleID, myRank ) result(logUnit)
+pure function getParticleLogUnit( particleID, myRank ) result(plogUnit)
     integer, intent(in) :: particleID
     integer, intent(in) :: myRank
-    integer :: logUnit
+    integer :: plogUnit
     ! --------------------------------------------!
-    ! logUnit = 150 + particleID + myRank*10 
-    logUnit = 150 + particleID + myRank*10 
+    plogUnit = 150 + particleID
 
 end function getParticleLogUnit
 
 !> Routine to log MEM particle data
-subroutine logParticleData_MEM( particle, logUnit, myRank, t )
+subroutine logParticleData_MEM( particle, plogUnit, myRank, t )
     type(mus_particle_MEM_type), intent(in) :: particle
-    integer, intent(in) :: logUnit
+    integer, intent(in) :: plogUnit
     integer, intent(in) :: myRank
     real(kind=rk), intent(in)  :: t
     ! --------------------------------------------!
@@ -168,62 +168,62 @@ subroutine logParticleData_MEM( particle, logUnit, myRank, t )
     inquire(file=filename, exist=fileExists, opened=fileIsOpen, number=existingLogUnit)
 
     if(fileIsOpen) then
-      if(existingLogUnit /= logUnit) then
-        write(stdOutUnit,*) 'ERROR logParticleData: wrong log unit connected'
+      if(existingLogUnit /= plogUnit) then
+        write(logUnit(1),*) 'ERROR logParticleData: wrong log unit connected'
         call tem_abort()
-      end if ! logUnit does not match
+      end if ! plogUnit does not match
     else ! File is not open
       ! Check if the log unit is available or used for some other file
-      inquire(unit=logUnit, opened=logUnitTaken)
+      inquire(unit=plogUnit, opened=logUnitTaken)
       if(logUnitTaken) then
-        ! write(stdOutUnit,*) 'ERROR logParticleData: log unit taken'
+        ! write(logUnit(1),*) 'ERROR logParticleData: log unit taken'
         call tem_abort()
       else
-        ! write(stdOutUnit,*) 'logParticleData: initializing particle log'
-        call initParticleLog_MEM( particle%particleID, filename, logUnit, fileExists )
+        ! write(logUnit(1),*) 'logParticleData: initializing particle log'
+        call initParticleLog_MEM( particle%particleID, filename, plogUnit, fileExists )
       end if ! logUnitTaken
     end if ! fileIsOpen
 
     ! After all the checks above, the file should be opened and the correct 
     ! logUnit attached
-    write(logUnit, '(E17.9)', advance='no') t
-    write(logUnit, '(A)', advance='no') ' '
+    write(plogUnit, '(E17.9)', advance='no') t
+    write(plogUnit, '(A)', advance='no') ' '
 
     ! Positions
     do i = 1, 3
-        write(logUnit, '(E17.9)', advance='no') particle%pos(i)
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(E17.9)', advance='no') particle%pos(i)
+        write(plogUnit, '(A)', advance='no') ' '
     end do
 
     ! Velocities
     do i = 1, 6
-        write(logUnit, '(E17.9)', advance='no') particle%vel(i)
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(E17.9)', advance='no') particle%vel(i)
+        write(plogUnit, '(A)', advance='no') ' '
     end do
     
     ! Hydrodynamic forces
     do i = 1, 6
-        write(logUnit, '(E17.9)', advance='no') &
+        write(plogUnit, '(E17.9)', advance='no') &
           & ( particle%F(i) + particle%Fext(i) )
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(A)', advance='no') ' '
     end do
 
     ! Collision forces
     do i = 1, 3
-        write(logUnit, '(E17.9)', advance='no') &
+        write(plogUnit, '(E17.9)', advance='no') &
           & ( 0.5*(particle%F_DEM(particle%F_DEM_now,i) + &
           &   particle%F_DEM(particle%F_DEM_next,i) ) & 
           & - particle%F(i) - particle%Fext(i) )
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(A)', advance='no') ' '
     end do
     
-    write(logUnit, '(A)')
+    write(plogUnit, '(A)')
 end subroutine logParticleData_MEM
 
 !> Routine to log DPS particle data
-subroutine logParticleData_DPS( particle, logUnit, myRank, t )
+subroutine logParticleData_DPS( particle, plogUnit, myRank, t )
     type(mus_particle_DPS_type), intent(in) :: particle
-    integer, intent(in) :: logUnit
+    integer, intent(in) :: plogUnit
     integer, intent(in) :: myRank
     real(kind=rk), intent(in)  :: t
     ! --------------------------------------------!
@@ -244,164 +244,164 @@ subroutine logParticleData_DPS( particle, logUnit, myRank, t )
     inquire(file=filename, exist=fileExists, opened=fileIsOpen, number=existingLogUnit)
 
     if(fileIsOpen) then
-      if(existingLogUnit /= logUnit) then
-        write(stdOutUnit,*) 'ERROR logParticleData: wrong log unit connected'
+      if(existingLogUnit /= plogUnit) then
+        write(logUnit(1),*) 'ERROR logParticleData: wrong log unit connected'
         call tem_abort()
-      end if ! logUnit does not match
+      end if ! plogUnit does not match
     else ! File is not open
       ! Check if the log unit is available or used for some other file
-      inquire(unit=logUnit, opened=logUnitTaken)
+      inquire(unit=plogUnit, opened=logUnitTaken)
       if(logUnitTaken) then
-        ! write(stdOutUnit,*) 'ERROR logParticleData: log unit taken'
+        ! write(logUnit(1),*) 'ERROR logParticleData: log unit taken'
         call tem_abort()
       else
-        ! write(stdOutUnit,*) 'logParticleData: initializing particle log'
-        call initParticleLog_DPS( particle%particleID, filename, logUnit, fileExists )
+        ! write(logUnit(1),*) 'logParticleData: initializing particle log'
+        call initParticleLog_DPS( particle%particleID, filename, plogUnit, fileExists )
       end if ! logUnitTaken
     end if ! fileIsOpen
 
     ! After all the checks above, the file should be opened and the correct 
-    ! logUnit attached
-    write(logUnit, '(E17.9)', advance='no') t
-    write(logUnit, '(A)', advance='no') ' '
+    ! plogUnit attached
+    write(plogUnit, '(E17.9)', advance='no') t
+    write(plogUnit, '(A)', advance='no') ' '
 
     ! Positions
     do i = 1, 3
-        write(logUnit, '(E17.9)', advance='no') particle%pos(i)
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(E17.9)', advance='no') particle%pos(i)
+        write(plogUnit, '(A)', advance='no') ' '
     end do
 
     ! Velocities
     do i = 1, 6
-        write(logUnit, '(E17.9)', advance='no') particle%vel(i)
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(E17.9)', advance='no') particle%vel(i)
+        write(plogUnit, '(A)', advance='no') ' '
     end do
     
     ! Forces
     do i = 1, 6
-        write(logUnit, '(E17.9)', advance='no') &
+        write(plogUnit, '(E17.9)', advance='no') &
           & ( particle%F_DEM( particle%F_DEM_now, i ) + particle%F(i) )
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(A)', advance='no') ' '
     end do
     ! Average forces
     do i = 1, 3
-        write(logUnit, '(E17.9)', advance='no') &
+        write(plogUnit, '(E17.9)', advance='no') &
           & particle%Favg(i)
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(A)', advance='no') ' '
     end do
     
-    write(logUnit, '(A)')
+    write(plogUnit, '(A)')
 
-    close(logUnit)
+    close(plogUnit)
 
 end subroutine logParticleData_DPS
 
 !> Routine to initialize MEM particle log file (e.g. print header)
-subroutine initParticleLog_MEM( particleID, fileName, logUnit, fileExists )
+subroutine initParticleLog_MEM( particleID, fileName, plogUnit, fileExists )
   integer, intent(in) :: particleID
   character(*), intent(in) :: fileName
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogUnit
   logical, intent(in) :: fileExists
   ! --------------------------------------------!
 
-  ! write(stdOutUnit,*) 'Calling initParticleLog!'
+  ! write(logUnit(1),*) 'Calling initParticleLog!'
   if(fileExists) then
-    open(logUnit, file = filename, status = 'old', position='append')
+    open(plogUnit, file = filename, status = 'old', position='append')
   else
-    ! write(stdOutUnit,*) 'INITPARTICLELOG logUnit', logUnit
-    open(logUnit, file = filename, status = 'new')
-    write(logUnit, '(A,I5)') 'Particle ID = ', particleID
-    write(logUnit, '(A18)', advance='no') 't'
-    write(logUnit, '(A18)', advance='no') 'x'
-    write(logUnit, '(A18)', advance='no') 'y'
-    write(logUnit, '(A18)', advance='no') 'z'
-    write(logUnit, '(A18)', advance='no') 'ux'
-    write(logUnit, '(A18)', advance='no') 'uy'
-    write(logUnit, '(A18)', advance='no') 'uz'
-    write(logUnit, '(A18)', advance='no') 'urx'
-    write(logUnit, '(A18)', advance='no') 'ury'
-    write(logUnit, '(A18)', advance='no') 'urz'
-    write(logUnit, '(A18)', advance='no') 'Fx_hydro'
-    write(logUnit, '(A18)', advance='no') 'Fy_hydro'
-    write(logUnit, '(A18)', advance='no') 'Fz_hydro'
-    write(logUnit, '(A18)', advance='no') 'RFx_hydro'
-    write(logUnit, '(A18)', advance='no') 'RFy_hydro'
-    write(logUnit, '(A18)', advance='no') 'RFz_hydro'
-    write(logUnit, '(A18)', advance='no') 'Fx_coll'
-    write(logUnit, '(A18)', advance='no') 'Fy_coll'
-    write(logUnit, '(A18)') 'Fz_coll'
+    ! write(logUnit(1),*) 'INITPARTICLELOG logUnit', logUnit
+    open(plogUnit, file = filename, status = 'new')
+    write(plogUnit, '(A,I5)') 'Particle ID = ', particleID
+    write(plogUnit, '(A18)', advance='no') 't'
+    write(plogUnit, '(A18)', advance='no') 'x'
+    write(plogUnit, '(A18)', advance='no') 'y'
+    write(plogUnit, '(A18)', advance='no') 'z'
+    write(plogUnit, '(A18)', advance='no') 'ux'
+    write(plogUnit, '(A18)', advance='no') 'uy'
+    write(plogUnit, '(A18)', advance='no') 'uz'
+    write(plogUnit, '(A18)', advance='no') 'urx'
+    write(plogUnit, '(A18)', advance='no') 'ury'
+    write(plogUnit, '(A18)', advance='no') 'urz'
+    write(plogUnit, '(A18)', advance='no') 'Fx_hydro'
+    write(plogUnit, '(A18)', advance='no') 'Fy_hydro'
+    write(plogUnit, '(A18)', advance='no') 'Fz_hydro'
+    write(plogUnit, '(A18)', advance='no') 'RFx_hydro'
+    write(plogUnit, '(A18)', advance='no') 'RFy_hydro'
+    write(plogUnit, '(A18)', advance='no') 'RFz_hydro'
+    write(plogUnit, '(A18)', advance='no') 'Fx_coll'
+    write(plogUnit, '(A18)', advance='no') 'Fy_coll'
+    write(plogUnit, '(A18)') 'Fz_coll'
   end if
 
 end subroutine initParticleLog_MEM
 
 !> Routine to initialize DPS particle log file (e.g. print header)
-subroutine initParticleLog_DPS( particleID, fileName, logUnit, fileExists )
+subroutine initParticleLog_DPS( particleID, fileName, plogUnit, fileExists )
   integer, intent(in) :: particleID
   character(*), intent(in) :: fileName
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogUnit
   logical, intent(in) :: fileExists
   ! --------------------------------------------!
 
-  ! write(stdOutUnit,*) 'Calling initParticleLog!'
+  ! write(logUnit(1),*) 'Calling initParticleLog!'
   if(fileExists) then
-    open(logUnit, file = filename, status = 'old', position='append')
+    open(plogUnit, file = filename, status = 'old', position='append')
   else
-    ! write(stdOutUnit,*) 'INITPARTICLELOG logUnit', logUnit
-    open(logUnit, file = filename, status = 'new')
-    write(logUnit, '(A,I5)') 'Particle ID = ', particleID
-    write(logUnit, '(A18)', advance='no') 't'
-    write(logUnit, '(A18)', advance='no') 'x'
-    write(logUnit, '(A18)', advance='no') 'y'
-    write(logUnit, '(A18)', advance='no') 'z'
-    write(logUnit, '(A18)', advance='no') 'ux'
-    write(logUnit, '(A18)', advance='no') 'uy'
-    write(logUnit, '(A18)', advance='no') 'uz'
-    write(logUnit, '(A18)', advance='no') 'urx'
-    write(logUnit, '(A18)', advance='no') 'ury'
-    write(logUnit, '(A18)', advance='no') 'urz'
-    write(logUnit, '(A18)', advance='no') 'Fx'
-    write(logUnit, '(A18)', advance='no') 'Fy'
-    write(logUnit, '(A18)', advance='no') 'Fz'
-    write(logUnit, '(A18)', advance='no') 'RFx'
-    write(logUnit, '(A18)', advance='no') 'RFy'
-    write(logUnit, '(A18)', advance='no') 'RFz'
-    write(logUnit, '(A18)', advance='no') 'Fxa'
-    write(logUnit, '(A18)', advance='no') 'Fya'
-    write(logUnit, '(A18)') 'Fza'
+    ! write(logUnit(1),*) 'INITPARTICLELOG logUnit', plogUnit
+    open(plogUnit, file = filename, status = 'new')
+    write(plogUnit, '(A,I5)') 'Particle ID = ', particleID
+    write(plogUnit, '(A18)', advance='no') 't'
+    write(plogUnit, '(A18)', advance='no') 'x'
+    write(plogUnit, '(A18)', advance='no') 'y'
+    write(plogUnit, '(A18)', advance='no') 'z'
+    write(plogUnit, '(A18)', advance='no') 'ux'
+    write(plogUnit, '(A18)', advance='no') 'uy'
+    write(plogUnit, '(A18)', advance='no') 'uz'
+    write(plogUnit, '(A18)', advance='no') 'urx'
+    write(plogUnit, '(A18)', advance='no') 'ury'
+    write(plogUnit, '(A18)', advance='no') 'urz'
+    write(plogUnit, '(A18)', advance='no') 'Fx'
+    write(plogUnit, '(A18)', advance='no') 'Fy'
+    write(plogUnit, '(A18)', advance='no') 'Fz'
+    write(plogUnit, '(A18)', advance='no') 'RFx'
+    write(plogUnit, '(A18)', advance='no') 'RFy'
+    write(plogUnit, '(A18)', advance='no') 'RFz'
+    write(plogUnit, '(A18)', advance='no') 'Fxa'
+    write(plogUnit, '(A18)', advance='no') 'Fya'
+    write(plogUnit, '(A18)') 'Fza'
   end if
 
 end subroutine initParticleLog_DPS
 
 
-subroutine closeParticleLog(logUnit)
-    integer, intent(in) :: logUnit
+subroutine closeParticleLog(plogUnit)
+    integer, intent(in) :: plogUnit
     ! --------------------------------------------!
-    close(logUnit)
+    close(plogUnit)
 end subroutine closeParticleLog
 
 !> openLogFile opens a file with name fileName and returns the unit
 !! attached to it. It checks whether the file exists and if not
-subroutine openLogFile( fileName, logUnit, isNewFile )
+subroutine openLogFile( fileName, plogUnit, isNewFile )
     character(len=*), intent(inout) :: filename
-    integer, intent(out) :: logUnit
+    integer, intent(out) :: plogUnit
     logical, intent(out), optional :: isNewFile
     ! --------------------------------------------!
     logical :: fileExists, fileIsOpen
     ! --------------------------------------------!
     ! Check if file with fileName already exists and whether it is already open
-    inquire(file=trim(filename), exist=fileExists, opened=fileIsOpen, number=logUnit)
+    inquire(file=trim(filename), exist=fileExists, opened=fileIsOpen, number=plogUnit)
 
     if(fileIsOpen) then
       ! File is open and we can write to it on unit logUnit
       if(present(isNewFile)) isNewFile = .FALSE.
       return
     else ! file is not open
-      logUnit = newunit()
+      plogUnit = newunit()
       if( fileExists ) then
-        open(logUnit, file = trim(fileName), status = 'old', position='append')
+        open(plogUnit, file = trim(fileName), status = 'old', position='append')
         if(present(isNewFile)) isNewFile = .FALSE.
       else
-        open(logUnit, file = trim(fileName), status = 'new')
+        open(plogUnit, file = trim(fileName), status = 'new')
         if(present(isNewFile)) isNewFile = .TRUE.
       end if
     end if
@@ -476,7 +476,7 @@ subroutine dumpdata(tracker, t, scheme, geometry, params)
   !> Params
   type(mus_param_type), intent(in) :: params
   ! -------------------------------------------- !
-  integer :: logUnit
+  integer :: plogUnit
   integer :: lev
   integer :: vel_pos(3), dens_pos, vol_frac_pos
   integer :: elemOff
@@ -508,7 +508,7 @@ subroutine dumpdata(tracker, t, scheme, geometry, params)
   vol_frac_pos = scheme%varSys%method%val(scheme%derVarPos(1)%vol_frac)%auxField_varPos(1)
 
   ! Open log file
-  call openLogFile( fileName, logUnit )
+  call openLogFile( fileName, plogUnit )
 
   do iElem = 1, tracker%elemList%nvals
     ldPos = int(tracker%elemList%val(iElem))
@@ -533,26 +533,26 @@ subroutine dumpdata(tracker, t, scheme, geometry, params)
     ! Write data to logUnit
 
     ! Time
-    write(logUnit, '(E17.9)', advance='no') t
-    write(logUnit, '(A)', advance='no') ' '
+    write(plogUnit, '(E17.9)', advance='no') t
+    write(plogUnit, '(A)', advance='no') ' '
 
     ! Element position
     do i = 1, 3
-        write(logUnit, '(E17.9)', advance='no') x(i) 
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(E17.9)', advance='no') x(i) 
+        write(plogUnit, '(A)', advance='no') ' '
     end do
 
     ! Fluid velocity
     do i = 1, 3
-        write(logUnit, '(E17.9)', advance='no') u_fluid(i) 
-        write(logUnit, '(A)', advance='no') ' '
+        write(plogUnit, '(E17.9)', advance='no') u_fluid(i) 
+        write(plogUnit, '(A)', advance='no') ' '
     end do
     
     ! Newline
-    write(logUnit, '(A)')
+    write(plogUnit, '(A)')
   end do
 
-  close(logUnit)
+  close(plogUnit)
   
 end subroutine dumpdata
 
@@ -568,7 +568,7 @@ subroutine mus_log_fluid_momentum(scheme, lev, params, comm)
   !> MPI communicator
   integer :: comm
   ! ------------------------------------------------------- !
-  integer :: logUnit, k, myRank, nProcs
+  integer :: plogUnit, k, myRank, nProcs
   character(len=1024) :: fileName 
   real(kind=rk) :: fluidMomentum(3)
   real(kind=rk) :: t
@@ -591,27 +591,27 @@ subroutine mus_log_fluid_momentum(scheme, lev, params, comm)
 
   ! Only root process opens and writes to the log file
   if(myRank == 0) then
-    call openLogFile( fileName, logUnit, isNewFile )
+    call openLogFile( fileName, plogUnit, isNewFile )
     if(isNewFile) then
     ! Write header if the file is new
-      write(logUnit, '(A18)', advance='no') 't'
-      write(logUnit, '(A18)', advance='no') 'fluidMomX'
-      write(logUnit, '(A18)', advance='no') 'fluidMomY'
-      write(logUnit, '(A18)', advance='no') 'fluidMomZ'
-      write(logUnit, '(A)') 
+      write(plogUnit, '(A18)', advance='no') 't'
+      write(plogUnit, '(A18)', advance='no') 'fluidMomX'
+      write(plogUnit, '(A18)', advance='no') 'fluidMomY'
+      write(plogUnit, '(A18)', advance='no') 'fluidMomZ'
+      write(plogUnit, '(A)') 
     end if ! isNewFile
 
     ! Write time and particle and fluid momentum to log file
-    write(logUnit, '(E17.9)', advance='no') t
+    write(plogUnit, '(E17.9)', advance='no') t
 
     do k = 1,3
-      write(logUnit, '(E17.9)', advance='no') fluidMomentum(k)
+      write(plogUnit, '(E17.9)', advance='no') fluidMomentum(k)
     end do
 
     ! Write a newline
-    write(logUnit, '(A)', advance='no') 
+    write(plogUnit, '(A)', advance='no') 
 
-    close(logUnit)
+    close(plogUnit)
   end if ! myRank == 0
 
 end subroutine mus_log_fluid_momentum 
@@ -632,7 +632,7 @@ subroutine mus_particles_log_total_momentum(particleGroup, scheme, lev, params, 
   !> Current (physical) time
   real(kind=rk) :: t
   ! ------------------------------------------------------- !
-  integer :: logUnit, k, myRank, nProcs
+  integer :: plogUnit, k, myRank, nProcs
   character(len=1024) :: fileName 
   real(kind=rk) :: fluidMomentum(3)
   real(kind=rk) :: particleMomentum(3)
@@ -662,41 +662,41 @@ subroutine mus_particles_log_total_momentum(particleGroup, scheme, lev, params, 
 
   ! Only root process opens and writes to the log file
   if(myRank == 0) then
-    call openLogFile( fileName, logUnit, isNewFile )
+    call openLogFile( fileName, plogUnit, isNewFile )
     if(isNewFile) then
     ! Write header if the file is new
-      write(logUnit, '(A18)', advance='no') 't'
-      write(logUnit, '(A18)', advance='no') 'fluidMomX'
-      write(logUnit, '(A18)', advance='no') 'fluidMomY'
-      write(logUnit, '(A18)', advance='no') 'fluidMomZ'
-      write(logUnit, '(A18)', advance='no') 'particleMomX'
-      write(logUnit, '(A18)', advance='no') 'particleMomY'
-      write(logUnit, '(A18)', advance='no') 'particleMomZ'
-      write(logUnit, '(A18)', advance='no') 'totalMomX'
-      write(logUnit, '(A18)', advance='no') 'totalMomY'
-      write(logUnit, '(A18)', advance='no') 'totalMomZ'
-      write(logUnit, '(A)') 
+      write(plogUnit, '(A18)', advance='no') 't'
+      write(plogUnit, '(A18)', advance='no') 'fluidMomX'
+      write(plogUnit, '(A18)', advance='no') 'fluidMomY'
+      write(plogUnit, '(A18)', advance='no') 'fluidMomZ'
+      write(plogUnit, '(A18)', advance='no') 'particleMomX'
+      write(plogUnit, '(A18)', advance='no') 'particleMomY'
+      write(plogUnit, '(A18)', advance='no') 'particleMomZ'
+      write(plogUnit, '(A18)', advance='no') 'totalMomX'
+      write(plogUnit, '(A18)', advance='no') 'totalMomY'
+      write(plogUnit, '(A18)', advance='no') 'totalMomZ'
+      write(plogUnit, '(A)') 
     end if ! isNewFile
 
     ! Write time and particle and fluid momentum to log file
-    write(logUnit, '(E17.9)', advance='no') t
+    write(plogUnit, '(E17.9)', advance='no') t
 
     do k = 1,3
-      write(logUnit, '(E17.9)', advance='no') fluidMomentum(k)
+      write(plogUnit, '(E17.9)', advance='no') fluidMomentum(k)
     end do
 
     do k = 1,3
-      write(logUnit, '(E17.9)', advance='no') particleMomentum(k)
+      write(plogUnit, '(E17.9)', advance='no') particleMomentum(k)
     end do
 
     do k = 1,3
-      write(logUnit, '(E17.9)', advance='no') fluidMomentum(k) + particleMomentum(k)
+      write(plogUnit, '(E17.9)', advance='no') fluidMomentum(k) + particleMomentum(k)
     end do
 
     ! Write a newline
-    write(logUnit, '(A)', advance='no') 
+    write(plogUnit, '(A)', advance='no') 
 
-    close(logUnit)
+    close(plogUnit)
   end if ! myRank == 0
 
 end subroutine mus_particles_log_total_momentum 
@@ -711,7 +711,7 @@ subroutine dump_particle_timing(proc_logUnit)
   real(kind=rk) :: t_pos, t_vel, t_force, t_sub, t_loadParticles
   ! real(kind=rk) :: tParticles
   ! character(len=100) :: fileName
-  ! integer :: logUnit, iError
+  ! integer :: plogUnit, iError
   ! integer :: Nprocs, myRank
   ! ------------------------------------- !
 
@@ -734,7 +734,7 @@ subroutine dump_particle_timing(proc_logUnit)
   t_loadParticles = tem_getTimerVal( timerHandle = mus_particle_timerHandles%loadParticleTimer )
 
 
-  ! Write to logUnit (should be opened before calling this routine)
+  ! Write to plogUnit (should be opened before calling this routine)
   write(proc_logUnit,'(A)') "------- PARTICLE CODE TIMING -------"
   write(proc_logUnit,'(A25,E17.9)') "loadParticles = ", t_loadParticles
   write(proc_logUnit,'(A25,E17.9)') "exchangePositions = ", t_upPos
@@ -764,16 +764,16 @@ subroutine dump_particle_timing(proc_logUnit)
   ! write(fileName,'(A)') 'mus_particle_timing.res'
   ! ! Open file to output timing to
   ! if(myRank == 0) then
-  !   call openLogFile( fileName, logUnit)
+  !   call openLogFile( fileName, plogUnit)
 
   !   ! Write timing data to file
-  !   write(logUnit,'(A18)', advance='no') 'tParticles'
-  !   write(logUnit,'(A18)', advance='no') 'Nprocs'
-  !   write(logUnit,'(A)')
-  !   write(logUnit,'(E17.9)', advance='no') tParticles
-  !   write(logUnit,'(I18)', advance='no') Nprocs
+  !   write(plogUnit,'(A18)', advance='no') 'tParticles'
+  !   write(plogUnit,'(A18)', advance='no') 'Nprocs'
+  !   write(plogUnit,'(A)')
+  !   write(plogUnit,'(E17.9)', advance='no') tParticles
+  !   write(plogUnit,'(I18)', advance='no') Nprocs
 
-  !   close(logUnit)
+  !   close(plogUnit)
   ! end if
   
 end subroutine dump_particle_timing

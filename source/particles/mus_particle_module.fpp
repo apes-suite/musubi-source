@@ -30,7 +30,7 @@ module mus_particle_module
 
   use mpi
   
-  use env_module, only : rk, double_k, long_k, stdOutUnit, newunit
+  use env_module, only : rk, double_k, long_k, newunit
 
   use tem_param_module,        only: rho0_lat => rho0, cs2, cs2inv
   use tem_logging_module,      only: logUnit
@@ -261,7 +261,7 @@ subroutine mus_particles_initialize( particleGroup, scheme, &
       particleGroup%calcLiftForce => applyLiftForce_DPS 
       particleGroup%calcPressureForce => applyPressureForce_DPS 
     case default
-      write(stdOutUnit,*) 'ERROR mus_particles_initialize: unknown particle kind!'
+      write(logUnit(1),*) 'ERROR mus_particles_initialize: unknown particle kind!'
       call tem_abort()
       particleGroup%applyHydrodynamicForces => mus_particles_applyHydrodynamicForces_DPS
       particleGroup%moveParticles => mus_particles_move_DPS
@@ -312,7 +312,7 @@ subroutine mus_particles_initialize( particleGroup, scheme, &
   allocate( particleGroup%BC_interaction(1:nBCs) )
 
 
-  ! write(stdOutUnit,*) '---- INIT PARTICLE BOUNDARY INTERACTIONS ------'
+  ! write(logUnit(1),*) '---- INIT PARTICLE BOUNDARY INTERACTIONS ------'
   open( pgDebugLog%lu, file=pgDebugLog%lfile, status='old', position='append' )
   do iBC = 1, nBCs
     BCid = scheme%field(1)%bc(iBC)%bc_id
@@ -505,15 +505,15 @@ subroutine mus_particles_mapping_MEM(particleGroup, scheme, geometry, params)
 
 
       if(removeFromMyRank) then
-        ! write(stdOutUnit,*) 'Removing particle pID', &
+        ! write(logUnit(1),*) 'Removing particle pID', &
         !   & particleGroup%particles%val(iParticle)%particleID, ' from process ', &
         !   & params%general%proc%rank
-        ! write(stdOutUnit,*) 'iter = ', params%general%simcontrol%now%iter 
-        ! write(stdOutUnit, '(A)', advance='no') 'coordOfOrigin = [ '
-        ! write(stdOutUnit, '(4I3)', advance = 'no') ( particleGroup%particles &
+        ! write(logUnit(1),*) 'iter = ', params%general%simcontrol%now%iter 
+        ! write(logUnit(1), '(A)', advance='no') 'coordOfOrigin = [ '
+        ! write(logUnit(1), '(4I3)', advance = 'no') ( particleGroup%particles &
         !   &                                          %val(iParticle)      &
         !   &                                          %coordOfOrigin(i), i = 1,4)
-        ! write(stdOutUnit, '(A)') ' ]'
+        ! write(logUnit(1), '(A)') ' ]'
 
         call remove_particle_from_da_particle_MEM( particleGroup%particles_MEM, iParticle)
         ! Note: iParticle is NOT incremented after removing a particle from
@@ -580,7 +580,7 @@ subroutine mus_particles_mapping_DPS(particleGroup, scheme, geometry, params)
 
       particleGroup%particles_DPS%val(iParticle)%newForMe = .FALSE. 
 
-      write(stdOutUnit,*) 'mus_particles_mapping_DPS: initialized new particle on proc', &
+      write(logUnit(1),*) 'mus_particles_mapping_DPS: initialized new particle on proc', &
         & params%general%proc%rank
 
       open( pgDebugLog%lu, file=pgDebugLog%lfile, status='old', position='append' )
@@ -743,10 +743,10 @@ subroutine mus_particles_applyHydrodynamicForces_MEM( &
   do iParticle = 1, particleGroup%particles_MEM%nvals
     if( particleGroup%particles_MEM%val(iParticle)%newForMe ) then
       
-      ! write(stdOutUnit,*) '--- INIT NEW PARTICLE ON PROC ', params%general%proc%rank,  '---'
-      ! write(stdOutUnit,*) 'Particle ID =', particleGroup%particles%val(iParticle)%particleID
-      ! write(stdOutUnit,*) 'iter = ', params%general%simcontrol%now%iter
-      ! write(stdOutUnit,*) '---------------------------------------------------------'
+      ! write(logUnit(1),*) '--- INIT NEW PARTICLE ON PROC ', params%general%proc%rank,  '---'
+      ! write(logUnit(1),*) 'Particle ID =', particleGroup%particles%val(iParticle)%particleID
+      ! write(logUnit(1),*) 'iter = ', params%general%simcontrol%now%iter
+      ! write(logUnit(1),*) '---------------------------------------------------------'
 
       ! Set the particle procedure pointers and initialize the communication masks
       call allocateProcessMasks( particle = particleGroup%particles_MEM%val(iParticle), &
@@ -977,12 +977,12 @@ subroutine testParticleConnectivity(scheme, particle, lev)
         neighPos = scheme%pdf(lev)%neigh( ?NGPOS?( iDir, elemPos, nSize ))
         !neighPos = scheme%pdf(lev)%neigh( ?NGPOS?( iDir, elemPos, nStateElems ))
 
-        write(stdOutUnit,'(A)') ' '
-        write(stdOutUnit, '(A,I12)') 'idir = ', iDir
-        write(stdOutUnit, '(A,I12)') 'idx_idir = ', idx_idir
-        write(stdOutUnit, '(A,I12)') 'elemPos = ', elemPos
-        write(stdOutUnit, '(A,I12)') 'stateVectorPos = ', stateVectorPos
-        write(stdOutUnit, '(A,I12)') 'PDF neigh = ', neighPos
+        write(logUnit(1),'(A)') ' '
+        write(logUnit(1), '(A,I12)') 'idir = ', iDir
+        write(logUnit(1), '(A,I12)') 'idx_idir = ', idx_idir
+        write(logUnit(1), '(A,I12)') 'elemPos = ', elemPos
+        write(logUnit(1), '(A,I12)') 'stateVectorPos = ', stateVectorPos
+        write(logUnit(1), '(A,I12)') 'PDF neigh = ', neighPos
 
         ! ldNeighElem = scheme%levelDesc( lev )                                   &
         !   &              %neigh(1)                                           &
@@ -1001,7 +1001,7 @@ subroutine testParticleConnectivity(scheme, particle, lev)
         ! Position of link to stream from
         ldNeighPos = ?IDX?( idx_idir, nghElem, nScalars, nSize )
 
-        write(stdOutUnit, '(A,I12)') 'levelDesc neigh = ', ldNeighPos
+        write(logUnit(1), '(A,I12)') 'levelDesc neigh = ', ldNeighPos
 
       end do
     end do
@@ -1009,24 +1009,12 @@ subroutine testParticleConnectivity(scheme, particle, lev)
 end subroutine testParticleConnectivity
 
 
-subroutine initProcLog( myRank, logUnit )
-
-  integer, intent(in) :: myRank, logUnit
-  ! --------------------------------------------!
-  character(len=1024) :: filename
-  ! --------------------------------------------!
-
-  write (filename, "(A3,I0.4)") "out", myRank
-  filename = trim(filename)//'.dat'
-  open(80+myRank, file = filename, status = 'new')
-end subroutine initProcLog
-
-subroutine printTotalElemList(scheme, geometry, lev, proc, logUnit)
+subroutine printTotalElemList(scheme, geometry, lev, proc, plogUnit)
   type(mus_scheme_type), intent(in) :: scheme
   type(mus_geom_type), intent(in) :: geometry
   integer, intent(in) :: lev
   integer, intent(in) :: proc
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogUnit
   ! --------------------------------------------!
   integer :: iElem, posInBnd
   integer(kind=long_k) :: bcID
@@ -1041,41 +1029,41 @@ subroutine printTotalElemList(scheme, geometry, lev, proc, logUnit)
 
   filename = trim(filename)//'.dat'
 
-  open(logUnit, file = filename, status = 'new')
+  open(plogUnit, file = filename, status = 'new')
   
-  write(logUnit, *) 'Local fluid TreeIDs'
-  write(logUnit,'(A12)', advance='no') 'TreeID'
-  write(logUnit,'(A10)', advance='no') 'hasBnd?'
-  write(logUnit,'(A)') 'Boundary IDs in each of the stencil directions'
+  write(plogUnit, *) 'Local fluid TreeIDs'
+  write(plogUnit,'(A12)', advance='no') 'TreeID'
+  write(plogUnit,'(A10)', advance='no') 'hasBnd?'
+  write(plogUnit,'(A)') 'Boundary IDs in each of the stencil directions'
 
   do iElem = 1, scheme%pdf(lev)%nElems_fluid
     elemTreeID = scheme%levelDesc(lev)%total(iElem) 
     elemProp = scheme%levelDesc(lev)%property(iElem) 
     if( btest(elemProp, prp_hasBnd) ) then
-      write(logUnit, '(I12)', advance='no') elemTreeID
-      write(logUnit, '(A10)', advance='no') ' hasBnd'
+      write(plogUnit, '(I12)', advance='no') elemTreeID
+      write(plogUnit, '(A10)', advance='no') ' hasBnd'
       ! Find out what the BCid is
       posInBnd = geometry%posInBndID(iElem)
       do iDir = 1,scheme%layout%fstencil%QQN
         bcID = geometry%boundary%boundary_ID(iDir,posInBnd)
-        write(logUnit, '(I12)', advance='no') bcID
+        write(plogUnit, '(I12)', advance='no') bcID
       end do
-      write(logUnit,'(A)') ' '
+      write(plogUnit,'(A)') ' '
     else
-      write(logUnit, '(I12)', advance='no') elemTreeID
-      write(logUnit, '(A10)') ' '
+      write(plogUnit, '(I12)', advance='no') elemTreeID
+      write(plogUnit, '(A10)') ' '
     end if
   end do
 
-  write(logUnit, *) 'Halo TreeIDs'
+  write(plogUnit, *) 'Halo TreeIDs'
   do iElem = scheme%pdf(lev)%nElems_fluid + 1, scheme%pdf(lev)%nElems_fluid + scheme%pdf(lev)%nElems_halo
     elemTreeID = scheme%levelDesc(lev)%total(iElem) 
     elemProp = scheme%levelDesc(lev)%property(iElem) 
     if( btest(elemProp, prp_hasBnd) ) then
-      write(logUnit, '(I12)', advance='no') elemTreeID
-      write(logUnit, '(A)') 'hasBnd'
+      write(plogUnit, '(I12)', advance='no') elemTreeID
+      write(plogUnit, '(A)') 'hasBnd'
     else
-      write(logUnit, '(I12)') elemTreeID
+      write(plogUnit, '(I12)') elemTreeID
     end if
   end do
   ! do iElem = 1, ubound( scheme%levelDesc(lev)%total, 1 )
@@ -1083,15 +1071,15 @@ subroutine printTotalElemList(scheme, geometry, lev, proc, logUnit)
   !   write(logUnit, '(I12)') elemTreeID
   ! end do
 
-  close(unit = logUnit, status='KEEP')
+  close(unit = plogUnit, status='KEEP')
 end subroutine printTotalElemList
 
-subroutine printNeighList(scheme, geometry, lev, proc, logUnit)
+subroutine printNeighList(scheme, geometry, lev, proc, plogUnit)
   type(mus_scheme_type), intent(in) :: scheme
   type(mus_geom_type), intent(in) :: geometry
   integer, intent(in) :: lev
   integer, intent(in) :: proc
-  integer, intent(in) :: logUnit
+  integer, intent(in) :: plogUnit
   ! --------------------------------------------!
   integer :: iElem, iDir, iBnd
   integer :: QQN
@@ -1107,47 +1095,47 @@ subroutine printNeighList(scheme, geometry, lev, proc, logUnit)
 
   filename = trim(filename)//'.dat'
 
-  open(logUnit, file = filename, status = 'new')
+  open(plogUnit, file = filename, status = 'new')
   
-  write(logUnit, *) 'Local fluid TreeIDs'
+  write(plogUnit, *) 'Local fluid TreeIDs'
   do iElem = 1, scheme%pdf(lev)%nElems_fluid
     elemTreeID = scheme%levelDesc(lev)%total(iElem) 
-    write(logUnit, '(I8)', advance='no') elemTreeID
+    write(plogUnit, '(I8)', advance='no') elemTreeID
     do iDir = 1, QQN
       neighPos = scheme%levelDesc(lev)%neigh(1)%nghElems(iDir, iElem)
       if(neighPos > 0) then
         elemTreeID = scheme%levelDesc(lev)%total(neighPos)
-        write(logUnit, '(I8)', advance='no') elemTreeID 
+        write(plogUnit, '(I8)', advance='no') elemTreeID 
       else
-        write(logUnit, '(I8)', advance='no') neighPos
+        write(plogUnit, '(I8)', advance='no') neighPos
       end if
     end do
-    write(logUnit, '(A)') ' '
+    write(plogUnit, '(A)') ' '
   end do
 
-  write(logUnit, *) 'Halo TreeIDs'
+  write(plogUnit, *) 'Halo TreeIDs'
   do iElem = scheme%pdf(lev)%nElems_fluid + 1, scheme%pdf(lev)%nElems_fluid + scheme%pdf(lev)%nElems_halo
     elemTreeID = scheme%levelDesc(lev)%total(iElem) 
-    write(logUnit, '(I8)', advance='no') elemTreeID
+    write(plogUnit, '(I8)', advance='no') elemTreeID
     do iDir = 1, QQN
       neighPos = scheme%levelDesc(lev)%neigh(1)%nghElems(iDir, iElem)
       if(neighPos > 0) then
         elemTreeID = scheme%levelDesc(lev)%total(neighPos)
-        write(logUnit, '(I8)', advance='no') elemTreeID 
+        write(plogUnit, '(I8)', advance='no') elemTreeID 
       else
-        write(logUnit, '(I8)', advance='no') neighPos
+        write(plogUnit, '(I8)', advance='no') neighPos
       end if
     
     end do
-    write(logUnit, '(A)') ' '
+    write(plogUnit, '(A)') ' '
   end do
 
-  write(logUnit,*) 'This mesh has ', geometry%boundary%nBCtypes,  ' boundary labels'
+  write(plogUnit,*) 'This mesh has ', geometry%boundary%nBCtypes,  ' boundary labels'
   do iBnd = 1, geometry%boundary%nBCtypes
-    write(logUnit,*) iBnd, ': ', geometry%boundary%BC_label(iBnd) 
+    write(plogUnit,*) iBnd, ': ', geometry%boundary%BC_label(iBnd) 
   end do
 
-  close(unit = logUnit, status='KEEP')
+  close(unit = plogUnit, status='KEEP')
 end subroutine printNeighList
 
 ! This is to test whether applyHydrodynamicForces indeed only loops over local fluid links
@@ -1209,7 +1197,7 @@ subroutine test_loopOverLocalLinks( this, scheme, stencil, params )
     end do linkLoop
   end do particleElemLoop
 
-  write(stdOutUnit, *) 'Process ', params%general%proc%rank, ' force comp loops over ', nLinks, ' links'
+  write(logUnit(1), *) 'Process ', params%general%proc%rank, ' force comp loops over ', nLinks, ' links'
 
 end subroutine test_loopOverLocalLinks
 

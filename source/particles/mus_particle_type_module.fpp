@@ -28,11 +28,12 @@
 module mus_particle_type_module
 
   use env_module, only: rk, long_k, zeroLength, &
-    &   stdOutUnit, minLength, labelLen
+    &                   minLength, labelLen
 
   use tem_stencil_module, only: tem_stencilHeader_type, &
     &                           tem_stencil_findIndexOfDir
   use tem_topology_module, only: tem_idOfCoord
+  use tem_logging_module, only: logUnit
   use tem_dyn_array_module, only:  &
     &   init, append, destroy,     &
     &   empty, dyn_intArray_type,  &
@@ -1086,18 +1087,18 @@ contains
     nvals = particleGroup%particles_MEM%nvals
 
     ! Unsorted pIDlist
-    write(stdOutUnit, '(A)', advance='no') 'pIDlist = [ '
-    write(stdOutUnit, '(6I3)', advance='no') ( particleGroup%particles_MEM  &
+    write(logUnit(1), '(A)', advance='no') 'pIDlist = [ '
+    write(logUnit(1), '(6I3)', advance='no') ( particleGroup%particles_MEM  &
       &                                      %pIDlist(iP), &
       &                                      iP = 1,nvals )
-    write(stdOutUnit, '(A)') ' ]'
+    write(logUnit(1), '(A)') ' ]'
     
     ! Sorted pIDlist
-    write(stdOutUnit, '(A)', advance='no') 'pIDsort = [ '
-    write(stdOutUnit, '(6I3)', advance='no') ( particleGroup%particles_MEM  &
+    write(logUnit(1), '(A)', advance='no') 'pIDsort = [ '
+    write(logUnit(1), '(6I3)', advance='no') ( particleGroup%particles_MEM  &
       &                                      %pIDsort(iP), &
       &                                       iP = 1,nvals )
-    write(stdOutUnit, '(A)') ' ]'
+    write(logUnit(1), '(A)') ' ]'
 
   end subroutine printpIDlist
 
@@ -1131,10 +1132,10 @@ contains
                              & wasAdded = wasAdded                  )
     end do
 
-    call printParticleGroup(particleGroup, stdOutUnit)
+    call printParticleGroup(particleGroup, logUnit(1))
     call printpIDlist(particleGroup)
     call remove_particle_from_da_particle_mem(particleGroup%particles_MEM, 2)
-    write(stdOutUnit,*) 'After removing 5th particle'
+    write(logUnit(1),*) 'After removing 5th particle'
     call printpIDlist(particleGroup)
 
   end subroutine test_append_da_particle

@@ -26,26 +26,27 @@
 
 module mus_particle_interactions_module
 
-use env_module,                        only : rk, long_k, stdOutUnit
-use tem_param_module,                  only : PI, div1_6, div1_12
-use tem_logging_module,                only : logUnit
-use tem_aux_module,                    only : tem_abort
-use tem_property_module,               only : prp_solid, prp_particle, &
-                                            & prp_hasBnd, prp_sendHalo
-use tem_geometry_module,               only : tem_CoordOfReal, tem_PosOfId
-use tem_topology_module,               only : tem_IdOfCoord, tem_FirstIdAtLevel
-use tem_stencil_module,                only : tem_stencilHeader_type
-use mus_geom_module,                   only : mus_geom_type
-use mus_scheme_type_module,            only : mus_scheme_type
-use mus_param_module,                  only : mus_param_type
-use mus_particle_type_module,          only : mus_particle_MEM_type,                &
-                                            & mus_particle_DPS_type,                &
-                                            & mus_particle_group_type
-use mus_particle_comm_type_module,     only : mus_particles_communication_type 
-use mus_particle_logging_type_module,  only : mus_particle_logging_type, &
-                                            & pgDebugLog
-use mus_particle_aux_module,           only : cross_product
-use mus_particle_boundary_module,      only : computeDisplacement, pgBndData
+use env_module,                        only: rk, long_k
+use tem_param_module,                  only: PI, div1_6, div1_12
+use tem_logging_module,                only: logUnit
+use tem_aux_module,                    only: tem_abort
+use tem_logging_module,                only: logUnit
+use tem_property_module,               only: prp_solid, prp_particle, &
+                                           & prp_hasBnd, prp_sendHalo
+use tem_geometry_module,               only: tem_CoordOfReal, tem_PosOfId
+use tem_topology_module,               only: tem_IdOfCoord, tem_FirstIdAtLevel
+use tem_stencil_module,                only: tem_stencilHeader_type
+use mus_geom_module,                   only: mus_geom_type
+use mus_scheme_type_module,            only: mus_scheme_type
+use mus_param_module,                  only: mus_param_type
+use mus_particle_type_module,          only: mus_particle_MEM_type,                &
+                                           & mus_particle_DPS_type,                &
+                                           & mus_particle_group_type
+use mus_particle_comm_type_module,     only: mus_particles_communication_type 
+use mus_particle_logging_type_module,  only: mus_particle_logging_type, &
+                                           & pgDebugLog
+use mus_particle_aux_module,           only: cross_product
+use mus_particle_boundary_module,      only: computeDisplacement, pgBndData
                                             
 
 
@@ -172,15 +173,15 @@ subroutine DEM_isRemoteCollision_MEM(particleA, particleB, myRank, send, &
 
     ! Check to make sure we found the proc
     if( otherRank /= send%proc(iproc) ) then
-      write(stdOutUnit, '(A)') '------------------------------------'
-      write(stdOutUnit,*) 'ERROR isRemoteCollision myRank = ', myRank, ' : could not find particle rank'
-      write(stdOutUnit,*) 'particle A with ID = ', particleA%particleID, ' owner ', particleA%owner
-      write(stdOutUnit,*) 'particle B with ID = ', particleB%particleID, ' owner ', particleB%owner
-      write(stdOutUnit,*) 'otherRank = ', otherRank
-      write(stdOutUnit, '(A)', advance = 'no') 'send%proc = ['
-      write(stdOutUnit, '(4I6)', advance = 'no') ( send%proc(i), i = 1, send%nProcs)
-      write(stdOutUnit, '(A)') ']'
-      write(stdOutUnit, '(A)') '------------------------------------'
+      write(logUnit(1), '(A)') '------------------------------------'
+      write(logUnit(1),*) 'ERROR isRemoteCollision myRank = ', myRank, ' : could not find particle rank'
+      write(logUnit(1),*) 'particle A with ID = ', particleA%particleID, ' owner ', particleA%owner
+      write(logUnit(1),*) 'particle B with ID = ', particleB%particleID, ' owner ', particleB%owner
+      write(logUnit(1),*) 'otherRank = ', otherRank
+      write(logUnit(1), '(A)', advance = 'no') 'send%proc = ['
+      write(logUnit(1), '(4I6)', advance = 'no') ( send%proc(i), i = 1, send%nProcs)
+      write(logUnit(1), '(A)') ']'
+      write(logUnit(1), '(A)') '------------------------------------'
 
       call tem_abort()
     end if
@@ -259,15 +260,15 @@ subroutine DEM_isRemoteCollision_DPS(particleA, particleB, myRank, send, &
 
     ! Check to make sure we found the proc
     if( otherRank /= send%proc(iproc) ) then
-      write(stdOutUnit, '(A)') '------------------------------------'
-      write(stdOutUnit,*) 'ERROR isRemoteCollision myRank = ', myRank, ' : could not find particle rank'
-      write(stdOutUnit,*) 'particle A with ID = ', particleA%particleID, ' owner ', particleA%owner
-      write(stdOutUnit,*) 'particle B with ID = ', particleB%particleID, ' owner ', particleB%owner
-      write(stdOutUnit,*) 'otherRank = ', otherRank
-      write(stdOutUnit, '(A)', advance = 'no') 'send%proc = ['
-      write(stdOutUnit, '(4I6)', advance = 'no') ( send%proc(i), i = 1, send%nProcs)
-      write(stdOutUnit, '(A)') ']'
-      write(stdOutUnit, '(A)') '------------------------------------'
+      write(logUnit(1), '(A)') '------------------------------------'
+      write(logUnit(1),*) 'ERROR isRemoteCollision myRank = ', myRank, ' : could not find particle rank'
+      write(logUnit(1),*) 'particle A with ID = ', particleA%particleID, ' owner ', particleA%owner
+      write(logUnit(1),*) 'particle B with ID = ', particleB%particleID, ' owner ', particleB%owner
+      write(logUnit(1),*) 'otherRank = ', otherRank
+      write(logUnit(1), '(A)', advance = 'no') 'send%proc = ['
+      write(logUnit(1), '(4I6)', advance = 'no') ( send%proc(i), i = 1, send%nProcs)
+      write(logUnit(1), '(A)') ']'
+      write(logUnit(1), '(A)') '------------------------------------'
 
       call tem_abort()
     end if

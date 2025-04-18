@@ -30,46 +30,47 @@ module mus_particle_DPS_module
 
 use mpi
 
-use env_module,                        only : rk, long_k, stdOutUnit
-use tem_param_module,                  only : div1_3, div1_6, PI, cs2inv, &
-                                            & cs4inv, rho0Inv
-use tem_aux_module,                    only : tem_abort
-use tem_geometry_module,               only : tem_CoordOfReal, tem_posOfId
-use tem_topology_module,               only : tem_IdOfCoord, tem_FirstIdAtLevel
-use tem_varSys_module,                 only : tem_varSys_type
-use mus_geom_module,                   only : mus_geom_type
-use mus_scheme_type_module,            only : mus_scheme_type
-use mus_param_module,                  only : mus_param_type
-use mus_auxField_module,               only : mus_auxFieldVar_type
-use mus_derVarPos_module,              only : mus_derVarPos_type
-use mus_particle_type_module,          only : mus_particle_DPS_type,        &
-                                            & mus_particle_group_type,      &
-                                            & allocateProcessMasks
-use mus_particle_comm_type_module,     only : mus_particles_communication_type
-use mus_particle_comm_module,          only : exchangeNewParticles_DPS,       &
-                                            & exchangeParticlesToRemove_DPS 
-use mus_particle_type_module,          only : remove_particle_from_da_particle_DPS, &
-                                            & interpolateFluidPropFunc, &
-                                            & calcVelAndPGradFunc
-use mus_particle_aux_module,           only : getBaryOfCoord,  &
-                                            & cross_product,   &
-                                            & followNeighPath,   &
-                                            & getPosOfCoord,   &
-                                            & findPartitionOfTreeID
-use mus_particle_logging_module,       only : getParticleLogUnit, &
-                                            & logParticleData, &
-                                            & closeParticleLog
-use mus_particle_logging_type_module,  only : pgDebugLog
-use mus_particle_boundary_module,      only : pgBndData, &
-                                            & getNeighborCoord, &
-                                            & wrapPeriodicCoord
-use mus_particle_interpolation_module, only : intp_1D_delta, &
-                                            & mus_particle_interpolator_type, &
-                                            & intp_1D_peskin, &
-                                            & intp1D_linear, &
-                                            & getwght1d_linear, &
-                                            & get_xd, &
-                                            & getInterpolationBnds
+use env_module,                        only: rk, long_k
+use tem_param_module,                  only: div1_3, div1_6, PI, cs2inv, &
+                                           & cs4inv, rho0Inv
+use tem_aux_module,                    only: tem_abort
+use tem_logging_module,                only: logUnit
+use tem_geometry_module,               only: tem_CoordOfReal, tem_posOfId
+use tem_topology_module,               only: tem_IdOfCoord, tem_FirstIdAtLevel
+use tem_varSys_module,                 only: tem_varSys_type
+use mus_geom_module,                   only: mus_geom_type
+use mus_scheme_type_module,            only: mus_scheme_type
+use mus_param_module,                  only: mus_param_type
+use mus_auxField_module,               only: mus_auxFieldVar_type
+use mus_derVarPos_module,              only: mus_derVarPos_type
+use mus_particle_type_module,          only: mus_particle_DPS_type,        &
+                                           & mus_particle_group_type,      &
+                                           & allocateProcessMasks
+use mus_particle_comm_type_module,     only: mus_particles_communication_type
+use mus_particle_comm_module,          only: exchangeNewParticles_DPS,       &
+                                           & exchangeParticlesToRemove_DPS 
+use mus_particle_type_module,          only: remove_particle_from_da_particle_DPS, &
+                                           & interpolateFluidPropFunc, &
+                                           & calcVelAndPGradFunc
+use mus_particle_aux_module,           only: getBaryOfCoord,  &
+                                           & cross_product,   &
+                                           & followNeighPath,   &
+                                           & getPosOfCoord,   &
+                                           & findPartitionOfTreeID
+use mus_particle_logging_module,       only: getParticleLogUnit, &
+                                           & logParticleData, &
+                                           & closeParticleLog
+use mus_particle_logging_type_module,  only: pgDebugLog
+use mus_particle_boundary_module,      only: pgBndData, &
+                                           & getNeighborCoord, &
+                                           & wrapPeriodicCoord
+use mus_particle_interpolation_module, only: intp_1D_delta, &
+                                           & mus_particle_interpolator_type, &
+                                           & intp_1D_peskin, &
+                                           & intp1D_linear, &
+                                           & getwght1d_linear, &
+                                           & get_xd, &
+                                           & getInterpolationBnds
 
 
 implicit none
@@ -1133,7 +1134,7 @@ subroutine mapParticlesToLattice_DPS(particleGroup, scheme, geometry, params)
 
       particleGroup%particles_DPS%val(iParticle)%newForMe = .FALSE. 
 
-      ! write(stdOutUnit,*) 'mus_particles_mapping_DPS: initialized new particle on proc', &
+      ! write(logUnit(1),*) 'mus_particles_mapping_DPS: initialized new particle on proc', &
       !   & params%general%proc%rank
 
        open( pgDebugLog%lu, file=pgDebugLog%lfile, status='old', position='append' )
@@ -1292,10 +1293,10 @@ subroutine mus_particles_DPS_interpolateFluidProperties( particle, interpolator,
                           & err      = failedToGrabValue,      &
                           & posOfCoord = particle%posOfOrigin  )
   if(failedToGrabValue) then
-    write(stdOutUnit,*) "ERROR interpolateFluidProperties: could not grab value of gradients!"
-    write(stdOutUnit,*) "CoordOfOrigin = ", particle%coordOfOrigin
-    write(stdOutUnit,*) "Particle owner = ", particle%owner
-    write(stdOutUnit,*) "myRank = ", params%general%proc%rank
+    write(logUnit(1),*) "ERROR interpolateFluidProperties: could not grab value of gradients!"
+    write(logUnit(1),*) "CoordOfOrigin = ", particle%coordOfOrigin
+    write(logUnit(1),*) "Particle owner = ", particle%owner
+    write(logUnit(1),*) "myRank = ", params%general%proc%rank
 
     call tem_abort()
   end if
@@ -1592,7 +1593,7 @@ do nx = interpolator%bnd_x(1), interpolator%bnd_x(2)
       & u            = u_tmp,            &
       & err          = failedToGrabValue )
       if(failedToGrabValue) then
-        write(stdOutUnit,*) 'ERROR interpolateFluidProps_delta: ', &
+        write(logUnit(1),*) 'ERROR interpolateFluidProps_delta: ', &
         & 'could not grab fluid prop values at coord', coord_xp
         call tem_abort()
       end if
@@ -1664,10 +1665,10 @@ subroutine mus_particles_DPS_interpolateFluidProperties_onewaycoupled( particle,
                         & err      = failedToGrabValue       )
 
   if(failedToGrabValue) then
-    write(stdOutUnit,*) "ERROR interpolateFluidProperties: could not grab value of gradients!"
-    write(stdOutUnit,*) "CoordOfOrigin = ", particle%coordOfOrigin
-    write(stdOutUnit,*) "Particle owner = ", particle%owner
-    write(stdOutUnit,*) "myRank = ", params%general%proc%rank
+    write(logUnit(1),*) "ERROR interpolateFluidProperties: could not grab value of gradients!"
+    write(logUnit(1),*) "CoordOfOrigin = ", particle%coordOfOrigin
+    write(logUnit(1),*) "Particle owner = ", particle%owner
+    write(logUnit(1),*) "myRank = ", params%general%proc%rank
 
     call tem_abort()
   end if
@@ -2011,7 +2012,7 @@ subroutine calcVelocityAndPressureGradient_onewaycoupled_old(coord, scheme, grad
       ! If we could not get density and velocity values at neighbor
       ! i.e. if neighbor is outside domain, use the neighbor in the 
       ! OTHER direction to extrapolate the values we need.
-      ! write(stdOutUnit,*) 'calcVelocityAndPressureGradient: extrapolating ', &
+      ! write(logUnit(1),*) 'calcVelocityAndPressureGradient: extrapolating ', &
       !   & 'from neighbor in opposite direction'
 
       ! First grab value at coord itself
@@ -2023,7 +2024,7 @@ subroutine calcVelocityAndPressureGradient_onewaycoupled_old(coord, scheme, grad
                            & u        = u_coord,            &
                            & err      = failedToGrabValue )
       if( failedToGrabValue ) then
-        write(stdOutUnit,*) 'ERROR calcVelocityAndPressureGradient: ', &
+        write(logUnit(1),*) 'ERROR calcVelocityAndPressureGradient: ', &
           & 'could not grab pressure value at coord', coord
         call tem_abort()
       end if
@@ -2049,7 +2050,7 @@ subroutine calcVelocityAndPressureGradient_onewaycoupled_old(coord, scheme, grad
                            & u        = u_tmp,            &
                            & err      = failedToGrabValue )
       if( failedToGrabValue ) then
-        ! write(stdOutUnit,*) 'WARNING calcVelocityAndPressureGradient: ',  &
+        ! write(logUnit(1),*) 'WARNING calcVelocityAndPressureGradient: ',  &
         !   & 'could not grab value at neighbor coord. Assuming value at ', &
         !   & 'coordOfOrigin'
         rho_tmp = rho_coord
@@ -2125,10 +2126,10 @@ subroutine grabValueAtCoord_twowaycoupled(coord, scheme, vel_pos, dens_pos, vol_
 
     if (ldPos <= 0) then
       ! If we couldn't find the element on this proc, set err to TRUE
-      ! write(stdOutUnit,*) 'WARNING rank mus_particles_DPS_grabValueAtCoord: ldPos <= 0'
-      ! write(stdOutUnit,*) 'ldPos =',  ldPos
-      ! write(stdOutUnit,*) 'TreeID =', TreeID
-      ! write(stdOutUnit,*) 'coord = ', coord
+      ! write(logUnit(1),*) 'WARNING rank mus_particles_DPS_grabValueAtCoord: ldPos <= 0'
+      ! write(logUnit(1),*) 'ldPos =',  ldPos
+      ! write(logUnit(1),*) 'TreeID =', TreeID
+      ! write(logUnit(1),*) 'coord = ', coord
       err = .TRUE.
       rho = -1.0_rk
       u = -1.0_rk
@@ -2188,10 +2189,10 @@ subroutine grabValueAtCoord_onewaycoupled(coord, scheme, vel_pos, dens_pos, rho,
 
     if (ldPos <= 0) then
       ! If we couldn't find the element on this proc, set err to TRUE
-      ! write(stdOutUnit,*) 'WARNING rank mus_particles_DPS_grabValueAtCoord: ldPos <= 0'
-      ! write(stdOutUnit,*) 'ldPos =',  ldPos
-      ! write(stdOutUnit,*) 'TreeID =', TreeID
-      ! write(stdOutUnit,*) 'coord = ', coord
+      ! write(logUnit(1),*) 'WARNING rank mus_particles_DPS_grabValueAtCoord: ldPos <= 0'
+      ! write(logUnit(1),*) 'ldPos =',  ldPos
+      ! write(logUnit(1),*) 'TreeID =', TreeID
+      ! write(logUnit(1),*) 'coord = ', coord
       err = .TRUE.
       rho = -1.0_rk
       u = -1.0_rk
@@ -2449,7 +2450,7 @@ subroutine applySrc_toElem( G, posInTotal, scheme, iLevel )
   ! F_i = w_i( (\vec{e}_i-\vec{u}*)/cs2 +
   !       (\vec{e}_i \cdot \vec{u}*)\vec{e}_i/cs4) \cdot \vec{F}
 
-  ! write(stdOutUnit,*) "posInTotal = ", posInTotal
+  ! write(logUnit(1),*) "posInTotal = ", posInTotal
   do iDir = 1, QQ
     ucx = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), &
       &                velocity )
@@ -2517,7 +2518,7 @@ subroutine applySrc_toElem_eps( G, posInTotal, scheme, iLevel )
   ! F_i = w_i( (\vec{e}_i-\vec{u}*)/cs2 +
   !       (\vec{e}_i \cdot \vec{u}*)\vec{e}_i/cs4) \cdot \vec{F}
 
-  ! write(stdOutUnit,*) "posInTotal = ", posInTotal
+  ! write(logUnit(1),*) "posInTotal = ", posInTotal
   do iDir = 1, QQ
     ucx = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), &
       &                velocity )

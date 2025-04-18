@@ -104,14 +104,14 @@ end type
       ! Check if particle ID is already in particle array 
       ! If so, do nothing
       if ( me%pIDlist(me%pIDsort(foundpos)) == particle%particleID ) then
-        ! write(stdOutUnit,*) "Warning append_da_particle: particle already in array "
+        ! write(logUnit(1),*) "Warning append_da_particle: particle already in array "
         return
       else
         ! need to append a new value!
 
         if (me%nvals == huge(me%nvals)) then
-           write(stdOutUnit,*) "reached end of integer range for dynamic particle array!"
-           write(stdOutUnit,*) "aborting!!"
+           write(logUnit(1),*) "reached end of integer range for dynamic particle array!"
+           write(logUnit(1),*) "aborting!!"
            stop
         end if
 
@@ -479,7 +479,7 @@ end type
 
     chunkLoop: do iChunk = 1, nChunks
       ! Load one chunk into the particleBuffer
-      write(stdOutUnit,*) 'loading chunk ', iChunk
+      write(logUnit(1),*) 'loading chunk ', iChunk
       ! Note: loading position values also sets the particle ID's!
       call mus_load_?tname?_data_chunk( conf           = conf,           &
                                        & parent         = parent,      &
@@ -520,7 +520,7 @@ end type
       ! nChunkVals is the number of particles actually read from the lua file
       ! Can be less than chunkSize if there are fewer than chunkSize particles
       ! left in lua table
-      ! write(stdOutUnit,*) 'nChunkVals = ', nChunkVals
+      ! write(logUnit(1),*) 'nChunkVals = ', nChunkVals
 
       !-- SET PARTICLE ROTATIONAL INERTIA --!
       do iParticle = 1, nChunkVals
@@ -531,10 +531,10 @@ end type
       end do
 
       ! Append particles in particleBuffer to particleGroup
-      write(stdOutUnit,*) 'Loading particles: nChunkVals = ', nChunkVals
+      write(logUnit(1),*) 'Loading particles: nChunkVals = ', nChunkVals
       do iParticle = 1, nChunkVals
         wasAdded = .FALSE.
-        ! write(stdOutUnit,*) 'Appending particle'
+        ! write(logUnit(1),*) 'Appending particle'
 
         ! Check if this particle position is local to my process
         isLocal = positionLocalOnMyRank( pos = particlebuffer(iparticle)%pos(1:3), &
@@ -601,7 +601,7 @@ end type
 
     chunkLoop: do iChunk = 1, nChunks
       ! Load one chunk into the particleBuffer
-      ! write(stdOutUnit,*) 'loading chunk ', iChunk
+      ! write(logUnit(1),*) 'loading chunk ', iChunk
       ! Note: loading position values also sets the particle ID's!
       call mus_load_?tname?_data_chunk( conf           = conf,           &
                                        & parent         = parent,      &
@@ -642,7 +642,7 @@ end type
       ! nChunkVals is the number of particles actually read from the lua file
       ! Can be less than chunkSize if there are fewer than chunkSize particles
       ! left in lua table
-      ! write(stdOutUnit,*) 'nChunkVals = ', nChunkVals
+      ! write(logUnit(1),*) 'nChunkVals = ', nChunkVals
 
       !-- SET PARTICLE ROTATIONAL INERTIA --!
       do iParticle = 1, nChunkVals
@@ -653,10 +653,10 @@ end type
       end do
 
       ! Append particles in particleBuffer to particleGroup
-      ! write(stdOutUnit,*) 'Loading particles: nChunkVals = ', nChunkVals
+      ! write(logUnit(1),*) 'Loading particles: nChunkVals = ', nChunkVals
       do iParticle = 1, nChunkVals
         wasAdded = .FALSE.
-        ! write(stdOutUnit,*) 'Appending particle'
+        ! write(logUnit(1),*) 'Appending particle'
 
         call append_DA_?tname?( me        = particles,                       &
                               & particle  = particleBuffer(iParticle),   &
@@ -714,7 +714,7 @@ end type
     nChunkVals = 0
     
     if( .NOT.( allocated( particleBuffer ) ) ) then
-      write(stdOutUnit,*) 'ERROR mus_load_particle_data_chunk:'
+      write(logUnit(1),*) 'ERROR mus_load_particle_data_chunk:'
       call tem_abort( 'particleBuffer not allocated')
     end if
 
@@ -827,7 +827,7 @@ end type
       call aot_table_close(L = conf, thandle = thandle)
 
     else
-      write(stdOutUnit,'(A)') &
+      write(logUnit(1),'(A)') &
         & 'Error MUS_LOAD_PARTICLE_DATA: unrecognized property'
     end if ! particle property
 

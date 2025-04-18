@@ -30,48 +30,49 @@ module mus_particle_MEM_module
 
 use mpi
 
-use env_module,                     only : rk, long_k, stdOutUnit
-use tem_param_module,               only : rho0_lat => rho0, cs2, cs2inv
-use tem_aux_module,                 only : tem_abort
-use tem_geometry_module,            only : tem_CoordOfReal, tem_PosOfId
-use tem_topology_module,            only : tem_IdOfCoord, tem_FirstIdAtLevel
-use tem_construction_module,        only : tem_levelDesc_type
-use tem_varSys_module,              only : tem_varSys_type
-use tem_varMap_module,              only : tem_varMap_type
-use tem_stencil_module,             only : tem_stencilHeader_type,  &
-                                         & tem_stencil_findIndexOfDir
-use tem_property_module,            only : prp_solid, prp_particle, &
-                                         & prp_hasBnd, prp_sendHalo
-use tem_dyn_array_module,           only : init, append, destroy,             &
-                                         & empty, dyn_intArray_type,          &
-                                         & dyn_longArray_type, PosOfVal_long, &
-                                         & SortPosOfVal_long
-use tem_grow_array_module,          only : init, append, destroy, empty,   &
-                                         & grw_int2darray_type,            &
-                                         & grw_logical2darray_type,        &
-                                         & grw_intarray_type,              &
-                                         & grw_longarray_type,             &
-                                         & grw_real2darray_type
-use mus_geom_module,                only : mus_geom_type
-use mus_scheme_type_module,         only : mus_scheme_type
-use mus_param_module,               only : mus_param_type
-use mus_particle_type_module,       only : mus_particle_MEM_type,               &
-                                         & mus_particle_group_type,         &
-                                         & printParticleGroup,              &
-                                         & printParticleGroup2_MEM,             &
-                                         & printpIDlist,                    &
-                                         & remove_particle_from_da_particle_MEM
-use mus_particle_logging_module,       only : logParticleData, getParticleLogUnit, closeParticleLog
-use mus_particle_logging_type_module,  only : mus_particle_logging_type, &
-                                            & pgDebugLog
-use mus_particle_comm_type_module,     only : mus_particles_communication_type 
-use mus_particle_aux_module,           only : findPartitionOfTreeID, &
-                                            & getBaryOfCoord,        &        
-                                            & cross_product         
-use mus_particle_boundary_module,      only : pgBndData, wrapPeriodicPos, &
-                                            & getNeighborCoord, &
-                                            & calcPeriodicRsurface, &
-                                            & computeDisplacement
+use env_module,                     only: rk, long_k
+use tem_param_module,               only: rho0_lat => rho0, cs2, cs2inv
+use tem_logging_module,             only: logUnit
+use tem_aux_module,                 only: tem_abort
+use tem_geometry_module,            only: tem_CoordOfReal, tem_PosOfId
+use tem_topology_module,            only: tem_IdOfCoord, tem_FirstIdAtLevel
+use tem_construction_module,        only: tem_levelDesc_type
+use tem_varSys_module,              only: tem_varSys_type
+use tem_varMap_module,              only: tem_varMap_type
+use tem_stencil_module,             only: tem_stencilHeader_type,  &
+                                        & tem_stencil_findIndexOfDir
+use tem_property_module,            only: prp_solid, prp_particle, &
+                                        & prp_hasBnd, prp_sendHalo
+use tem_dyn_array_module,           only: init, append, destroy,             &
+                                        & empty, dyn_intArray_type,          &
+                                        & dyn_longArray_type, PosOfVal_long, &
+                                        & SortPosOfVal_long
+use tem_grow_array_module,          only: init, append, destroy, empty,   &
+                                        & grw_int2darray_type,            &
+                                        & grw_logical2darray_type,        &
+                                        & grw_intarray_type,              &
+                                        & grw_longarray_type,             &
+                                        & grw_real2darray_type
+use mus_geom_module,                only: mus_geom_type
+use mus_scheme_type_module,         only: mus_scheme_type
+use mus_param_module,               only: mus_param_type
+use mus_particle_type_module,       only: mus_particle_MEM_type,           &
+                                        & mus_particle_group_type,         &
+                                        & printParticleGroup,              &
+                                        & printParticleGroup2_MEM,         &
+                                        & printpIDlist,                    &
+                                        & remove_particle_from_da_particle_MEM
+use mus_particle_logging_module,       only: logParticleData, getParticleLogUnit, closeParticleLog
+use mus_particle_logging_type_module,  only: mus_particle_logging_type, &
+                                           & pgDebugLog
+use mus_particle_comm_type_module,     only: mus_particles_communication_type 
+use mus_particle_aux_module,           only: findPartitionOfTreeID, &
+                                           & getBaryOfCoord,        &        
+                                           & cross_product         
+use mus_particle_boundary_module,      only: pgBndData, wrapPeriodicPos, &
+                                           & getNeighborCoord, &
+                                           & calcPeriodicRsurface, &
+                                           & computeDisplacement
     
 
 
@@ -412,7 +413,7 @@ subroutine mapToLattice( this, particleGroup, scheme, stencil, &
 
   ! ------------------------------------------!
   ! 0. Initialize parameters from scheme, stencil, etc.
-  ! write(stdOutUnit,'(A)') 'Enter mapToLattice'
+  ! write(logUnit(1),'(A)') 'Enter mapToLattice'
   
   ! Set rmflag to false by default
   rmflag = .FALSE.
@@ -588,21 +589,21 @@ subroutine updateCoordOfOrigin( this, geometry )
   moveDir = newCoordOfOrigin(1:3) - this%coordOfOrigin(1:3)
 
   if( any( abs(moveDir) > 1 ) ) then
-    write(stdOutUnit, *) 'ERROR: particle moved more than one lattice site'
-    write(stdOutUnit, '(A)',advance='no') 'Particle ID '
-    write(stdOutUnit, *) this%particleID
-    write(stdOutUnit, '(A)',advance='no') 'pos'
-    write(stdOutUnit, *) this%pos(1:3)
-    write(stdOutUnit, '(A)',advance='no') 'vel'
-    write(stdOutUnit, *) this%vel(1:3)
-    write(stdOutUnit, '(A)',advance='no') 'F'
-    write(stdOutUnit, *) this%F(1:3)
-    write(stdOutUnit, '(A)',advance='no') 'MoveDir'
-    write(stdOutUnit, *) moveDir
-    write(stdOutUnit, '(A)',advance='no') 'newCoordOfOrigin'
-    write(stdOutUnit, *) newCoordOfOrigin
-    write(stdOutUnit, '(A)',advance='no') 'oldCoordOfOrigin'
-    write(stdOutUnit, *) this%coordOfOrigin
+    write(logUnit(1), *) 'ERROR: particle moved more than one lattice site'
+    write(logUnit(1), '(A)',advance='no') 'Particle ID '
+    write(logUnit(1), *) this%particleID
+    write(logUnit(1), '(A)',advance='no') 'pos'
+    write(logUnit(1), *) this%pos(1:3)
+    write(logUnit(1), '(A)',advance='no') 'vel'
+    write(logUnit(1), *) this%vel(1:3)
+    write(logUnit(1), '(A)',advance='no') 'F'
+    write(logUnit(1), *) this%F(1:3)
+    write(logUnit(1), '(A)',advance='no') 'MoveDir'
+    write(logUnit(1), *) moveDir
+    write(logUnit(1), '(A)',advance='no') 'newCoordOfOrigin'
+    write(logUnit(1), *) newCoordOfOrigin
+    write(logUnit(1), '(A)',advance='no') 'oldCoordOfOrigin'
+    write(logUnit(1), *) this%coordOfOrigin
   !  call tem_abort()
   end if
 
@@ -662,7 +663,7 @@ subroutine updateParticleOwner(this, scheme, geometry, myRank, procs, nProcs)
   end if
 
   if( this%owner < 0 ) then
-    write(stdOutUnit,*) "Error: proc ", myRank, &
+    write(logUnit(1),*) "Error: proc ", myRank, &
     & "could not find owner of particle with ID", this%particleID
     call tem_abort()
   end if
@@ -677,9 +678,9 @@ subroutine updateParticleOwner(this, scheme, geometry, myRank, procs, nProcs)
                       & lower      = 1,                           &
                       & upper      = scheme%pdf(lev)%nElems_fluid )
     if(ldPos <= 0) then
-      write(stdOutUnit,*) "Error: proc ", myRank, &
+      write(logUnit(1),*) "Error: proc ", myRank, &
       & ": origin of particle with ID", this%particleID, "is not on a lattice site!"
-      write(stdOutUnit,*) "Origin = ", this%pos(1:3)
+      write(logUnit(1),*) "Origin = ", this%pos(1:3)
 
       call tem_abort()
     end if
@@ -786,7 +787,7 @@ subroutine updateExclusionList(this, scheme, geometry, myRank, procs, nProcs, dx
                       & pos      = newPos,             & 
                       & wasAdded = wasAdded            )
             if( .NOT. wasAdded ) then
-              write(stdOutUnit,'(A)') &
+              write(logUnit(1),'(A)') &
               & 'ERROR updateExclusionList: could not add element'
             end if
           end if ! belongs to particle
@@ -933,11 +934,11 @@ subroutine updateSolidNodes(this, scheme, stencil)
   ! Map PDF values of elements with particle property to themselves
   ! This way the compute kernel leaves them unchanged. 
 
-  ! write(stdOutUnit, '(A)') 'updateSolidNodes'
+  ! write(logUnit(1), '(A)') 'updateSolidNodes'
   lev = this%coordOfOrigin(4)
   nElems = scheme%pdf( lev )%nElems_local
   nSize  = scheme%pdf( lev )%nSize
-  ! write(stdOutUnit, '(A,I12)') 'nSize = ', nSize
+  ! write(logUnit(1), '(A,I12)') 'nSize = ', nSize
 
   ! state varpos for 1st field since neigh is created only for 1st field
   stateVarPos(:stencil%QQ) = scheme%varSys                    &
@@ -1001,7 +1002,7 @@ subroutine updateFluidNeighbors(this, scheme, stencil)
   integer :: iElem, nElems, nSize                 
   integer :: stateVarPos(stencil%QQ)
   
-  ! write(stdOutUnit, '(A)') 'updateFluidNeighbors'
+  ! write(logUnit(1), '(A)') 'updateFluidNeighbors'
 
   lev = this%coordOfOrigin(4)
   nElems = scheme%pdf( lev )%nElems_local
@@ -1068,7 +1069,7 @@ subroutine updateNewFluidNodes(this, scheme, stencil)
   integer :: iElem, nElems, nSize                 
   integer :: stateVarPos(stencil%QQ)
 
-  ! write(stdOutUnit, '(A)') 'updateNewFluidNodes'
+  ! write(logUnit(1), '(A)') 'updateNewFluidNodes'
   lev = this%coordOfOrigin(4)
   nElems = scheme%pdf( lev )%nElems_local
   nSize  = scheme%pdf( lev )%nSize
@@ -1253,7 +1254,7 @@ subroutine applyVelocityBounceback(this, scheme, stencil, params)
   ! vector particle origin to surface elem and angular velocity
   real(kind=rk) :: r(3), r_lat(3), om_lat(3)
   ! ------------------------------------------!
-  ! write(stdOutUnit,'(A)') 'Inside applyParticleVelocityBounceback'
+  ! write(logUnit(1),'(A)') 'Inside applyParticleVelocityBounceback'
   lev = this%coordOfOrigin(4)
   iField = 1
 
@@ -1441,7 +1442,7 @@ subroutine setToEquilibrium(elemList, N, lev, scheme, rho, vel)
   integer :: elemPos
   integer :: nNext
   
-  ! write(stdOutUnit, '(A)') 'setToEquilibrium'
+  ! write(logUnit(1), '(A)') 'setToEquilibrium'
   ! --- Compute equilibrium distribution from prescribed rho, vel_arr
   zeroPos = scheme%layout%fStencil%restPosition
   QQN = scheme%layout%fStencil%QQN

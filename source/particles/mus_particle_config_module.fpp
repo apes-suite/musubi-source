@@ -94,7 +94,7 @@
 ?? include 'particleArrayMacros.inc'
 ! Module to load particle parameters from lua file
 module mus_particle_config_module
-  use env_module, only: rk, long_k, stdOutUnit, labelLen
+  use env_module, only: rk, long_k, labelLen
 
   use tem_grow_array_module, only: append, destroy, empty
   use tem_aux_module, only: tem_abort
@@ -1421,7 +1421,7 @@ contains
                           & buff    = particleblob_prism%particle_mass,  &
                           & flag    = read_is_successful           )
       case default
-        write(stdOutUnit,*) "ERROR: Predefined particle shape kind not recognized, aborting!"
+        write(logUnit(1),*) "ERROR: Predefined particle shape kind not recognized, aborting!"
         call tem_abort()
       end select
 
@@ -1509,7 +1509,7 @@ contains
 
 
     if(.NOT. read_succesful) then
-      write(stdOutUnit,*) "ERROR mus_load_particleblob_cylinder: could not read cylinder params"
+      write(logUnit(1),*) "ERROR mus_load_particleblob_cylinder: could not read cylinder params"
       call tem_abort()
     end if
 
@@ -1620,7 +1620,7 @@ contains
     end if
 
     if(.NOT. read_succesful) then
-      write(stdOutUnit,*) "ERROR mus_load_particleblob_prism: could not read prism params"
+      write(logUnit(1),*) "ERROR mus_load_particleblob_prism: could not read prism params"
       call tem_abort()
     end if
 

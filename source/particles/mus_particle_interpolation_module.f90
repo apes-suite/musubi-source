@@ -25,12 +25,13 @@
 !! at particle locations are implemented.
 
 module mus_particle_interpolation_module
-use env_module,                        only : rk, labelLen, stdOutUnit
-use tem_param_module,                  only : div1_3, div1_6, PI, cs2inv, cs4inv
-use tem_stencil_module,                only : tem_stencilHeader_type, &
-                                            & d3q27_cxDir, &
-                                            & d2q9_cxDir
-use mus_particle_aux_module,           only : getPathToVec
+use env_module,              only: rk, labelLen
+use tem_logging_module,      only: logUnit
+use tem_param_module,        only: div1_3, div1_6, PI, cs2inv, cs4inv
+use tem_stencil_module,      only: tem_stencilHeader_type, &
+  &                                d3q27_cxDir, &
+  &                                d2q9_cxDir
+use mus_particle_aux_module, only: getPathToVec
 
 
 implicit none
@@ -130,7 +131,7 @@ subroutine init_particle_interpolator( interpolator, stencil )
     end do
 
   case default
-    write(stdOutUnit,*) "Error init_particle_interpolator: stencil kind not supported" 
+    write(logUnit(1),*) "Error init_particle_interpolator: stencil kind not supported" 
   end select
 end subroutine init_particle_interpolator
 
