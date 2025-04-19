@@ -97,7 +97,7 @@ module mus_particle_config_module
   use env_module, only: rk, long_k, labelLen
 
   use tem_grow_array_module, only: append, destroy, empty
-  use tem_aux_module, only: tem_abort
+  use tem_aux_module, only: tem_abort, check_aot_error
   use tem_timer_module, only: tem_startTimer, tem_stopTimer
   use tem_logging_module, only: logUnit
 
@@ -1096,20 +1096,21 @@ contains
           ! For MEM particles there is no default halo_distance. It must be
           ! specified by the user, one typically takes it equal to the particle
           ! diameter.
-          call mus_load_real( conf    = conf,                        &
-                            & thandle = p_thandle,                   &
-                            & key     = 'halo_distance',             &
-                            & buff    = particleGroup%halo_distance, &
-                            & flag    = flag                         )
+          call aot_get_val( L = conf, thandle = p_thandle,     &
+            &               key = 'halo_distance',             &
+            &               val = particleGroup%halo_distance, &
+            &               ErrCode = iError                   )
 
         case('DPS', 'DPS_twoway', 'DPS_oneway', 'DPS_unittest')
-          call mus_load_real( conf        = conf,                        &
-                            & thandle     = p_thandle,                   &
-                            & key         = 'halo_distance',             &
-                            & buff        = particleGroup%halo_distance, &
-                            & default_val = dx ,                         &
-                            & flag        = flag                         )
+          call aot_get_val( L = conf, thandle = p_thandle,     &
+            &               key = 'halo_distance',             &
+            &               val = particleGroup%halo_distance, &
+            &               default = dx,                      &
+            &               ErrCode = iError                   )
       end select
+      call check_aot_error(                                          &
+        &    iError, key = 'halo_distance',                          &
+        &    event_string = 'reading '//trim(particle_kind)//' data' )
 
       call mus_load_particle_collisions( particleGroup = particleGroup, &
                                        & conf          = conf,          &
