@@ -71,10 +71,6 @@ module mus_particle_type_module
 
   implicit none
 
-  ! use this logUnit for writing to file containing particle velocities for
-  ! debug
-  integer, parameter, public :: particleLogUnit = 55  
-
   !> Data type representing a collection of particles, typically all 
   !  particles on a single process/rank
   type mus_particle_group_type
