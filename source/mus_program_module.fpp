@@ -103,7 +103,6 @@ module mus_program_module
 
   public :: mus_initialize
   public :: mus_solve
-  public :: mus_solve_particles
   public :: mus_finalize
 
 
@@ -123,7 +122,7 @@ contains
     !> Global parameters
     type( mus_param_type ),     intent(inout) :: params
     !> control routine
-    type( mus_control_type ),   intent(out)   :: control
+    type( mus_control_type ),   intent(inout) :: control
     !> contains pointer to scheme, physics types.
     !! passed to init_Scheme to build varSys
     type( mus_varSys_solverData_type ), target :: solverData
@@ -228,7 +227,7 @@ contains
     !> Global parameters
     type( mus_param_type ), intent(inout) :: params
     !> control routine
-    type( mus_control_type ), intent(in)    :: control
+    type( mus_control_type ), intent(inout) :: control
     !> contains pointer to scheme, physics types
     type( mus_varSys_solverData_type ), target :: solverData
     !> mesh adaptation
@@ -266,10 +265,7 @@ contains
 
       ! Iterate through the elements in a level-wise fashion
       ! and advance the time steps
-      call control%do_computation( scheme    = scheme,   &
-        &                          geometry  = geometry, &
-        &                          params    = params,   &
-        &                          iLevel    = minLevel  )
+      call control%do_computation( iLevel = minLevel  )
 
       call do_balance()
 
@@ -362,156 +358,6 @@ contains
     end subroutine do_balance
 
   end subroutine mus_solve
-! **************************************************************************** !
-  !> This routine does the main musubi computation loop for coupled LBM-DEM 
-  !! simulations of solid particles in a fluid
-  subroutine mus_solve_particles( scheme, geometry, params, control, &
-                                & solverData, adapt, particleGroup   )
-    ! ------------------------------------------------------------------------!
-    !> scheme type
-    type( mus_scheme_type ),    intent(inout) :: scheme
-    !> Treelmesh data
-    type( mus_geom_type ),      intent(inout) :: geometry
-    !> Global parameters
-    type( mus_param_type ),     intent(inout) :: params
-    !> control routine
-    type( mus_control_type ),   intent(in)    :: control
-    !> contains pointer to scheme, physics types
-    type( mus_varSys_solverData_type ), target :: solverData
-    !> mesh adaptation
-    type(tem_adapt_type),       intent(inout) :: adapt
-    !> object containing data for solid particles
-    type(mus_particle_group_type),    intent(inout) :: particleGroup
-    ! ------------------------------------------------------------------------!
-    integer :: minLevel, maxLevel
-    ! ------------------------------------------------------------------------!
-
-    call tem_startTimer( timerHandle =  mus_timerHandles%mainLoop )
-    minLevel = geometry%tree%global%minLevel
-    maxLevel = geometry%tree%global%maxLevel
-
-    ! --------------------------------------------------------------------------
-    ! Start main loop
-    mainloop: do
-
-      ! check if some action has to be taken based on timeControl:
-      ! tracking, global reduction operations, restart.
-      ! check flow status including perform checks
-      ! only at minLevel to complete one multilevel cycle.
-      call check_flow_status( scheme   = scheme,                    &
-        &                     general  = params%general,            &
-        &                     physics  = params%physics,            &
-        &                  mus_aborts  = params%mus_aborts,         &
-        &           restart_triggered  = params%restart_triggered,  &
-        &                    geometry  = geometry                   )
-
-      if( tem_status_run_end(params%general%simControl%status) .or.            &
-        & tem_status_run_terminate(params%general%simControl%status) ) then
-        exit mainLoop
-      end if
-
-      ! clear status bit
-      call tem_simControl_clearStat( me = params%general%simControl )
-
-      ! Iterate through the elements in a level-wise fashion
-      ! and advance the time steps
-      call control%do_computation_particles( scheme    = scheme,     &
-                                           & geometry  = geometry,   &
-                                           & params    = params,     &
-                                           & iLevel    = minLevel,   &
-                                           & particleGroup = particleGroup )
-
-      call do_balance
-
-    enddo mainloop
-    write(logUnit(6),"(A)") 'Finished main loop.'
-    ! Finish main loop
-    ! --------------------------------------------------------------------------
-
-    call tem_stopTimer( timerHandle = mus_timerHandles%mainLoop )
-
-  contains
-
-    subroutine do_balance
-      real(kind=rk) :: total_density
-      logical :: balance_triggered
-
-      ! Perform the dynamic load balancing if interval has been reached
-      if( params%general%balance%dynamic ) then
-        call tem_timeControl_check( me   = params%general%balance%timeControl, &
-          &                         now  = params%general%simControl%now,      &
-          &                         comm = params%general%proc%comm,           &
-          &                         triggered = balance_triggered )
-
-        if( balance_triggered ) then
-
-          ! Stop main loop timer
-          call tem_stopTimer( timerHandle = mus_timerHandles%mainLoop )
-
-          ! -------------------------------------------------------------------
-          select case (trim(scheme%header%kind))
-          case ('poisson', 'poisson_boltzmann_linear', &
-            &   'poisson_boltzmann_nonlinear'          )
-            ! check final total potential
-            call check_potential( scheme, minlevel, maxLevel, params%general, &
-              &                   total_density )
-          case default
-            call check_density( scheme, minLevel, maxLevel, params%general, &
-              &                 total_density                               )
-          end select
-
-          ! Measure imbalance and dump timing to disk
-          call mus_perf_measure( &
-            &       totalDens   = total_density,        &
-            &       domSize     = geometry%tree%global%nElems, &
-            &       minLevel    = minLevel,             &
-            &       maxLevel    = maxLevel,             &
-            &       nElems      = scheme%pdf(minLevel:maxLevel)%nElems_fluid, &
-            &       scaleFactor = params%scaleFactor,   &
-            &       general     = params%general )
-
-
-          ! Only dump level timing for two levels mesh
-          if ( params%dump_level_timing .and. ((maxLevel-minLevel)==1) ) then
-            call dump_level_timing(                          &
-              & minLevel   = minLevel,                       &
-              & maxLevel   = maxLevel,                       &
-              & pdf        = scheme%pdf(:),                  &
-              & domSize    = geometry%tree%global%nElems,    &
-              & timingFile = params%general%timingFile,      &
-              & revision   = params%general%solver%revision, &
-              & simName    = params%general%solver%simName,  &
-              & proc       = params%general%proc             )
-          end if
-          ! -------------------------------------------------------------------
-
-          call mus_reset_mainTimer()
-
-          call tem_startTimer( timerHandle =  mus_timerHandles%balance )
-          call mus_perform_dynLoadBal( scheme     = scheme,             &
-            &                          params     = params,             &
-            &                          geometry   = geometry,           &
-            &                          solverData = solverData          )
-          call tem_stopTimer( timerHandle =  mus_timerHandles%balance )
-
-          if( geometry%globIBM%nIBMs > 0 )then
-            call mus_finishIBM( me      = geometry%globIBM, &
-              &                 params  = params,           &
-              &                 useTime = .true.            )
-          end if
-
-          ! Restart mainloop timer
-          call tem_startTimer( timerHandle =  mus_timerHandles%mainLoop )
-          ! update min iter
-          params%general%simControl%timeControl%min%iter = &
-            & params%general%simControl%now%iter
-
-        end if ! balance triggered
-      end if !dynamic
-
-    end subroutine
-
-  end subroutine mus_solve_particles
 ! **************************************************************************** !
 
 

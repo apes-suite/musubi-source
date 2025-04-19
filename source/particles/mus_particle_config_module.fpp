@@ -1300,13 +1300,15 @@ contains
     type(mus_particle_group_type), intent(in) :: particleGroup
     integer, intent(in) :: logUnit
     ! ------------------------------------ !
-    write(logUnit,'(A)') '---- PARTICLEGROUP SETTINGS ----'
-    write(logUnit,'(A,L2)')    'enableCollisions = ', particleGroup%enableCollisions
-    write(logUnit,'(A,E17.9)') 'collision_tol    = ', particleGroup%collision_tol
-    write(logUnit,'(A,E17.9)') 'collision_time   = ', particleGroup%collision_time
-    write(logUnit,'(A,I12)') 'Number of DEM subcycles = ', particleGroup%Nsubcycles
-    write(logUnit,'(A,I12)') 'Particle buffer size    = ', particleGroup%particleBufferSize
-    write(logUnit,'(A,I12)') 'Particle log interval   = ', particleGroup%particleLogInterval
+    if (particleGroup%nParticles > 0) then
+      write(logUnit,'(A)') '---- PARTICLEGROUP SETTINGS ----'
+      write(logUnit,'(A,L2)')    'enableCollisions = ', particleGroup%enableCollisions
+      write(logUnit,'(A,E17.9)') 'collision_tol    = ', particleGroup%collision_tol
+      write(logUnit,'(A,E17.9)') 'collision_time   = ', particleGroup%collision_time
+      write(logUnit,'(A,I12)') 'Number of DEM subcycles = ', particleGroup%Nsubcycles
+      write(logUnit,'(A,I12)') 'Particle buffer size    = ', particleGroup%particleBufferSize
+      write(logUnit,'(A,I12)') 'Particle log interval   = ', particleGroup%particleLogInterval
+    end if
     ! ------------------------------------ !
   end subroutine mus_particles_print_config
 

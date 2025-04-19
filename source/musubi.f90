@@ -58,7 +58,7 @@ program musubi
   ! ESPECIALLY OF THE FOLLOWING MODULES
   use mus_control_module,            only: mus_control_type
   use mus_program_module,            only: mus_initialize, mus_solve, &
-    &                                      mus_finalize, mus_solve_particles
+    &                                      mus_finalize
   use mus_varSys_module,             only: mus_varSys_solverData_type
 
   ! include modules for coupled LBM-DEM simulations of solid particles
@@ -74,15 +74,17 @@ program musubi
   type(mus_scheme_type),            target :: scheme
   type(mus_geom_type),              target :: geometry
   type(mus_param_type),             target :: params
+  type(mus_particle_group_type),    target :: particleGroup
   type(mus_varSys_solverData_type), target :: solverData
-  type(mus_control_type)                   :: control
   type(tem_adapt_type)                     :: adapt
+  type(mus_control_type)                   :: control
   integer :: ierr
   ! -------------------------------------------------------------------------- !
-    !> PARTICLE module types
-  ! particle group type holds all particle data on this partition
-  ! particle data read from lua file in mus_load_config -> mus_load_particles
-  type(mus_particle_group_type) :: particleGroup
+
+  control = mus_control_type( scheme        = scheme,       &
+    &                         geometry      = geometry,     &
+    &                         params        = params,       &
+    &                         particleGroup = particleGroup )
 
   ! Initialize environment
   call tem_start(codeName   = 'Musubi',                 &
@@ -139,22 +141,12 @@ program musubi
 
 
   ! do main loop
-  if ( trim(params%particle_kind) == 'none') then
-    call mus_solve( scheme     = scheme,     &
-      &             solverData = solverData, &
-      &             geometry   = geometry,   &
-      &             params     = params,     &
-      &             control    = control,    &
-      &             adapt      = adapt       )
-  else
-    call mus_solve_particles( scheme        = scheme,       &
-      &                       solverData    = solverData,   &
-      &                       geometry      = geometry,     &
-      &                       params        = params,       &
-      &                       control       = control,      &
-      &                       adapt         = adapt,        &
-      &                       particleGroup = particleGroup )
-  end if
+  call mus_solve( scheme     = scheme,     &
+    &             solverData = solverData, &
+    &             geometry   = geometry,   &
+    &             params     = params,     &
+    &             control    = control,    &
+    &             adapt      = adapt       )
 
   ! finialize musubi
   call mus_finalize( scheme       = scheme,                     &
