@@ -94,8 +94,10 @@ module mus_program_module
   use aotus_module, only: close_config
 
   ! include particle modules
-  use mus_particle_module,               only: mus_particle_group_type 
-  use mus_particle_DPS_module,           only: mus_particles_initFluidVolumeFraction
+  use mus_particle_module,        only: mus_particle_group_type, &
+    &                                   mus_particles_initialize
+  use mus_particle_config_module, only: mus_finalize_particleGroup
+  use mus_particle_DPS_module,    only: mus_particles_initFluidVolumeFraction
 
   implicit none
 
@@ -112,17 +114,19 @@ contains
 ! **************************************************************************** !
   !> This routine load musubi configuration file and initialize construction
   !! flow, auxilary and main control routines
-  subroutine mus_initialize( scheme, geometry, params, control, &
-    &                        solverData                         )
+  subroutine mus_initialize( scheme, geometry, params, particleGroup, control, &
+    &                        solverData                                        )
     ! -------------------------------------------------------------------------
     !> scheme type
-    type( mus_scheme_type ),    intent(inout) :: scheme
+    type( mus_scheme_type ),         intent(inout) :: scheme
     !> Treelmesh data
-    type( mus_geom_type ),      intent(inout) :: geometry
+    type( mus_geom_type ),           intent(inout) :: geometry
     !> Global parameters
-    type( mus_param_type ),     intent(inout) :: params
+    type( mus_param_type ),          intent(inout) :: params
+    !> Particle parameters
+    type( mus_particle_group_type ), intent(inout) :: particleGroup
     !> control routine
-    type( mus_control_type ),   intent(inout) :: control
+    type( mus_control_type ),        intent(inout) :: control
     !> contains pointer to scheme, physics types.
     !! passed to init_Scheme to build varSys
     type( mus_varSys_solverData_type ), target :: solverData
@@ -145,9 +149,9 @@ contains
       &                globTree = geometry%tree     )
 
     ! construct levelDescriptor, connectivity array and boundary elements
-    call mus_construct( scheme    = scheme,            &
-      &                 geometry  = geometry,          &
-      &                 params    = params             )
+    call mus_construct( scheme    = scheme,   &
+      &                 geometry  = geometry, &
+      &                 params    = params    )
 
     ! Init auxiliary features such as interpolation, boundaries, restart
     ! and the tracker
@@ -204,6 +208,14 @@ contains
 
     write(logUnit(1),*) "Starting Musubi MAIN loop with time control:"
     call tem_timeControl_dump(params%general%simControl%timeControl,logUnit(1))
+
+    if ( trim(params%particle_kind) /= 'none' ) then
+      call mus_particles_initialize(        &
+        &    particleGroup = particleGroup, &
+        &    scheme        = scheme,        &
+        &    geometry      = geometry,      &
+        &    params        = params         )   
+    end if
 
     ! choose main control routine function pointer
     call mus_init_control( params%controlRoutine, control, &
@@ -366,12 +378,15 @@ contains
   !! Close auxiliary stuff such as restart and the tracker,
   !! finalize treelm, dump timing and finialize mpi with fin_env
   !!
-  subroutine mus_finalize(scheme, params, tree, levelPointer, nBCs, globIBM)
+  subroutine mus_finalize(scheme, params, particleGroup, tree, levelPointer, &
+    &                     nBCs, globIBM)
     ! ------------------------------------------------------------------------!
     !> scheme type
     type(mus_scheme_type), intent(inout) :: scheme
     !> Global parameters
-    type(mus_param_type),intent(inout) :: params
+    type(mus_param_type), intent(inout) :: params
+    !> Particle data
+    type(mus_particle_group_type), intent(inout) :: particleGroup
     !> geometry infomation
     type(treelmesh_type),intent(inout) :: tree
     !> global information
@@ -519,6 +534,11 @@ contains
 
     !free mesh
     call tem_global_mesh_free(tree%global)
+
+    ! De-allocate particleGroup object
+    if ( params%particle_kind /= 'none' ) then
+      call mus_finalize_particleGroup( particleGroup )
+    end if
 
 
   end subroutine mus_finalize

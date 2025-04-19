@@ -63,9 +63,6 @@ program musubi
 
   ! include modules for coupled LBM-DEM simulations of solid particles
   use mus_particle_type_module,      only: mus_particle_group_type
-  use mus_particle_config_module,    only: mus_finalize_particleGroup, &
-    &                                      mus_load_particles
-  use mus_particle_module,           only: mus_particles_initialize
   use mus_particle_timer_module,     only: mus_init_particleTimer
 
   implicit none
@@ -114,31 +111,14 @@ program musubi
   call mus_init_bcTimer( geometry%boundary%nBCtypes )
 
   ! initialize musubi
-  call mus_initialize( scheme        = scheme,     &
-    &                  solverData    = solverData, &
-    &                  geometry      = geometry,   &
-    &                  params        = params,     &
-    &                  control       = control     )
-
-  call mus_load_particles(                              &
-    &    particleGroup = particleGroup,                 &
-    &    particle_kind = trim(params%particle_kind),    &
-    &    conf          = params%general%solver%conf(1), &
-    &    chunkSize     = 100,                           &
-    &    scheme        = scheme,                        &
-    &    geometry      = geometry,                      &
-    &    myRank        = params%general%proc%rank       )
- 
-  if ( trim(params%particle_kind) /= 'none' ) then
-    call mus_particles_initialize(        &
-      &    particleGroup = particleGroup, &
-      &    scheme        = scheme,        &
-      &    geometry      = geometry,      &
-      &    params        = params         )   
-  end if
+  call mus_initialize( scheme        = scheme,        &
+    &                  solverData    = solverData,    &
+    &                  geometry      = geometry,      &
+    &                  params        = params,        &
+    &                  particleGroup = particleGroup, &
+    &                  control       = control        )
 
   call mpi_barrier( MPI_COMM_WORLD, ierr )
-
 
   ! do main loop
   call mus_solve( scheme     = scheme,     &
@@ -148,18 +128,14 @@ program musubi
     &             control    = control,    &
     &             adapt      = adapt       )
 
-  ! finialize musubi
-  call mus_finalize( scheme       = scheme,                     &
-    &                params       = params,                     &
-    &                tree         = geometry%tree,              &
-    &                nBCs         = geometry%boundary%nBCtypes, &
-    &                levelPointer = geometry%levelPointer,      &
-    &                globIBM      = geometry%globIBM            )
-
-  ! De-allocate particleGroup object
-  if ( params%particle_kind /= 'none' ) then
-    call mus_finalize_particleGroup( particleGroup )
-  end if
+  ! finalize musubi
+  call mus_finalize( scheme        = scheme,                     &
+    &                params        = params,                     &
+    &                particleGroup = particleGroup,              &
+    &                tree          = geometry%tree,              &
+    &                nBCs          = geometry%boundary%nBCtypes, &
+    &                levelPointer  = geometry%levelPointer,      &
+    &                globIBM       = geometry%globIBM            )
 
   ! finalize treelm function like print run time info and mpi
   call tem_finalize(params%general)
