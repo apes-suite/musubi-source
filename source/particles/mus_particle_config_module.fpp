@@ -947,8 +947,8 @@ contains
     ! ----------------------------------------------------------- !
     real(kind=rk) :: realBuffer
     integer :: intBuffer
+    integer :: iError
     logical :: flag
-
     ! ----------------------------------------------------------- !
     flag = .FALSE.
     ! Get number of DEM subcycles to use per LBM time step
@@ -961,36 +961,46 @@ contains
 
     particleGroup%Nsubcycles = intBuffer
 
-    ! Get particle collision time. If this is not specified particles will NOT
+    ! Get particle collision time.
+    ! If this is not specified or negative particles will NOT
     ! collide at all during the simulation. We specify a default value so
     ! the simulation does not abort if we don't manage to read it. In this
     ! case we will just disable collisions
-    call mus_load_real( conf        = conf,                      &
-                      & thandle     = p_thandle,                 &
-                      & key         = 'particle_collision_time', &
-                      & buff        = realBuffer,                &
-                      & default_val = -1.0_rk,                   &
-                      & flag        = flag                       )
-    if( flag ) then
+    call aot_get_val( L = conf, thandle = p_thandle,   &
+      &               key = 'particle_collision_time', &
+      &               val = realBuffer,                &
+      &               default = -1.0_rk,               &
+      &               ErrCode = iError                 )
+    if (btest(iError, aoterr_Fatal)) then
+      write(logUnit(1), *) 'ERROR in reading particle_collision_time!'
+      write(logUnit(1), *) 'Aborting!'
+      call tem_abort()
+    end if
+
+    particleGroup%enableCollisions = (realBuffer > 0.0_rk)
+
+    if (particleGroup%enableCollisions) then
       ! Successfully read particle collision time.
       ! Enable collisions with the specified time
-      particleGroup%enableCollisions = .TRUE.
       particleGroup%collision_time = realBuffer
 
       ! If particle collisions are enabled, get particle threshold collision gap
       ! This is the distance between particle surfaces at which we consider two
       ! particles colliding
-
-      ! NOTE: collision_tol MUST be specified when using collisions. If it cannot
-      ! be read the simulation will abort..
-      call mus_load_real( conf    = conf,                      &
-                        & thandle = p_thandle,                 &
-                        & key     = 'particle_collision_tol', &
-                        & buff    = realBuffer,                &
-                        & flag    = flag                       )
-      particleGroup%collision_tol = realBuffer
-    else
-      particleGroup%enableCollisions = .FALSE.
+      call aot_get_val( L = conf, thandle = p_thandle,     &
+        &               key = 'particle_collision_tol',    &
+        &               val = particleGroup%collision_tol, &
+        &               ErrCode = iError                   )
+      if (btest(iError, aoterr_Fatal)) then
+        write(logUnit(1), *) 'ERROR in reading particle_collision_tol!'
+        if (btest(iError, aoterr_NonExistent)) then
+          write(logUnit(1), *) '    setting not found!'
+        else
+          write(logUnit(1), *) '    needs to be a real number!'
+        end if
+        write(logUnit(1), *) 'Aborting!'
+        call tem_abort()
+      end if
     end if
   end subroutine mus_load_particle_collisions
 
@@ -1324,6 +1334,7 @@ contains
     logical, intent(out) :: flag
     ! ---------------------------------------------------- !
     integer :: shape_thandle, iError
+    integer :: vError(6)
     real(kind=rk) :: default_force(6)
     real(kind=rk) :: default_vel(6)
     logical :: read_is_successful
@@ -1331,59 +1342,71 @@ contains
     default_force = 0.0_rk
     default_vel = 0.0_rk
 
-    call aot_table_open(L       = conf,    &
+    call aot_table_open(L       = conf,          &
       &                 thandle = shape_thandle, &
-      &                 parent  = parent,  &
-      &                 key     = 'shape'  )
+      &                 parent  = parent,        &
+      &                 key     = 'shape'        )
 
     if (shape_thandle /= 0) then
       ! Load shape kind
       call aot_get_val( L       = conf,          &
-        &               thandle = shape_thandle,       &
+        &               thandle = shape_thandle, &
         &               key     = 'kind',        &
-        &               val     = blob_type,    &
+        &               val     = blob_type,     &
         &               ErrCode = iError         )
+      call check_aot_error( iError, key = 'kind',                   &
+        &                   event_string = 'getting particle shape' )
 
       select case(trim(blob_type))
       case('cylinder')
         call mus_load_particleblob_cylinder( particleblob = particleblob, &
-                                           & conf         = conf,         &
-                                           & parent       = shape_thandle       )
+          &                                  conf         = conf,         &
+          &                                  parent       = shape_thandle )
+
         ! Load the particle properties from the particle table (handle: parent).
         ! These are the same for each particle in the "blob"
-        call mus_load_realvec( conf        = conf,                       &
-                              & p_thandle   = parent,                     &
-                              & key         = 'velocity',                 &
-                              & buff        = particleblob%particle_vel,  &
-                              & default_val = default_vel,                &
-                              & n           = 6,                          &
-                              & flag        = read_is_successful          )
+        call aot_get_val( L       = conf,                      &
+          &               thandle = parent,                    &
+          &               key     = 'velocity',                &
+          &               val     = particleblob%particle_vel, &
+          &               default = default_vel,               &
+          &               ErrCode = vError                     )
+        if (any(btest(vError, aoterr_Fatal))) then
+          write(logUnit(0), *) "ERROR reading the velocity for " &
+            &                  // "particleblob cylinder"
+          call tem_abort()
+        end if
+        particleblob%init_particles_to_fluid_vel &
+          & = (sum(abs(particleblob%particle_vel)) > 8*tiny(1.0_rk))
 
-        if(read_is_successful) then
-          particleblob%init_particles_to_fluid_vel = .FALSE.
-        else
-          particleblob%init_particles_to_fluid_vel = .TRUE.
+        call aot_get_val( L       = conf,                        &
+          &               thandle = parent,                      &
+          &               key     = 'force',                     &
+          &               val     = particleblob%particle_force, &
+          &               default = default_vel,                 &
+          &               ErrCode = vError                       )
+        if (any(btest(vError, aoterr_Fatal))) then
+          write(logUnit(0), *) "ERROR reading the force for " &
+            &                  // "particleblob cylinder"
+          call tem_abort()
         end if
 
-        call mus_load_realvec( conf        = conf,                         &
-                              & p_thandle   = parent,                       &
-                              & key         = 'force',                      &
-                              & buff        = particleblob%particle_force,  &
-                              & default_val = default_force,                &
-                              & n           = 6,                            &
-                              & flag        = read_is_successful            )
+        call aot_get_val( L       = conf,                         &
+          &               thandle = parent,                       &
+          &               key     = 'radius',                     &
+          &               val     = particleblob%particle_radius, &
+          &               ErrCode = iError                        )
+        call check_aot_error(iError, key = 'radius', &
+          &                  event_string = 'reading cylinder particle shape')
 
-        call mus_load_real( conf    = conf,                          &
-                          & thandle = parent,                        &
-                          & key     = 'radius',                      &
-                          & buff    = particleblob%particle_radius, &
-                          & flag    = read_is_successful             )
+        call aot_get_val( L       = conf,                       &
+          &               thandle = parent,                     &
+          &               key     = 'mass',                     &
+          &               val     = particleblob%particle_mass, &
+          &               ErrCode = iError                      )
+        call check_aot_error(iError, key = 'mass', &
+          &                  event_string = 'reading cylinder particle shape')
 
-        call mus_load_real( conf    = conf,                        &
-                          & thandle = parent,                      &
-                          & key     = 'mass',                      &
-                          & buff    = particleblob%particle_mass,  &
-                          & flag    = read_is_successful           )
       case('prism')
         call mus_load_particleblob_prism( particleblob = particleblob_prism, &
                                         & conf         = conf,               &
@@ -1425,6 +1448,9 @@ contains
                           & flag    = read_is_successful           )
       case default
         write(logUnit(1),*) "ERROR: Predefined particle shape kind not recognized, aborting!"
+        write(logUnit(1),*) "       Has to be one of:"
+        write(logUnit(1),*) "       * cylinder"
+        write(logUnit(1),*) "       * prism"
         call tem_abort()
       end select
 
