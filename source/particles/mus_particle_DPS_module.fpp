@@ -1117,11 +1117,9 @@ subroutine mapParticlesToLattice_DPS(particleGroup, scheme, geometry, params)
     if( particleGroup%particles_DPS%val(iParticle)%newForMe ) then
 
 
-      call allocateProcessMasks( particle = particleGroup%particles_DPS%val(iParticle), &
-                       & scheme   = scheme,                                     &
-                       & geometry = geometry,                                   &
-                       & nProcs   = particleGroup%send%nProcs,                  &
-                       & lev      = geometry%tree%global%maxLevel               )
+      call allocateProcessMasks(                                    &
+        &    particle = particleGroup%particles_DPS%val(iParticle), &
+        &    nProcs   = particleGroup%send%nProcs                   )
 
       call initParticle_DPS( &
                  & particle    = particleGroup%particles_DPS%val(iParticle),            &

@@ -24,7 +24,6 @@
 !> mus_particle_type_module contains the main particle data types for LBM-DEM
 !! simulations of solid particles in the flow
 
-?? include 'particleArrayMacros.inc'
 module mus_particle_type_module
 
   use env_module, only: rk, long_k, zeroLength, &
@@ -34,299 +33,47 @@ module mus_particle_type_module
     &                           tem_stencil_findIndexOfDir
   use tem_topology_module, only: tem_idOfCoord
   use tem_logging_module, only: logUnit
-  use tem_dyn_array_module, only:  &
-    &   init, append, destroy,     &
-    &   empty, dyn_intArray_type,  &
-    &   dyn_longArray_type,        &
-    &   PosOfVal_long,             &
-    &   SortPosOfVal_long
-  use tem_grow_array_module, only:      &
-    &   init, append, destroy, empty,   &
-    &   grw_int2darray_type,            &
-    &   grw_logical2darray_type,        &
-    &   grw_intarray_type,              &
-    &   grw_longarray_type,             &
-    &   grw_real2darray_type
   
   use mus_geom_module, only: mus_geom_type
   use mus_scheme_type_module, only: mus_scheme_type
   use mus_param_module, only: mus_param_type
+
   use mus_particle_comm_type_module, only: mus_particles_communication_type
   use mus_particle_interpolation_module, only: mus_particle_interpolator_type
 
-  implicit none
+  use mus_particle_array_module, only: maxContainerSize
 
-  ! --------- INTERFACE BLOCKS FOR GENERIC PROCEDURES -------- !
-  ! This is used so that names for similar procedures for different kinds of 
-  ! particles can be referenced using the same name 
-  
-  interface allocateProcessMasks
-    module procedure allocateProcessMasks_MEM
-    module procedure allocateProcessMasks_DPS
-  end interface
-  ! ----------------------------------------------------------!
+  use mus_particle_MEM_type_module, only:     &
+    &   mus_particle_MEM_type,                &
+    &   allocateProcessMasks,                 &
+    &   dyn_particle_MEM_array_type,          &
+    &   init_da_particle_MEM,                 &
+    &   destroy_da_particle_MEM,              &
+    &   append_da_particle_MEM,               &
+    &   expand_da_particle_MEM,               &
+    &   truncate_da_particle_MEM,             &
+    &   swap_da_particle_MEM,                 &
+    &   remove_particle_from_da_particle_MEM, &
+    &   sortposofval_particle_MEM
+
+  use mus_particle_DPS_type_module, only:     &
+    &   mus_particle_DPS_type,                &
+    &   allocateProcessMasks,                 &
+    &   dyn_particle_DPS_array_type,          &
+    &   init_da_particle_DPS,                 &
+    &   destroy_da_particle_DPS,              &
+    &   append_da_particle_DPS,               &
+    &   expand_da_particle_DPS,               &
+    &   truncate_da_particle_DPS,             &
+    &   swap_da_particle_DPS,                 &
+    &   remove_particle_from_da_particle_DPS, &
+    &   sortposofval_particle_DPS
+
+  implicit none
 
   ! use this logUnit for writing to file containing particle velocities for
   ! debug
   integer, parameter, public :: particleLogUnit = 55  
-  ! max container size for particle dynamic array
-  integer, public :: maxContainerSize = 10000
-
-
-  ! Basic particle type
-  type mus_particle_MEM_type
-    !- Unique particleID for identification across all processes
-    integer :: particleID
-  
-    !- Owner process of this particle
-    !  Process is owner if coordOfOrigin is local to this process
-    integer :: owner
-    
-    !> Process who was owner in last time step. We need this for the 
-    !! averaging of forces over two time steps
-    integer :: previousOwner = -1
-    
-    !- Array matching the shape of the send%proc array
-    !  the ith entry indicates whether this particle exists on
-    !  send%proc(i) and hence we need to send velocity updates there
-    logical, allocatable :: existsOnProc(:)
-    
-    !- Array matching the shape of the send%proc array
-    !  the ith entry indicates whether this particle is new on
-    !  send%proc(i) in which case we need to send over data
-    !  to that proc so it can be added to its particleGroup
-    logical, allocatable :: addToProc(:)
-    
-    !- Array matching the shape of the send%proc array
-    !  the ith entry indicates whether this particle is new on
-    !  send%proc(i) in which case we need to send over data
-    !  to that proc so it can be added to its particleGroup
-    logical, allocatable :: removeFromProc(:)
-    
-    !> Logical which tells us whether to initialize this particle or not
-    !! is set to true only immediately after receiving this particle
-    !! from a neighboring process
-    logical :: newForMe = .FALSE.
-  
-    !> hasCollided tells us whether particle has just had its velocity modified
-    !! in a collision and that this information needs to be sent to other processes
-    logical :: hasCollided = .FALSE.
-  
-    !> removeParticle indicates that this particle needs to be removed after e.g.
-    !! hitting an open boundary. This information is first sent to all other procs
-    !! that know about this particle, then the particle is actually removed from 
-    !! the particleGroup.
-    logical :: removeParticle_global = .FALSE.
-  
-    !- Radius of (spherical) particle
-    real(kind=rk) :: radius
-  
-    !- mass and rotational inertia
-    real(kind=rk) :: mass
-    real(kind=rk) :: rotInertia
-  
-    ! radius in lattice units, rounded up
-    integer :: Rn                   
-    
-    !- Particle origin position and translational + angular velocity (x,y,z,rx,ry,rz)
-    real(kind=rk) :: vel(6)
-    real(kind=rk) :: pos(6)
-    real(kind=rk) :: oldPos(6)
-    
-    ! integer coordinate of desired point
-    integer :: coordOfOrigin(4)     
-    integer :: oldCoordOfOrigin(4)     
-  
-  
-    ! Hydrodynamic force and torque acting on the particle (fx,fy,fz,mx,my,mz) 
-    ! F is the average of hydrodynamic force computation in current 
-    ! and last time step F = 0.5 * ( Fbuff(1,:) + Fbuff(2,:) )
-    real(kind=rk) :: F(6) = 0.0_rk
-    real(kind=rk) :: Fbuff(2,6) = 0.0_rk         
-  
-    ! External force vector which is loaded from the lua script.
-    ! Can only be constant as of now (for example to simulate gravity)
-    real(kind=rk) :: Fext(6) = 0.0_rk 
-    
-    ! Index pointing to which row of Fbuff to fill at this time step 
-    integer :: Fnow = 1                 
-    ! Index pointing to which row of Fbuff contains force data of last time step
-    integer :: Flast = 2                 
-  
-    ! Buffer for the DEM collision force and torque
-    ! We need to store forces at last two times for velocity verlet integration
-    real(kind=rk) :: F_DEM(2,6) = 0.0_rk
-  
-    ! Index pointing to row in Fcoll for current DEM time step (t)
-    integer :: F_DEM_now = 1
-    ! Index pointing to row in Fcoll at next DEM time step (t + dt_dem)
-    integer :: F_DEM_next = 2
-  
-    ! For DEM treatment of particle-wall collisions we store the distance
-    ! to the nearest wall and the normal vector (pointing towards the wall)
-    ! of that wall
-    integer :: nWallPos = 0 ! number of elements in wallPosSum
-    real(kind=rk) :: avgWallPos(3) = 0.0_rk
-    real(kind=rk) :: rwall(3) = 0.0_rk
-  
-    ! Logical that indicates whether this particle is close enough to a wall
-    ! that we need to compute wall interactions during the subcycling loop
-    logical :: interactWithWall = .FALSE. 
-  
-    !- Dynamic array containing indices of the currently covered fluid elements
-    !- These need to be excluded in the loop over elements in the kernel
-    !- Pertains to levelDesc total list (from which kernel lists are generated) 
-    type(dyn_intArray_type) :: exclusionList 
-    
-    !> Buffer for exclusion list used in moveParticle routine 
-    !  Used to determine newly uncovered fluid neighbors
-    type(dyn_intArray_type) :: exclusionListBuffer 
-  
-    !> Number of fluid neighbors for this particle
-    integer :: NfluidNeighbors
-  
-    !> Indices in levelDesc total list of elements that 
-    !  need to be turned to fluid after moving particle
-    type(grw_intArray_type) :: makeFluidList 
-  
-  end type mus_particle_MEM_type
-
-?? copy :: DPA_decltxt(particle_MEM)
-
-  !> Basic particle type for Discrete Particle Simulations
-  !! In DPS particles are unresolved i.e. they are not represented
-  !! on the grid. Instead, their effect on the flow is considered
-  !! using the volume fraction in the fluid_GNS scheme's equilibrium
-  !! distribution functions and forcing terms. Hence the scheme kind
-  !! should be set to 'fluid_GNS' when using these kinds of particles.
-  type mus_particle_DPS_type
-    !- Unique particleID for identification across all processes
-    integer :: particleID
-  
-    !- Owner process of this particle
-    !  Process is owner if coordOfOrigin is local to this process
-    integer :: owner
-  
-    !> Previous owner of this particle. Used to determine when to 
-    !! Send data like particle%momInc to new owner
-    integer :: previousOwner
-    
-    !- Array matching the shape of the send%proc array
-    !  the ith entry indicates whether this particle exists on
-    !  send%proc(i) and hence we need to send velocity updates there
-    logical, allocatable :: existsOnProc(:)
-    
-    !- Array matching the shape of the send%proc array
-    !  the ith entry indicates whether this particle is new on
-    !  send%proc(i) in which case we need to send over data
-    !  to that proc so it can be added to its particleGroup
-    logical, allocatable :: addToProc(:)
-    
-    !- Array matching the shape of the send%proc array
-    !  the ith entry indicates whether this particle is new on
-    !  send%proc(i) in which case we need to send over data
-    !  to that proc so it can be added to its particleGroup
-    logical, allocatable :: removeFromProc(:)
-    
-    !> Logical which tells us whether to initialize this particle or not
-    !! is set to true only immediately after receiving this particle
-    !! from a neighboring process
-    logical :: newForMe = .FALSE.
-  
-    !> hasCollided tells us whether particle has just had its velocity modified
-    !! in a collision and that this information needs to be sent to other processes
-    logical :: hasCollided = .FALSE.
-  
-    !> removeParticle_global indicates that this particle needs to be removed after e.g.
-    !! hitting an open boundary. This information is first sent to all other procs
-    !! that know about this particle, then the particle is actually removed from 
-    !! the particleGroup.
-    logical :: removeParticle_global = .FALSE.
-  
-    !> removeParticle_local indicates that this particle needs to be removed from 
-    !! this process's particleGroup because its coordOfOrigin is not within one 
-    !! lattice site of a local fluid cell
-    logical :: removeParticle_local = .FALSE.
-  
-    !- Radius of (spherical) particle
-    real(kind=rk) :: radius
-  
-    ! radius in lattice units, rounded up
-    integer :: Rn                   
-  
-    !- mass and rotational inertia
-    real(kind=rk) :: mass
-    real(kind=rk) :: rotInertia
-  
-    !- Particle origin position and translational + angular velocity (x,y,z,rx,ry,rz)
-    real(kind=rk) :: vel(6)
-    real(kind=rk) :: pos(6)
-    real(kind=rk) :: oldPos(6)
-    
-    ! integer coordinate of desired point
-    integer :: coordOfOrigin(4)     
-    integer :: oldCoordOfOrigin(4)     
-  
-    ! position of origin in levelDesc%total list
-    ! integer :: posOfOrigin
-    integer :: posOfOrigin
-    
-    ! Hydrodynamic force and torque acting on the particle (fx,fy,fz,mx,my,mz) 
-    real(kind=rk) :: F(6) = 0.0_rk
-  
-    ! Momentum to be transferred to fluid by modification of pdfs over 1 LBM time step 
-    ! = the sum of all momentum transferred in the DEM subcycles.
-    real(kind=rk) :: Favg(3) = 0.0_rk
-  
-    ! Fluid velocity interpolated to particle location
-    ! For computation of hydrodynamic forces 
-    real(kind=rk) :: u_fluid(3) = 0.0_rk
-  
-    ! Fluid density interpolated to particle location
-    ! For computation of hydrodynamic forces 
-    real(kind=rk) :: rho_fluid = 0.0_rk
-  
-    ! Fluid volume fraction interpolated to particle location
-    ! For computation of hydrodynamic forces 
-    real(kind=rk) :: eps_f_fluid = 0.0_rk
-  
-    ! Pressure gradient interpolated to particle location
-    real(kind=rk) :: grad_p_fluid(3) = 0.0_rk
-  
-    ! Velocity curl interpolated to particle location
-    real(kind=rk) :: curl_u_fluid(3) = 0.0_rk
-  
-    ! External force vector which is loaded from the lua script.
-    ! Can only be constant as of now (for example to simulate gravity)
-    real(kind=rk) :: Fext(6) = 0.0_rk 
-    
-    ! Buffer for the DEM collision force and torque
-    ! We need to store forces at last two times for velocity verlet integration
-    real(kind=rk) :: F_DEM(2,6) = 0.0_rk
-  
-    ! Index pointing to row in Fcoll for current DEM time step (t)
-    integer :: F_DEM_now = 1
-    ! Index pointing to row in Fcoll at next DEM time step (t + dt_dem)
-    integer :: F_DEM_next = 2
-  
-    !> List containing indices of nearby particles to check for 
-    !! collisions during the DEM subcycles
-    type(dyn_intarray_type) :: DEM_neighborlist
-  
-    ! For DEM treatment of particle-wall collisions we store the distance
-    ! to the nearest wall and the normal vector (pointing towards the wall)
-    ! of that wall
-    integer :: nWallPos = 0 ! number of elements in wallPosSum
-    real(kind=rk) :: avgWallPos(3) = 0.0_rk
-    real(kind=rk) :: rwall(3) = 0.0_rk
-  
-    ! Logical that indicates whether this particle is close enough to a wall
-    ! that we need to compute wall interactions during the subcycling loop
-    logical :: interactWithWall = .FALSE. 
-  
-  end type mus_particle_DPS_type
-
-?? copy :: DPA_decltxt(particle_DPS)
 
   !> Data type representing a collection of particles, typically all 
   !  particles on a single process/rank
@@ -731,98 +478,8 @@ module mus_particle_type_module
 
 
 contains
-  !--- ROUTINES FOR OPERATING ON PARTICLE DYNARRAYS ---!
-  
-! ---- Dynamic particle array methods for momentum exchange method ---- !
-?? copy :: DPA_inittxt(particle_MEM)
-?? copy :: DPA_destroytxt(particle_MEM)
-?? copy :: DPA_appendtxt(particle_MEM)
-?? copy :: DPA_expandtxt(particle_MEM)
-?? copy :: DPA_swaptxt(particle_MEM) 
-?? copy :: DPA_removetxt(particle_MEM)
-?? copy :: DPA_truncatetxt(particle_MEM)
-?? copy :: DPA_sortposofval_txt(particle_MEM)
 
-! ---- Dynamic particle array methods for Discrete Particle Simulations ---- !
-?? copy :: DPA_inittxt(particle_DPS)
-?? copy :: DPA_destroytxt(particle_DPS)
-?? copy :: DPA_appendtxt(particle_DPS)
-?? copy :: DPA_expandtxt(particle_DPS)
-?? copy :: DPA_swaptxt(particle_DPS) 
-?? copy :: DPA_removetxt(particle_DPS)
-?? copy :: DPA_truncatetxt(particle_DPS)
-?? copy :: DPA_sortposofval_txt(particle_DPS)
 
-  ! ************************************************************************ !
-  !> Routines for allocating the existsOnProc, addToProc and removeFromProc masks
-  !! used to determine when particles should be sent over to new processes or which 
-  !! processes need to receive position, velocity updates etc.
-  
-  subroutine allocateProcessMasks_MEM( particle, scheme, geometry, nProcs, lev )
-    !> Particle to initialize
-    type(mus_particle_MEM_type), intent(inout) :: particle
-    !> Scheme for access to level descriptor
-    type(mus_scheme_type), intent(inout) :: scheme
-    !> Geometry to determine TreeIDs of elements 'covered' by particle
-    type(mus_geom_type), intent(in) :: geometry
-    !> Number of processes to communicate particle data with
-    integer :: nProcs
-    !> Level of this particle
-    integer :: lev
-    ! -----------------------------------------------!
-    ! Allocate space for the existsOnProc mask which tells us on which other procs
-    ! this particle lives at the current time step
-    if( allocated(particle%existsOnProc) ) deallocate( particle%existsOnProc )
-    allocate( particle%existsOnProc( nProcs ) )
-    particle%existsOnProc( 1:nProcs ) = .FALSE.
-    
-    ! addToProc is used to determine whether to send over data needed to add this
-    ! particle to the receiving process's particle group
-    if( allocated(particle%addToProc) ) deallocate( particle%addToProc )
-    allocate( particle%addToProc( nProcs ) )
-    particle%addToProc( 1:nProcs ) = .FALSE.
-    
-    ! removeFromProc is used to determine whether to send over the signal that
-    ! a particle needs to be removed from the receiving proc's particle group
-    if( allocated(particle%removeFromProc) ) deallocate( particle%removeFromProc )
-    allocate( particle%removeFromProc( nProcs ) )
-    particle%removeFromProc( 1:nProcs ) = .FALSE.
-  
-  end subroutine allocateProcessMasks_MEM 
-  
-  
-  subroutine allocateProcessMasks_DPS( particle, scheme, geometry, nProcs, lev )
-    !> Particle to initialize
-    type(mus_particle_DPS_type), intent(inout) :: particle
-    !> Scheme for access to level descriptor
-    type(mus_scheme_type), intent(inout) :: scheme
-    !> Geometry to determine TreeIDs of elements 'covered' by particle
-    type(mus_geom_type), intent(in) :: geometry
-    !> Number of processes to communicate particle data with
-    integer :: nProcs
-    !> Level of this particle
-    integer :: lev
-    ! -----------------------------------------------!
-    ! Allocate space for the existsOnProc mask which tells us on which other procs
-    ! this particle lives at the current time step
-    if( allocated(particle%existsOnProc) ) deallocate( particle%existsOnProc )
-    allocate( particle%existsOnProc( nProcs ) )
-    particle%existsOnProc( 1:nProcs ) = .FALSE.
-    
-    ! addToProc is used to determine whether to send over data needed to add this
-    ! particle to the receiving process's particle group
-    if( allocated(particle%addToProc) ) deallocate( particle%addToProc )
-    allocate( particle%addToProc( nProcs ) )
-    particle%addToProc( 1:nProcs ) = .FALSE.
-    
-    ! removeFromProc is used to determine whether to send over the signal that
-    ! a particle needs to be removed from the receiving proc's particle group
-    if( allocated(particle%removeFromProc) ) deallocate( particle%removeFromProc )
-    allocate( particle%removeFromProc( nProcs ) )
-    particle%removeFromProc( 1:nProcs ) = .FALSE.
-  
-  end subroutine allocateProcessMasks_DPS 
-  
   ! ************************************************************************ !
   ! Routines for printing particle group data, to be used for debugging
   subroutine printParticleGroup(particleGroup, logUnit )
@@ -912,9 +569,6 @@ contains
           &                                        %removeFromProc(i),i=1,particleGroup%send%nProcs)
         write(logUnit, '(A)') ']'
       end if
-
-      
-      
 
     end do
 
