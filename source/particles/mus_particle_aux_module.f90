@@ -45,12 +45,21 @@ module mus_particle_aux_module
   use mus_scheme_type_module,  only: mus_scheme_type
 
   implicit none
+  private
 
   public :: findPartitionOfTreeID
   public :: coordExistsOnMyRank
   public :: coordLocalOnMyRank
   public :: cross_product
   public :: getBaryOfCoord
+  public :: getCartesianStencilIndices
+  public :: getPathToVec
+  public :: getPosOfCoord
+  public :: followNeighPath
+  public :: findPropIndex
+  public :: getProcessBoundingBox
+  public :: mus_particles_global_errorcheck
+  public :: positionLocalOnMyRank
 
 
 contains
@@ -630,14 +639,14 @@ contains
     flag_local = flag
 
     ! Use MPI reduce to check if error code on ANY process was TRUE
-    call MPI_allreduce(     &
-      & flag_local,         & ! send buffer
-      & flag_global,        & ! receive buffer
-      & 1,                  & ! count
-      & MPI_LOGICAL,        & ! datatype
-      & MPI_LOR,            & ! reduction operation
-      & comm,               & ! MPI communicator
-      & iErr                ) ! iError
+    call MPI_allreduce( &
+      &    flag_local,  & ! send buffer
+      &    flag_global, & ! receive buffer
+      &    1,           & ! count
+      &    MPI_LOGICAL, & ! datatype
+      &    MPI_LOR,     & ! reduction operation
+      &    comm,        & ! MPI communicator
+      &    iErr         ) ! iError
 
     ! Set flag equal to the global error code.
     flag = flag_global
