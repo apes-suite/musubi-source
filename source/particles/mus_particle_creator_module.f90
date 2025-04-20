@@ -133,7 +133,7 @@ contains
     ! ---------------------------------------------------------!
     ! Initialize the 2D growing arrays, giving them a first dimension of 6
     ! e.g. me%position(:,iParticle) = (x, y, z, rx, ry, rz)
-    if(present(Nparticles)) then
+    if (present(Nparticles)) then
       call init( me = me%position, width = 6, length = Nparticles )
       call init( me = me%velocity, width = 6, length = Nparticles )
       call init( me = me%force, width = 6, length = Nparticles )
@@ -204,31 +204,35 @@ contains
   
     ! Set initial coordOfOrigin
     particleGroup%particles_MEM%val(iParticle)%coordOfOrigin &
-      &  = tem_CoordOfReal( mesh  = geometry%tree,                               &
-                          & point = particleGroup%particles_MEM%val(iParticle)%pos,  &
-                          & level = lev                                          ) 
+      &  = tem_CoordOfReal( &
+      &      mesh  = geometry%tree,                                  &
+      &      point = particleGroup%particles_MEM%val(iParticle)%pos, &
+      &      level = lev                                             ) 
   
-    ! Update particle coordOfOrigin: this ensures that both particle%coordOfOrigin and 
-    ! particle%oldCoordOfOrigin are set
-    call updateCoordOfOrigin( this = particleGroup%particles_MEM%val(iParticle), &
-                            & geometry = geometry                            )
+    ! Update particle coordOfOrigin: this ensures that both
+    ! particle%coordOfOrigin and particle%oldCoordOfOrigin are set
+    call updateCoordOfOrigin(                                  &
+      &     this = particleGroup%particles_MEM%val(iParticle), &
+      &     geometry = geometry                                )
   
     ! Set initial existsOnProc to FALSE. Will be set to true in initParticle_MEM
     ! If particle actually exists on proc
     particleGroup%particles_MEM%val(iParticle)%existsOnProc = .FALSE.
     
     ! Initialize particle representation on the grid. Also sets owner.
-    call initParticle_MEM( particle    = particleGroup%particles_MEM%val(iParticle),  &
-                          & particleID  = iParticle,                               &
-                          & geometry    = geometry,                                & 
-                          & scheme      = scheme,                                  &
-                          & myRank      = myRank,                                  &
-                          & comm        = particleGroup%send,                      &
-                          & rmflag      = rmflag                                   )
+    call initParticle_MEM(                                            &
+      &     particle    = particleGroup%particles_MEM%val(iParticle), &
+      &     particleID  = iParticle,                                  &
+      &     geometry    = geometry,                                   & 
+      &     scheme      = scheme,                                     &
+      &     myRank      = myRank,                                     &
+      &     comm        = particleGroup%send,                         &
+      &     rmflag      = rmflag                                      )
       
   
     if(rmflag) then
-      call remove_particle_from_da_particle_MEM( particleGroup%particles_MEM, iParticle )
+      call remove_particle_from_da_particle_MEM( particleGroup%particles_MEM, &
+        &                                        iParticle                    )
     end if
     
     ! Set particle force to 0 initially
@@ -236,9 +240,10 @@ contains
   
   end subroutine createNewParticle_MEM
   
-  !> Routine to create a new particle using the information in the particleCreator object
-  subroutine createNewParticle_DPS( pos, vel, F, radius, mass, particleID, &
-                                  & particleGroup, geometry, scheme, myRank )
+  !> Routine to create a new particle using the information in the
+  !! particleCreator object
+  subroutine createNewParticle_DPS( pos, vel, F, radius, mass, particleID,  &
+    &                               particleGroup, geometry, scheme, myRank )
     !> Create particle at this position
     real(kind=rk), intent(in) :: pos(6)
     !> Initial velocity of particle
@@ -288,13 +293,14 @@ contains
       &    nProcs   = particleGroup%send%nProcs                   )
   
     ! Initialize the new particle on the lattice
-    call initParticle_DPS( particle      = particleGroup%particles_DPS%val(iParticle),  &
-                          & interpolator = particleGroup%interpolator,                  &
-                          & particleID   = particleID,                                  &
-                          & geometry     = geometry,                                    & 
-                          & scheme       = scheme,                                      &
-                          & myRank       = myRank,                                      &
-                          & comm         = particleGroup%send                           )
+    call initParticle_DPS(                                             &
+      &    particle     = particleGroup%particles_DPS%val(iParticle),  &
+      &    interpolator = particleGroup%interpolator,                  &
+      &    particleID   = particleID,                                  &
+      &    geometry     = geometry,                                    & 
+      &    scheme       = scheme,                                      &
+      &    myRank       = myRank,                                      &
+      &    comm         = particleGroup%send                           )
   
     if( particleGroup%particles_DPS%val(iParticle)%removeParticle_local ) then
       open( pgDebugLog%lu, file=pgDebugLog%lfile, status='old', position='append' )
@@ -304,10 +310,9 @@ contains
       close(pgDebugLog%lu)
     end if
   
-  
-  
   end subroutine createNewParticle_DPS
   
+
   !> Routine to generate a unique particleID for a particle
   function getNewParticleID(particle_creator, iParticle)
     !> Particle creator object
@@ -322,8 +327,9 @@ contains
     getNewParticleID = particle_creator%IDoffset%val(iParticle) &
     & + particle_creator%N_times_called*particle_creator%global_Nparticles
   
-  end function
+  end function getNewParticleID
   
+
   !> Routine to create new fully resolved MEM particles
   subroutine create_particles_MEM( particle_creator, particleGroup, scheme, &
                                  & geometry, params, myRank                 )
@@ -426,7 +432,7 @@ contains
                                & point = particle_creator%position%val(1:3,k), &
                                & level = geometry%tree%global%maxLevel         ) 
   
-        call particleGroup%intp(                                &
+        call particleGroup%intp(                                   &
             & xp           = particle_creator%position%val(1:6,k), &
             & coord_xp     = coord,                                &
             & scheme       = scheme,                               &
@@ -435,7 +441,7 @@ contains
             & interpolator = particleGroup%interpolator,           &
             & vel_xp       = vel_tmp,                              &
             & rho_xp       = rho_tmp,                              &
-            & eps_f_xp     = eps_f_tmp                            )
+            & eps_f_xp     = eps_f_tmp                             )
   
         particle_vel(1:3) = vel_tmp
         particle_vel(4:6) = 0.0_rk
@@ -447,7 +453,7 @@ contains
   
       ! Create the particle
       call createNewParticle_DPS( pos = particle_creator%position%val(1:6,k), &
-                                & vel = particle_vel, & 
+                                & vel = particle_vel,                         & 
                                 & F = particle_creator%force%val(1:6,k),      &
                                 & radius = particle_creator%radius%val(k),    &
                                 & mass = particle_creator%mass%val(k),        &
@@ -464,9 +470,10 @@ contains
   
   end subroutine create_particles_DPS
   
+
   !> Routine that checks if new particles should be created and creates them if so.
   subroutine check_and_create_new_particles_MEM( particle_creator, iter, particleGroup, &
-    &                                        scheme, geometry, params, myRank               )
+    &                                        scheme, geometry, params, myRank           )
     !> Particle creator object
     type(mus_particle_creator_type), intent(inout) :: particle_creator
     !> Current LBM iteration
@@ -578,7 +585,7 @@ contains
   
   !> Routine that checks if new particles should be created and creates them if so.
   subroutine check_and_create_new_particles_DPS( particle_creator, iter, particleGroup, &
-    &                                        scheme, geometry, params, myRank               )
+    &                                        scheme, geometry, params, myRank           )
     !> Particle creator object
     type(mus_particle_creator_type), intent(inout) :: particle_creator
     !> Current LBM iteration
@@ -663,6 +670,7 @@ contains
     end if
   end subroutine check_and_create_new_particles_DPS
   
+
   !> Function to check whether particles should be created using the particleCreator 
   !! object at the current iteration iter.
   function must_create_new_particles(iter, i_start, i_end, interval)
@@ -693,9 +701,9 @@ contains
   
   !> Routine to initialize the particle creator object from a particle 
   !! blob cylinder object
-  subroutine init_particle_creator_from_blob(                          &
+  subroutine init_particle_creator_from_blob(           &
           & particle_creator, particleblob, Nparticles, &
-          & scheme, geometry, myRank                                   )
+          & scheme, geometry, myRank                    )
     !> Particle creator object
     type(mus_particle_creator_type), intent(inout) :: particle_creator
     !> Particle blob object describing the shape of the initial "blob" of particles
@@ -740,13 +748,13 @@ contains
     ! Fill the cylinder with particles according to the chosen distribution kind
     select case( trim(particleblob%distribution%kind) )
     case ('uniform')
-      call fill_cylinder( R         = particleblob%radius,      &
-                        & L         = blob_length,              &
-                        & d         = d,                        &
-                        & positions = positions                 ) 
+      call fill_cylinder( R         = particleblob%radius, &
+                        & L         = blob_length,         &
+                        & d         = d,                   &
+                        & positions = positions            ) 
   
       ! Rotate the cylinder to the desired orientation 
-      call rotate_positions( positions = positions,                  &
+      call rotate_positions( positions = positions,                 &
                           & n1        = [ 0.0_rk, 0.0_rk, 1.0_rk ], &
                           & n2        = n_cylinder                  )
   
@@ -777,11 +785,11 @@ contains
   
     ! Set velocity, force, radius and mass of particles
     do iPos = 1, positions%nvals
-      islocal = positionLocalOnMyRank(                                            &
+      islocal = positionLocalOnMyRank(                       &
                       & pos      = positions%val(1:3, iPos), &
-                      & geometry = geometry,                                      &
-                      & scheme   = scheme,                                        &
-                      & myRank   = myRank                                         )
+                      & geometry = geometry,                 &
+                      & scheme   = scheme,                   &
+                      & myRank   = myRank                    )
       if(isLocal) then
         call append( me  = particle_creator%position, &
                    & val = positions%val(1:6,iPos)    )
@@ -815,9 +823,9 @@ contains
   
   !> Routine to initialize the particle creator object from a particle 
   !! blob prism object
-  subroutine init_particle_creator_from_blob_prism(                          &
+  subroutine init_particle_creator_from_blob_prism(     &
           & particle_creator, particleblob, Nparticles, &
-          & scheme, geometry, myRank                                   )
+          & scheme, geometry, myRank                    )
     !> Particle creator object
     type(mus_particle_creator_type), intent(inout) :: particle_creator
     !> Particle blob object describing the shape of the initial "blob" of particles
@@ -861,19 +869,19 @@ contains
     select case( trim(particleblob%distribution%kind) )
     case ('uniform')
       if(particleblob%nx < 0 .OR. particleblob%ny < 0 .OR. particleblob%nz < 0) then
-        call fill_prism( lx        = lx,       &
+        call fill_prism( lx       = lx,       &
                       & ly        = ly,       &
                       & lz        = lz,       &
                       & d         = d,        &
                       & positions = positions )
       else 
-        call fill_prism( lx        = lx,               &
-                      & ly        = ly,               &
-                      & lz        = lz,               &
-                      & nx        = particleblob%nx,  &
-                      & ny        = particleblob%ny,  &
-                      & nz        = particleblob%nz,  &
-                      & positions = positions         )
+        call fill_prism( lx       = lx,              &
+                      & ly        = ly,              &
+                      & lz        = lz,              &
+                      & nx        = particleblob%nx, &
+                      & ny        = particleblob%ny, &
+                      & nz        = particleblob%nz, &
+                      & positions = positions        )
       end if
     case('gaussian')
       call fill_blob_positions_gauss_prism( particleblob = particleblob, &
@@ -934,6 +942,7 @@ contains
   
   end subroutine init_particle_creator_from_blob_prism
   
+
   !> Routine to initialize particle creator object with random positions 
   !! inside a cylinder described by blob_cylinder type
   subroutine fill_blob_positions_gauss( particleblob, positions, Nparticles )
@@ -1000,6 +1009,7 @@ contains
   
   end subroutine fill_blob_positions_gauss
   
+
   !> Routine to initialize particle creator object with random positions 
   !! inside a prism described by blob_prism type
   subroutine fill_blob_positions_gauss_prism( particleblob, positions, Nparticles )
@@ -1046,8 +1056,8 @@ contains
     do iSlice = 1, Nslices
       call init_particle_blob_prob( blob    = particleblob%distribution,       &
                                   & d       = 2*particleblob%particle_radius,  &
-                                  & xlim    = [-0.5*Lx, 0.5*Lx],                    &
-                                  & ylim    = [-0.5*Ly, 0.5*Ly],                    &
+                                  & xlim    = [-0.5*Lx, 0.5*Lx],               &
+                                  & ylim    = [-0.5*Ly, 0.5*Ly],               &
                                   & mu      = particleblob%distribution%mu,    &
                                   & sigma   = particleblob%distribution%sigma, &
                                   & Nchosen = Nparticles_per_slice             )

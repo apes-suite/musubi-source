@@ -25,10 +25,9 @@
 !! parts of the particle code to analyze its performance
 
 module mus_particle_timer_module
-  ! Use statements
-    use env_module,         only: rk
-    use tem_timer_module,   only: tem_resetTimer, tem_addTimer,&
-      &                           tem_getTimerVal, tem_getNTimers
+  use env_module,         only: rk
+  use tem_timer_module,   only: tem_resetTimer, tem_addTimer,&
+   &                            tem_getTimerVal, tem_getNTimers
   implicit none
 
   type mus_particles_timerhandle_type
@@ -71,7 +70,9 @@ module mus_particle_timer_module
 
   type(mus_particles_timerhandle_type), save :: mus_particle_timerHandles
 
-  contains
+
+contains
+
 
   subroutine mus_init_particleTimer()
     ! add timer handles to measure wall clock time of different routines
@@ -96,10 +97,10 @@ module mus_particle_timer_module
     call tem_addTimer( timerHandle = mus_particle_TimerHandles%forceTimer, &
       &                timerName   = 'forceTimer'         )
 
-    call tem_addTimer( timerHandle = mus_particle_TimerHandles%idleTimer,&
+    call tem_addTimer( timerHandle = mus_particle_TimerHandles%idleTimer, &
       &                timerName   = 'idleTime'        )
 
-    call tem_addTimer( timerHandle = mus_particle_TimerHandles%exchangePositionsTimer,&
+    call tem_addTimer( timerHandle = mus_particle_TimerHandles%exchangePositionsTimer, &
       &                timerName   = 'exchangePositions' )
 
     call tem_addTimer( timerHandle = mus_particle_TimerHandles%exchangeVelocitiesTimer, &
