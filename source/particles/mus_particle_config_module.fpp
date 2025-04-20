@@ -150,10 +150,11 @@ module mus_particle_config_module
   use mus_particle_aux_module, only: getProcessBoundingBox, &
     &   positionLocalOnMyRank
   use mus_particle_blob_module, only:    &
+    &   mus_particle_blob_prob_type,     &
     &   mus_particle_blob_cylinder_type, &
+    &   mus_particle_blob_prism_type,    &
     &   particleblob,                    &
     &   particleblob_prism,              &
-    &   mus_particle_blob_prism_type,    &
     &   print_particleblob,              &
     &   print_particleblob_prism
   use mus_particle_creator_module, only:       &
@@ -273,12 +274,12 @@ contains
           call tem_abort()
         end select
 
-      call aot_get_val( L       = conf,          &
-        &               thandle = p_thandle,     &
-        &               key     = 'interpolation_kind',        &
-        &               val     = interpolation_kind, &
-        &               default = 'delta',         &
-        &               ErrCode = iError         )
+      call aot_get_val( L       = conf,                 &
+        &               thandle = p_thandle,            &
+        &               key     = 'interpolation_kind', &
+        &               val     = interpolation_kind,   &
+        &               default = 'delta',              &
+        &               ErrCode = iError                )
 
       if (btest(iError, aoterr_Fatal)) then
         write(logUnit(1),*) 'FATAL Error occured, while retrieving particle interpolation kind:'
@@ -354,17 +355,17 @@ contains
     character(len=labelLen) :: stringBuffer
 
     ! -----------------------------------------!
-    call aot_table_open(L       = conf,              &
-      &                 thandle = thandle,           &
-      &                 parent  = p_thandle,         &
-      &                 key     = 'tracker'          )
+    call aot_table_open(L       = conf,      &
+      &                 thandle = thandle,   &
+      &                 parent  = p_thandle, &
+      &                 key     = 'tracker'  )
 
     ! If tracker table is available, load its data
     if (thandle /= 0) then
       ! ---------------- LOAD FILE NAME PREFIX ----------------- !
       ! Actual filename will be this with _tXXXX.dat appended to it
       call aot_get_val(L = conf, thandle = thandle, key = 'name', &
-        &              val = stringBuffer, ErrCode = iError           )
+        &              val = stringBuffer, ErrCode = iError       )
       if (btest(iError, aoterr_Fatal)) then
         write(logUnit(1),*) 'FATAL Error occured, while retrieving tracker{name}:'
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
@@ -385,10 +386,10 @@ contains
       tracker%trackertype = stringBuffer
 
       ! ----------- OPEN DIR1 TABLE ---------- !
-      call aot_table_open(L       = conf,              &
+      call aot_table_open(L       = conf,     &
         &                 thandle = tthandle, &
-        &                 parent  = thandle, &
-        &                 key     = 'dir1'       )
+        &                 parent  = thandle,  &
+        &                 key     = 'dir1'    )
       if (tthandle /= 0) then
         ! get the number of values in dir1 table, should be 3
         nVals = aot_table_length(L=conf, thandle=tthandle)
@@ -424,10 +425,10 @@ contains
       call aot_table_close(L = conf, thandle = tthandle)
 
       ! ----------- OPEN DIR2 TABLE ---------- !
-      call aot_table_open(L       = conf,              &
+      call aot_table_open(L       = conf,     &
         &                 thandle = tthandle, &
-        &                 parent  = thandle, &
-        &                 key     = 'dir2'       )
+        &                 parent  = thandle,  &
+        &                 key     = 'dir2'    )
       if (tthandle /= 0) then
         ! get the number of values in dir2 table, should be 3
         nVals = aot_table_length(L=conf, thandle=tthandle)
@@ -438,9 +439,9 @@ contains
         end if ! nVals /= 3
 
         do iVal = 1, nVals
-          call aot_get_val(L = conf, thandle = tthandle, &
+          call aot_get_val(L = conf, thandle = tthandle,      &
             &              val = intBuffer, ErrCode = iError, &
-            &              pos = iVal)
+            &              pos = iVal                         )
           if (btest(iError, aoterr_Fatal)) then
             write(*,*) 'FATAL Error occured, while retrieving dir2'
             if (btest(iError, aoterr_NonExistent)) write(*,*) &
@@ -463,10 +464,10 @@ contains
       call aot_table_close(L = conf, thandle = tthandle)
 
       ! ---------------- LOAD XSTART ----------------- !
-      call aot_table_open(L       = conf,              &
+      call aot_table_open(L       = conf,     &
         &                 thandle = tthandle, &
-        &                 parent  = thandle, &
-        &                 key     = 'xstart'       )
+        &                 parent  = thandle,  &
+        &                 key     = 'xstart'  )
       if (tthandle /= 0) then
         ! get the number of values in xstart table, should be 3
         nVals = aot_table_length(L=conf, thandle=tthandle)
@@ -504,7 +505,7 @@ contains
 
       ! ---------------- LOAD LENGTH1 ----------------- !
       call aot_get_val(L = conf, thandle = thandle, key = 'length1', &
-        &              val = realBuffer, ErrCode = iError               )
+        &              val = realBuffer, ErrCode = iError            )
 
       if (btest(iError, aoterr_Fatal)) then
         write(logUnit(1),*) 'FATAL Error occured, while retrieving tracker{length1}:'
@@ -515,7 +516,7 @@ contains
       tracker%length1 = realBuffer
       ! ---------------- LOAD LENGTH2 ----------------- !
       call aot_get_val(L = conf, thandle = thandle, key = 'length2', &
-        &              val = realBuffer, ErrCode = iError               )
+        &              val = realBuffer, ErrCode = iError            )
       if (btest(iError, aoterr_Fatal)) then
         write(logUnit(1),*) 'FATAL Error occured, while retrieving tracker{length2}:'
         if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
@@ -610,9 +611,9 @@ contains
 
       ! Get value for boundary kinds
       call aot_table_open(L       = conf,              &
-        &                 thandle = bnd_kind_handle,    &
+        &                 thandle = bnd_kind_handle,   &
         &                 parent  = boundaries_handle, &
-        &                 key     = 'bnd_kind'       )
+        &                 key     = 'bnd_kind'         )
       if( bnd_kind_handle /= 0 ) then
         ! get the number of values in bnd_kind, should be 6
         nVals = aot_table_length(L=conf, thandle=bnd_kind_handle)
@@ -623,9 +624,9 @@ contains
         end if ! nVals /= 6
 
         do iVal = 1, nVals
-          call aot_get_val(L = conf, thandle = bnd_kind_handle, &
-            &              val = bnd_kind, default='wall', ErrCode = iError, &
-            &              pos = iVal)
+          call aot_get_val( L = conf, thandle = bnd_kind_handle,              &
+            &               val = bnd_kind, default='wall', ErrCode = iError, &
+            &               pos = iVal                                        )
 
           if (btest(iError, aoterr_Fatal)) then
             write(*,*) 'FATAL Error occured, while retrieving bnd_kind'
@@ -671,169 +672,6 @@ contains
 
   end subroutine mus_load_particle_boundaries
 
-
-  !> Routine to load a real value from table specified by thandle
-  !! and store the value in buff, with check if this went correctly.
-  subroutine mus_load_real(conf, thandle, key, buff, default_val, flag)
-    !> configuration
-    type(flu_State) :: conf
-    !> Handle to parent table
-    integer, intent(in) :: thandle
-    !> Key within table of value to load
-    character(len=*), intent(in) :: key
-    !> Buffer to store the result
-    real(kind=rk), intent(out) :: buff
-    !> Default value to use if we failed to read the value
-    !! If default value is omitted AND we cannot read the key,
-    !! the routine will terminate the program with an error
-    real(kind=rk), intent(in), optional :: default_val
-    !> Flag to indicate whether we successfully read the value (flag = TRUE)
-    !! or not (flag = FALSE)
-    logical, intent(out) :: flag
-    ! -----------------------------------------!
-    integer :: iError
-    ! -----------------------------------------!
-    ! First try to read the value without default_val
-    call aot_get_val(L = conf, thandle = thandle, key = key, &
-      &              val = buff, ErrCode = iError )
-
-    if (btest(iError, aoterr_Fatal)) then
-      ! If we could not get the value, use the default (if it exists)
-      if( present(default_val) ) then
-        ! Use the default, but set the flag to FALSE to indicate that we
-        ! could not read the user-supplied value from the file.
-        buff = default_val
-        flag = .FALSE.
-      else
-        write(logUnit(1),*) 'ERROR: mus_load_real failed to retrieve key ', trim(key)
-        write(logUnit(1),*) 'ABORTING!'
-        flag = .FALSE.
-        call tem_abort()
-      end if ! present(default_val)
-    else ! successfully read user-supplied value from lua file
-      flag = .TRUE.
-    end if
-  end subroutine mus_load_real
-
-  !> Load a table of N real values using a key
-  subroutine mus_load_realvec(conf, p_thandle, key, buff, default_val, N, flag)
-    !> configuration
-    type(flu_State) :: conf
-    !> Handle to parent table (should be opened prior to calling this routine)
-    integer, intent(in) :: p_thandle
-    !> Key of subtable to load values from
-    character(len=*), intent(in) :: key
-    !> Buffer to store the result
-    real(kind=rk), intent(out) :: buff(N)
-    !> Default value to use if we failed to read the value
-    !! If default value is omitted AND we cannot read the key,
-    !! the routine will terminate the program with an error
-    real(kind=rk), intent(in), optional :: default_val(N)
-    !> Number of elements in the subtable we want to read
-    integer, intent(in) :: N
-    !> Flag to indicate whether we successfully read the value (flag = TRUE)
-    !! or not (flag = FALSE)
-    logical, intent(out) :: flag
-    ! -----------------------------------------!
-    integer :: iError, nVals, iVal
-    integer :: thandle
-    ! -----------------------------------------!
-    ! Attempt to open the subtable
-    call aot_table_open(L       = conf,       &
-      &                 thandle = thandle,    &
-      &                 parent  = p_thandle,  &
-      &                 key     = key         )
-
-    ! Check if opening the subtable was successful
-    if (thandle /= 0) then
-      ! If we opened the subtable succesfully, check if its length is correct
-      nVals = aot_table_length(L=conf, thandle=thandle)
-      if(nVals /= N) then
-        write(*,*) 'mus_load_realvec: FATAL Error occurred, table ', trim(key), &
-        & ' is not of expected length'
-        call tem_abort()
-      end if ! nVals /= N
-
-      ! Now loop over the values in the subtable
-      do iVal = 1, nVals
-        ! Attempt to read the iVal-th value
-        call aot_get_val(L = conf, thandle = thandle, &
-          &              val = buff(iVal), ErrCode = iError, &
-          &              pos = iVal)
-
-        ! Check for errors reading this value
-        if (btest(iError, aoterr_Fatal)) then
-          write(*,*) 'mus_load_realvec: FATAL Error occured, while retrieving value ', key
-          call tem_abort()
-        end if
-      end do ! loop over values in subtable
-      flag = .TRUE.
-    else
-      write(*,*) 'Subtable ', key ,' is not defined, using default value'
-      if(present(default_val)) then
-        buff(1:N) = default_val(1:N)
-        flag = .FALSE.
-      else
-        write(*,*) 'Fatal error, subtable ', key, ' is not defined.'
-        call tem_abort()
-      end if ! present(default_val)
-    end if ! thandle =/ 0
-
-    !> Close the subtable
-    call aot_table_close(L = conf, thandle = thandle)
-
-  end subroutine mus_load_realvec
-
-
-  !> Routine to load a real value from table specified by thandle
-  !! and store the value in buff, with check if this went correctly.
-  subroutine mus_load_int(conf, thandle, key, buff, default_val, flag)
-    !> configuration
-    type(flu_State) :: conf
-    !> Handle to parent table
-    integer, intent(in) :: thandle
-    !> Key within table of value to load
-    character(len=*), intent(in) :: key
-    !> Buffer to store the result
-    integer, intent(out) :: buff
-    !> Default value to use if we failed to read the value
-    !! If default value is omitted AND we cannot read the key,
-    !! the routine will terminate the program with an error
-    integer, intent(in), optional :: default_val
-    !> Flag to indicate whether we successfully read the value (flag = TRUE)
-    !! or not (flag = FALSE)
-    logical, intent(out) :: flag
-    ! -----------------------------------------!
-    integer :: iError
-    ! -----------------------------------------!
-    if( present(default_val) ) then
-      call aot_get_val(L = conf, thandle = thandle, key = key, &
-        &              val = buff, ErrCode = iError, default = default_val )
-
-      if (btest(iError, aoterr_Fatal)) then
-        write(logUnit(1),*) 'mus_load_int failed to retrieve key ', trim(key)
-        if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
-        if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
-        write(logUnit(1),*) 'using default value of ', default_val
-        flag = .FALSE.
-      else
-        flag = .TRUE.
-      end if
-    else
-      call aot_get_val(L = conf, thandle = thandle, key = key, &
-        &              val = buff, ErrCode = iError )
-
-      if (btest(iError, aoterr_Fatal)) then
-        write(logUnit(1),*) 'ERROR: mus_load_int failed to retrieve key ', trim(key)
-        if (btest(iError, aoterr_NonExistent)) write(*,*) 'Variable nonexistent!'
-        if (btest(iError, aoterr_WrongType)) write(*,*) 'Variable of wrong type!'
-        write(logUnit(1),*) 'ABORTING!'
-        flag = .FALSE.
-        call tem_abort()
-      end if
-    end if ! default val present
-
-  end subroutine mus_load_int
 
   !> Get the particle kind from the configuration
   !!
@@ -946,20 +784,15 @@ contains
     integer, intent(in) :: p_thandle
     ! ----------------------------------------------------------- !
     real(kind=rk) :: realBuffer
-    integer :: intBuffer
     integer :: iError
-    logical :: flag
     ! ----------------------------------------------------------- !
-    flag = .FALSE.
     ! Get number of DEM subcycles to use per LBM time step
-    call mus_load_int( conf        = conf,                  &
-                      & thandle     = p_thandle,             &
-                      & key         = 'nDEMsubcycles',       &
-                      & buff        = intBuffer,             &
-                      & default_val = 50,                    &
-                      & flag        = flag                   )
-
-    particleGroup%Nsubcycles = intBuffer
+    call aot_get_val( L = conf, thandle = p_thandle,  &
+      &               key = 'nDEMsubcycles',          &
+      &               val = particleGroup%Nsubcycles, &
+      &               default = 50,                   &
+      &               ErrCode = iError                )
+    call check_aot_error(iError, key = "nDEMsubcycles")
 
     ! Get particle collision time.
     ! If this is not specified or negative particles will NOT
@@ -1029,8 +862,8 @@ contains
     !> Layout kind (e.g. d2q9 or d3q19) to load correct interpolation routines
     character(len=labelLen) :: layout
 
-    integer :: particleLogInterval, particleBufferSize
-    integer :: intBuffer
+    !!integer :: particleLogInterval, particleBufferSize
+    !!integer :: intBuffer
     integer :: iError
     !> Handle to particle table
     integer :: p_thandle
@@ -1069,37 +902,35 @@ contains
       ! This should be the total amount of particles defined in the
       ! 'particles' table in musubi.lua
       ! This is required if particle table is present.
-      call mus_load_int( conf    = conf,         &
-                       & thandle = p_thandle,    &
-                       & key     = 'nParticles', &
-                       & buff    = nParticles,   &
-                       & flag    = flag          )
-
-      particleGroup%nParticles = nParticles
+      call aot_get_val( L = conf, thandle = p_thandle, &
+        &               key = 'nParticles',            &
+        &               val = nParticles,              &
+        &               ErrCode = iError               )
+      call check_aot_error(iError, key = 'nParticles', &
+        &    event_string = 'loading particles'        )
+      nParticles = particleGroup%nParticles
 
       !-- INITIALIZE MAXIMUM SIZE OF PARTICLE DYN ARRAYS --!
       ! This should be the greater than the total amount of particles defined
       ! in the 'particles' table in musubi.lua
       ! This is required if particle table is present.
-      call mus_load_int( conf        = conf,                     &
-                       & thandle     = p_thandle,                &
-                       & key         = 'maxDynArraySize',        &
-                       & buff        = intBuffer,                &
-                       & default_val = particleGroup%nParticles, &
-                       & flag        = flag                      )
-
-      maxContainerSize = intBuffer
+      call aot_get_val( L = conf, thandle = p_thandle,      &
+        &               key     = 'maxDynArraySize',        &
+        &               val     = maxContainerSize,         &
+        &               default = particleGroup%nParticles, &
+        &               ErrCode = iError                    )
+      call check_aot_error(iError, key = 'maxDynArraySize', &
+        &    event_string = 'loading particles'             )
 
       ! ---- LOAD PARTICLE LOG INTERVAL ---- !
       ! Optional, default value is logging every LBM time step
-      call mus_load_int( conf        = conf,                  &
-                       & thandle     = p_thandle,             &
-                       & key         = 'particleLogInterval', &
-                       & buff        = particleLogInterval,   &
-                       & default_val = 1,                     &
-                       & flag        = flag                   )
-
-      particleGroup%particleLogInterval = particleLogInterval
+      call aot_get_val( L = conf, thandle = p_thandle,           &
+        &               key = 'particleLogInterval',             &
+        &               val = particleGroup%particleLogInterval, &
+        &               default = 1,                             &
+        &               ErrCode = iError                         )
+      call check_aot_error(iError, key = 'particleLogInterval', &
+        &    event_string = 'loading particles'             )
 
       select case(particle_kind)
         case( 'MEM', 'MEM_unittest' )
@@ -1123,8 +954,8 @@ contains
         &    event_string = 'reading '//trim(particle_kind)//' data' )
 
       call mus_load_particle_collisions( particleGroup = particleGroup, &
-                                       & conf          = conf,          &
-                                       & p_thandle     = p_thandle )
+        &                                conf          = conf,          &
+        &                                p_thandle     = p_thandle      )
 
       !-- INITIALIZE DEBUG TRACKERS --!
       call mus_load_debugtracker( conf = conf, p_thandle = p_thandle, tracker = debugTracker )
@@ -1136,32 +967,29 @@ contains
       ! or wall BC's provided that the geometry is simple prismatic.
 
       call mus_load_particle_boundaries( conf      = conf,      &
-                                       & p_thandle = p_thandle, &
-                                       & bndData   = pgBndData  )
-
+        &                                p_thandle = p_thandle, &
+        &                                bndData   = pgBndData  )
 
       !-- INITIALIZE PARTICLE BUFFER SIZE --!
-      call mus_load_int( conf        = conf,                 &
-                       & thandle     = p_thandle,            &
-                       & key         = 'particleBufferSize', &
-                       & buff        = particleBufferSize,   &
-                       & default_val = 100,                  &
-                       & flag        = flag                  )
-
-      particleGroup%particleBufferSize = particleBufferSize
-
+      call aot_get_val( L       = conf,                             &
+        &               thandle = p_thandle,                        &
+        &               key     = 'particleBufferSize',             &
+        &               val     = particleGroup%particleBufferSize, &
+        &               default = 100,                              &
+        &               ErrCode = iError                            )
+      call check_aot_error(iError, key = 'particleBufferSize')
 
       !-- LOAD ACTUAL PARTICLE DATA --!
       ! Load the timing settings for the particle creator. This tells us at what
       ! iterations particles need to be created during the simulation.
       call mus_load_particle_creator_timing( conf             = conf,             &
-                                           & p_thandle        = p_thandle,        &
-                                           & particle_creator = particle_creator, &
-                                           & Nparticles       = Nparticles,       &
-                                           & chunkSize        = chunkSize,        &
-                                           & scheme           = scheme,           &
-                                           & geometry         = geometry,         &
-                                           & myRank           = myRank            )
+        &                                    p_thandle        = p_thandle,        &
+        &                                    particle_creator = particle_creator, &
+        &                                    Nparticles       = Nparticles,       &
+        &                                    chunkSize        = chunkSize,        &
+        &                                    scheme           = scheme,           &
+        &                                    geometry         = geometry,         &
+        &                                    myRank           = myRank            )
 
       ! See if we are using a predefined shape to load a "blob" of particles
       ! or if we are loading each particle position individually.
@@ -1205,10 +1033,10 @@ contains
       ! individual positions from the lua file.
       if (predefined) then
         ! Load parameters of the cylindrical particleblob (length, radius, etc.)
-        call mus_load_predefined_particleblob( conf         = conf,         &
-          &                                    parent       = p_thandle,    &
-          &                                    blob_type    = blob_type,    &
-          &                                    flag         = flag          )
+        call mus_load_predefined_particleblob( conf         = conf,      &
+          &                                    parent       = p_thandle, &
+          &                                    blob_type    = blob_type, &
+          &                                    flag         = flag       )
 
         select case(blob_type)
         case('cylinder')
@@ -1337,7 +1165,11 @@ contains
     integer :: vError(6)
     real(kind=rk) :: default_force(6)
     real(kind=rk) :: default_vel(6)
-    logical :: read_is_successful
+    real(kind=rk) :: force(6)
+    real(kind=rk) :: velocity(6)
+    real(kind=rk) :: radius
+    real(kind=rk) :: mass
+    logical :: has_init_velocity
     ! ---------------------------------------------------- !
     default_force = 0.0_rk
     default_vel = 0.0_rk
@@ -1357,95 +1189,70 @@ contains
       call check_aot_error( iError, key = 'kind',                   &
         &                   event_string = 'getting particle shape' )
 
+      ! Load the particle properties from the particle table (handle: parent).
+      ! These are the same for each particle in the "blob"
+      call aot_get_val( L       = conf,                      &
+        &               thandle = parent,                    &
+        &               key     = 'velocity',                &
+        &               val     = particleblob%particle_vel, &
+        &               default = default_vel,               &
+        &               ErrCode = vError                     )
+      if (any(btest(vError, aoterr_Fatal))) then
+        write(logUnit(0), *) "ERROR reading the velocity for " &
+          &                  // "particleblob cylinder"
+        call tem_abort()
+      end if
+      has_init_velocity = (sum(abs(velocity)) > 8*tiny(1.0_rk))
+
+      call aot_get_val( L       = conf,                        &
+        &               thandle = parent,                      &
+        &               key     = 'force',                     &
+        &               val     = particleblob%particle_force, &
+        &               default = default_vel,                 &
+        &               ErrCode = vError                       )
+      if (any(btest(vError, aoterr_Fatal))) then
+        write(logUnit(0), *) "ERROR reading the force for " &
+          &                  // "particleblob cylinder"
+        call tem_abort()
+      end if
+
+      call aot_get_val( L       = conf,                         &
+        &               thandle = parent,                       &
+        &               key     = 'radius',                     &
+        &               val     = particleblob%particle_radius, &
+        &               ErrCode = iError                        )
+      call check_aot_error(iError, key = 'radius', &
+        &                  event_string = 'reading particleblob')
+
+      call aot_get_val( L       = conf,                       &
+        &               thandle = parent,                     &
+        &               key     = 'mass',                     &
+        &               val     = particleblob%particle_mass, &
+        &               ErrCode = iError                      )
+      call check_aot_error(iError, key = 'mass', &
+        &                  event_string = 'reading particleblob')
+
       select case(trim(blob_type))
       case('cylinder')
         call mus_load_particleblob_cylinder( particleblob = particleblob, &
           &                                  conf         = conf,         &
           &                                  parent       = shape_thandle )
-
-        ! Load the particle properties from the particle table (handle: parent).
-        ! These are the same for each particle in the "blob"
-        call aot_get_val( L       = conf,                      &
-          &               thandle = parent,                    &
-          &               key     = 'velocity',                &
-          &               val     = particleblob%particle_vel, &
-          &               default = default_vel,               &
-          &               ErrCode = vError                     )
-        if (any(btest(vError, aoterr_Fatal))) then
-          write(logUnit(0), *) "ERROR reading the velocity for " &
-            &                  // "particleblob cylinder"
-          call tem_abort()
-        end if
-        particleblob%init_particles_to_fluid_vel &
-          & = (sum(abs(particleblob%particle_vel)) > 8*tiny(1.0_rk))
-
-        call aot_get_val( L       = conf,                        &
-          &               thandle = parent,                      &
-          &               key     = 'force',                     &
-          &               val     = particleblob%particle_force, &
-          &               default = default_vel,                 &
-          &               ErrCode = vError                       )
-        if (any(btest(vError, aoterr_Fatal))) then
-          write(logUnit(0), *) "ERROR reading the force for " &
-            &                  // "particleblob cylinder"
-          call tem_abort()
-        end if
-
-        call aot_get_val( L       = conf,                         &
-          &               thandle = parent,                       &
-          &               key     = 'radius',                     &
-          &               val     = particleblob%particle_radius, &
-          &               ErrCode = iError                        )
-        call check_aot_error(iError, key = 'radius', &
-          &                  event_string = 'reading cylinder particle shape')
-
-        call aot_get_val( L       = conf,                       &
-          &               thandle = parent,                     &
-          &               key     = 'mass',                     &
-          &               val     = particleblob%particle_mass, &
-          &               ErrCode = iError                      )
-        call check_aot_error(iError, key = 'mass', &
-          &                  event_string = 'reading cylinder particle shape')
+        particleblob%particle_vel = velocity
+        particleblob%particle_force = force
+        particleblob%init_particles_to_fluid_vel = has_init_velocity
+        particleblob%particle_radius = radius
+        particleblob%particle_mass = mass
 
       case('prism')
         call mus_load_particleblob_prism( particleblob = particleblob_prism, &
-                                        & conf         = conf,               &
-                                        & parent       = shape_thandle       )
-        ! Load the particle properties from the particle table (handle: parent).
-        ! These are the same for each particle in the "blob"
-        call mus_load_realvec( conf        = conf,                       &
-                              & p_thandle   = parent,                     &
-                              & key         = 'velocity',                 &
-                              & buff        = particleblob_prism%particle_vel,  &
-                              & default_val = default_vel,                &
-                              & n           = 6,                          &
-                              & flag        = read_is_successful          )
+          &                               conf         = conf,               &
+          &                               parent       = shape_thandle       )
+        particleblob_prism%particle_vel = velocity
+        particleblob_prism%particle_force = force
+        particleblob_prism%init_particles_to_fluid_vel = has_init_velocity
+        particleblob_prism%particle_radius = radius
+        particleblob_prism%particle_mass = mass
 
-        if(read_is_successful) then
-          particleblob%init_particles_to_fluid_vel = .FALSE.
-        else
-          particleblob%init_particles_to_fluid_vel = .TRUE.
-        end if
-
-        call mus_load_realvec( conf        = conf,                         &
-                              & p_thandle   = parent,                       &
-                              & key         = 'force',                      &
-                              & buff        = particleblob_prism%particle_force,  &
-                              & default_val = default_force,                &
-                              & n           = 6,                            &
-                              & flag        = read_is_successful            )
-
-        call mus_load_real( conf    = conf,                          &
-                          & thandle = parent,                        &
-                          & key     = 'radius',                      &
-                          & buff    = particleblob_prism%particle_radius, &
-                          & flag    = read_is_successful             )
-
-        call mus_load_real( conf    = conf,                        &
-                          & thandle = parent,                      &
-                          & key     = 'mass',                      &
-                          & buff    = particleblob_prism%particle_mass,  &
-                          & flag    = read_is_successful           )
       case default
         write(logUnit(1),*) "ERROR: Predefined particle shape kind not recognized, aborting!"
         write(logUnit(1),*) "       Has to be one of:"
@@ -1457,12 +1264,62 @@ contains
       flag = .TRUE.
     else
       flag = .FALSE.
-      return
     end if
     call aot_table_close(L = conf, thandle = shape_thandle)
 
-
   end subroutine mus_load_predefined_particleblob
+
+  subroutine mus_load_particle_distribution(distribution, conf, parent)
+    type(mus_particle_blob_prob_type), intent(inout) :: distribution
+    !> configuration
+    type(flu_State) :: conf
+    !> Handle to parent table in which the "shape" table exists
+    integer, intent(in) :: parent
+    ! --------------------------------------- !
+    integer :: iError, pError(2)
+    ! --------------------------------------- !
+    call aot_get_val( L       = conf,              &
+      &               thandle = parent,            &
+      &               key     = 'distribution',    &
+      &               val     = distribution%kind, &
+      &               default = 'uniform',         &
+      &               ErrCode = iError             )
+    call check_aot_error(iError, key = "distribution",   &
+      &    event_string = "reading particle distribution")
+
+    if ( trim(particleblob%distribution%kind) == 'gaussian' ) then
+      ! Load the random seed to be used for generating random positions
+      call aot_get_val( L       = conf,              &
+        &               thandle = parent,            &
+        &               key     = 'seed',            &
+        &               val     = distribution%seed, &
+        &               default = 10,                &
+        &               ErrCode = iError             )
+      call check_aot_error(iError, key = "seed",   &
+        &    event_string = "reading gaussian distribution")
+
+      ! Load the mean and standard deviation of the distribution
+      call aot_get_val( L       = conf,            &
+        &               thandle = parent,          &
+        &               key     = 'mu',            &
+        &               val     = distribution%mu, &
+        &               ErrCode = pError           )
+      if (any(btest(pError, aoterr_Fatal))) then
+        write(logUnit(0),*) "ERROR reading mu for gaussian distribution"
+      end if
+
+      call aot_get_val( L       = conf,               &
+        &               thandle = parent,             &
+        &               key     = 'sigma',            &
+        &               val     = distribution%sigma, &
+        &               ErrCode = pError              )
+      if (any(btest(pError, aoterr_Fatal))) then
+        write(logUnit(0),*) "ERROR reading sigma for gaussian distribution"
+      end if
+
+    end if
+
+  end subroutine mus_load_particle_distribution
 
   subroutine mus_load_particleblob_cylinder(particleblob, conf, parent)
     type(mus_particle_blob_cylinder_type), intent(inout) :: particleblob
@@ -1471,73 +1328,37 @@ contains
     !> Handle to parent table in which the "shape" table exists
     integer, intent(in) :: parent
     ! --------------------------------------- !
-    integer :: iError
-    logical :: flag, read_succesful
+    integer :: iError, vError(3)
+    logical :: failure
     ! --------------------------------------- !
-    read_succesful = .TRUE.
+    failure = .false.
     ! load origin
-    call mus_load_realvec( conf      = conf,                &
-                         & p_thandle = parent,              &
-                         & key       = 'origin',            &
-                         & buff      = particleblob%origin, &
-                         & N         = 3,                   &
-                         & flag      = flag                 )
-    if(.NOT. flag) read_succesful = .FALSE.
+    call aot_get_val( L       = conf,                &
+      &               thandle = parent,              &
+      &               key     = 'origin',            &
+      &               val     = particleblob%origin, &
+      &               ErrCode = vError               )
+    failure = failure .or. any(btest(vError, aoterr_Fatal))
 
     ! load cylinder axis
-    call mus_load_realvec( conf      = conf,             &
-                         & p_thandle = parent,           &
-                         & key       = 'vec',            &
-                         & buff      = particleblob%vec, &
-                         & N         = 3,                &
-                         & flag      = flag              )
-    if(.NOT. flag) read_succesful = .FALSE.
+    call aot_get_val( L       = conf,             &
+      &               thandle = parent,           &
+      &               key     = 'vec',            &
+      &               val     = particleblob%vec, &
+      &               ErrCode = vError            )
+    failure = failure .or. any(btest(vError, aoterr_Fatal))
 
     ! load cylinder radius
-    call mus_load_real( conf    = conf,                &
-                      & thandle = parent,              &
-                      & key     = 'cylinder_radius',   &
-                      & buff    = particleblob%radius, &
-                      & flag    = flag                 )
-    if(.NOT. flag) read_succesful = .FALSE.
+    call aot_get_val( L       = conf,                &
+      &               thandle = parent,              &
+      &               key     = 'cylinder_radius',   &
+      &               val     = particleblob%radius, &
+      &               ErrCode = iError               )
+    failure = failure .or. btest(iError, aoterr_Fatal)
 
-    ! Optional: load the probability distribution of particles inside the blob
-    call aot_get_val( L       = conf,                           &
-      &               thandle = parent,                         &
-      &               key     = 'distribution',                 &
-      &               val     = particleblob%distribution%kind, &
-      &               default = 'uniform',                      &
-      &               ErrCode = iError                          )
+    call mus_load_particle_distribution(particleblob%distribution, conf, parent)
 
-    if( trim(particleblob%distribution%kind) == 'gaussian' ) then
-      ! Load the random seed to be used for generating random positions
-      call mus_load_int( conf        = conf,                           &
-                       & thandle     = parent,                         &
-                       & key         = 'seed',                         &
-                       & buff        = particleblob%distribution%seed, &
-                       & default_val = 10,                             &
-                       & flag        = flag                            )
-
-
-      ! Load the mean and standard deviation of the distribution
-      call mus_load_realvec( conf      = conf,                         &
-                           & p_thandle = parent,                       &
-                           & key       = 'mu',                         &
-                           & buff      = particleblob%distribution%mu, &
-                           & N         = 2,                            &
-                           & flag      = flag                          )
-
-      call mus_load_realvec( conf      = conf,                            &
-                           & p_thandle = parent,                          &
-                           & key       = 'sigma',                         &
-                           & buff      = particleblob%distribution%sigma, &
-                           & N         = 2,                               &
-                           & flag      = flag                             )
-
-    end if
-
-
-    if(.NOT. read_succesful) then
+    if (failure) then
       write(logUnit(1),*) "ERROR mus_load_particleblob_cylinder: could not read cylinder params"
       call tem_abort()
     end if
@@ -1552,103 +1373,70 @@ contains
     !> Handle to parent table in which the "shape" table exists
     integer, intent(in) :: parent
     ! --------------------------------------- !
-    integer :: iError
-    logical :: flag, read_succesful
+    integer :: iError, vError(3)
+    logical :: failure
     ! --------------------------------------- !
-    read_succesful = .TRUE.
+    failure = .false.
     ! load origin
-    call mus_load_realvec( conf      = conf,                &
-                         & p_thandle = parent,              &
-                         & key       = 'origin',            &
-                         & buff      = particleblob%origin, &
-                         & N         = 3,                   &
-                         & flag      = flag                 )
-    if(.NOT. flag) read_succesful = .FALSE.
+    call aot_get_val( L       = conf,                &
+      &               thandle = parent,              &
+      &               key     = 'origin',            &
+      &               val     = particleblob%origin, &
+      &               ErrCode = vError               )
+    failure = failure .or. any(btest(vError, aoterr_Fatal))
 
     ! load x-direction axis
-    call mus_load_realvec( conf      = conf,               &
-                         & p_thandle = parent,             &
-                         & key       = 'vec_x',            &
-                         & buff      = particleblob%vec_x, &
-                         & N         = 3,                  &
-                         & flag      = flag                )
-    if(.NOT. flag) read_succesful = .FALSE.
+    call aot_get_val( L       = conf,               &
+      &               thandle = parent,             &
+      &               key     = 'vec_x',            &
+      &               val     = particleblob%vec_x, &
+      &               ErrCode = vError              )
+    failure = failure .or. any(btest(vError, aoterr_Fatal))
 
     ! load y-direction axis
-    call mus_load_realvec( conf      = conf,               &
-                         & p_thandle = parent,             &
-                         & key       = 'vec_y',            &
-                         & buff      = particleblob%vec_y, &
-                         & N         = 3,                  &
-                         & flag      = flag                )
-    if(.NOT. flag) read_succesful = .FALSE.
+    call aot_get_val( L       = conf,               &
+      &               thandle = parent,             &
+      &               key     = 'vec_y',            &
+      &               val     = particleblob%vec_y, &
+      &               ErrCode = vError              )
+    failure = failure .or. any(btest(vError, aoterr_Fatal))
 
     ! load z-direction axis
-    call mus_load_realvec( conf      = conf,               &
-                         & p_thandle = parent,             &
-                         & key       = 'vec_z',            &
-                         & buff      = particleblob%vec_z, &
-                         & N         = 3,                  &
-                         & flag      = flag                )
-    if(.NOT. flag) read_succesful = .FALSE.
+    call aot_get_val( L       = conf,               &
+      &               thandle = parent,             &
+      &               key     = 'vec_z',            &
+      &               val     = particleblob%vec_z, &
+      &               ErrCode = vError              )
+    failure = failure .or. any(btest(vError, aoterr_Fatal))
 
-    call mus_load_int( conf        = conf,            &
-                     & thandle     = parent,          &
-                     & key         = 'nx',            &
-                     & buff        = particleblob%nx, &
-                     & default_val = -1,              &
-                     & flag        = flag             )
+    call aot_get_val( L       = conf,            &
+      &               thandle = parent,          &
+      &               key     = 'nx',            &
+      &               val     = particleblob%nx, &
+      &               default = -1,              &
+      &               ErrCode = iError           )
+    failure = failure .or. btest(iError, aoterr_Fatal)
 
-    call mus_load_int( conf        = conf,            &
-                     & thandle     = parent,          &
-                     & key         = 'ny',            &
-                     & buff        = particleblob%ny, &
-                     & default_val = -1,              &
-                     & flag        = flag             )
+    call aot_get_val( L       = conf,            &
+      &               thandle = parent,          &
+      &               key     = 'ny',            &
+      &               val     = particleblob%ny, &
+      &               default = -1,              &
+      &               ErrCode = iError           )
+    failure = failure .or. btest(iError, aoterr_Fatal)
 
-    call mus_load_int( conf        = conf,            &
-                     & thandle     = parent,          &
-                     & key         = 'nz',            &
-                     & buff        = particleblob%nz, &
-                     & default_val = -1,              &
-                     & flag        = flag             )
+    call aot_get_val( L       = conf,            &
+      &               thandle = parent,          &
+      &               key     = 'nz',            &
+      &               val     = particleblob%nz, &
+      &               default = -1,              &
+      &               ErrCode = iError           )
+    failure = failure .or. btest(iError, aoterr_Fatal)
 
     ! Optional: load the probability distribution of particles inside the blob
-    call aot_get_val( L       = conf,                           &
-      &               thandle = parent,                         &
-      &               key     = 'distribution',                 &
-      &               val     = particleblob%distribution%kind, &
-      &               default = 'uniform',                      &
-      &               ErrCode = iError                          )
+    call mus_load_particle_distribution(particleblob%distribution, conf, parent)
 
-    if( trim(particleblob%distribution%kind) == 'gaussian' ) then
-      ! Load the random seed to be used for generating random positions
-      call mus_load_int( conf        = conf,                           &
-                       & thandle     = parent,                         &
-                       & key         = 'seed',                         &
-                       & buff        = particleblob%distribution%seed, &
-                       & default_val = 10,                             &
-                       & flag        = flag                            )
-
-
-      ! Load the mean and standard deviation of the distribution
-      call mus_load_realvec( conf      = conf,                         &
-                           & p_thandle = parent,                       &
-                           & key       = 'mu',                         &
-                           & buff      = particleblob%distribution%mu, &
-                           & N         = 2,                            &
-                           & flag      = flag                          )
-
-      call mus_load_realvec( conf      = conf,                            &
-                           & p_thandle = parent,                          &
-                           & key       = 'sigma',                         &
-                           & buff      = particleblob%distribution%sigma, &
-                           & N         = 2,                               &
-                           & flag      = flag                             )
-
-    end if
-
-    if(.NOT. read_succesful) then
+    if (failure) then
       write(logUnit(1),*) "ERROR mus_load_particleblob_prism: could not read prism params"
       call tem_abort()
     end if
