@@ -74,7 +74,7 @@ module mus_d3q19_module
   public :: mus_advRel_kFluid_rBGK_vStd_lD3Q19
   public :: bgk_advRel_d3q19_GNS 
   public :: mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19
-  public :: bgk_advRel_d3q19_incomp_GNS 
+  public :: mus_advRel_kFluidIncompGNS_rBGK_vStd_lD3Q19 
   public :: mus_advRel_kFluid_rTRT_vStd_lD3Q19
   public :: mus_advRel_kFluidIncomp_rTRT_vStd_lD3Q19
   public :: mus_advRel_kFluid_rBGK_vBlock_lD3Q19
@@ -1706,9 +1706,10 @@ end subroutine bgk_advRel_d3q19_GNS
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_advRel_d3q19_incomp_GNS( fieldProp, inState, outState, auxField, &
-    &                                 neigh, nElems, nSolve, level, layout,   &
-    &                                 params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluidIncompGNS_rBGK_vStd_lD3Q19( &
+    &          fieldProp, inState, outState, auxField,    &
+    &          neigh, nElems, nSolve, level, layout,      &
+    &          params, varSys, derVarPos                  )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -2205,7 +2206,7 @@ end subroutine bgk_advRel_d3q19_GNS
 !$omp end do nowait
 ?? END IF
 
-  end subroutine bgk_advRel_d3q19_incomp_GNS
+  end subroutine mus_advRel_kFluidIncompGNS_rBGK_vStd_lD3Q19
 ! **************************************************************************** !
 
 

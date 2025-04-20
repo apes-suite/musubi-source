@@ -38,7 +38,7 @@ module mus_initFluidIncomp_module
   use mus_bgk_module,   only: mus_advRel_kCFD_rBGK_vStdNoOpt_l
   use mus_d3q19_module, only: mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19, &
     &                         mus_advRel_kFluidIncomp_rTRT_vStd_lD3Q19, &
-    &                         bgk_advRel_d3q19_incomp_GNS
+    &                         mus_advRel_kFluidIncompGNS_rBGK_vStd_lD3Q19
   use mus_d3q27_module, only: mus_advRel_kCFD_rBGK_vStd_lD3Q27
   use mus_d2q9_module,  only: mus_advRel_kFluidIncomp_rBGK_vStd_lD2Q9, &
     &                         mus_advRel_kFluidIncomp_rMRT_vStd_lD2Q9
@@ -117,7 +117,7 @@ contains
     case ('bgk')
       select case (trim(layout))
       case ('d3q19')
-        compute => bgk_advRel_d3q19_incomp_GNS
+        compute => mus_advRel_kFluidIncompGNS_rBGK_vStd_lD3Q19
       case default
         write(logUnit(1),*) 'ERROR: layout not supported!'
         write(logUnit(1),*) 'Currently only d3q19 and d2q9 layouts are supported for fluid_GNS'
