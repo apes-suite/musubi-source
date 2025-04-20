@@ -183,7 +183,6 @@ contains
         case ('MEM')
           me%check_particles => check_particles_MEM
           me%advance_particles => advance_particles_MEM
-          !me%do_computation => do_fast_singleLevel_particles_MEM
           write(logUnit(5),"(A)") "Select fast single level control routine for ", &
             & " fully coupled MEM particles"
         case ('DPS')
@@ -192,7 +191,6 @@ contains
           me%DPS_do_advance = .true.
           me%check_particles => check_particles_DPS
           me%advance_particles => advance_particles_DPS
-          !me%do_computation => do_fast_singleLevel_particles_DPS
           write(logUnit(5),"(A)") "Select fast single level control routine for ", &
             & " fully coupled DPS particles using the Generalized Navier-Stokes equations"
         case ('DPS_twoway')
@@ -200,7 +198,6 @@ contains
           me%DPS_do_advance = .true.
           me%check_particles => check_particles_DPS
           me%advance_particles => advance_particles_DPS
-          !me%do_computation => do_fast_singleLevel_particles_DPS_twoway
           write(logUnit(5),"(A)") "Select fast single level control routine ", &
             & "for two-way coupled DPS particles (neglecting the effect of local ", &
             & "fluid volume fraction )."
@@ -209,10 +206,9 @@ contains
           me%DPS_do_advance = .false.
           me%check_particles => check_particles_DPS
           me%advance_particles => advance_particles_DPS
-          !me%do_computation => do_fast_singleLevel_particles_DPS_oneway
           write(logUnit(5),"(A)") "Select fast single level control routine ", &
             & "for one-way coupled DPS particles."
-        case ('default')
+        case default
           write(logUnit(5),"(A)") "Particulate flow simulations disabled!"
         end select
       else
