@@ -81,7 +81,7 @@ module mus_d2q9_module
   public :: bgk_HybridRecursiveRegularizedCorr_d2q9
   public :: bgk_ProjectedRecursiveRegularized_d2q9
   public :: bgk_DualRelaxationTime_RR_d2q9
-  public :: bgk_advRel_d2q9_GNS
+  public :: mus_advRel_kFluidGNS_rBGK_vStd_lD2Q9
 
   ! ============================================================================
   ! D2Q9 flow model
@@ -1823,9 +1823,10 @@ end subroutine bgk_HybridRecursiveRegularizedCorr_d2q9
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine bgk_advRel_d2q9_GNS( fieldProp, inState, outState, auxField, &
-    &                         neigh, nElems, nSolve, level, layout,   &
-    &                         params, varSys, derVarPos               )
+  subroutine mus_advRel_kFluidGNS_rBGK_vStd_lD2Q9(     &
+    &          fieldProp, inState, outState, auxField, &
+    &          neigh, nElems, nSolve, level, layout,   &
+    &          params, varSys, derVarPos               )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -1943,7 +1944,7 @@ end subroutine bgk_HybridRecursiveRegularizedCorr_d2q9
     end do nodeloop
 !$omp end do nowait
 
-  end subroutine bgk_advRel_d2q9_GNS
+  end subroutine mus_advRel_kFluidGNS_rBGK_vStd_lD2Q9
 ! **************************************************************************** !
 
 end module mus_d2q9_module

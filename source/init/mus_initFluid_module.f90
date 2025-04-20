@@ -67,7 +67,7 @@ module mus_initFluid_module
     &                             bgk_HybridRecursiveRegularized_d2q9,     &
     &                             bgk_DualRelaxationTime_RR_d2q9,          &
     &                             bgk_HybridRecursiveRegularizedCorr_d2q9, &
-    &                             bgk_advRel_d2q9_GNS                    
+    &                             mus_advRel_kFluidGNS_rBGK_vStd_lD2Q9                    
   use mus_mrt_d3q19_module, only: mus_advRel_kFluid_rMRT_vStd_lD3Q19,      &
     &                             mus_advRel_kFluid_rMRT_vStdNoOpt_lD3Q19, &
     &                             mus_advRel_kCFD_rMRT_vStdNoOpt_l
@@ -254,7 +254,7 @@ contains
       case ('d3q19')
         compute => bgk_advRel_d3q19_GNS
       case('d2q9')
-        compute => bgk_advRel_d2q9_GNS
+        compute => mus_advRel_kFluidGNS_rBGK_vStd_lD2Q9
       case default
         write(logUnit(1),*) 'ERROR: layout not supported!'
         write(logUnit(1),*) 'Currently only d3q19 and d2q9 layouts are supported for fluid_GNS'
