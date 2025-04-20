@@ -28,10 +28,16 @@ module mus_particle_boundary_module
   use env_module, only: rk, long_k, newunit
   
   implicit none
+  private
 
   public :: mus_particle_boundarydata_type
   public :: pgBndData
-  
+  public :: getNeighborCoord
+  public :: wrapPeriodicCoord
+  public :: wrapPeriodicPos
+  public :: computeDisplacement
+  public :: calcPeriodicRsurface
+
   type mus_particle_boundarydata_type
     !> boundary locations [xmin, xmax, ymin, ymax, zmin, zma]
     real(kind=rk) :: bnd(6)
@@ -61,12 +67,13 @@ contains
   !> getNeighborCoord gets the coordinate of the element
   !! offset from input coord by (nx,ny,nz) while taking into
   !! account periodicity
-  function getNeighborCoord( coord, nx, ny, nz, boundaryData ) result(neighborCoord)
+  function getNeighborCoord( coord, nx, ny, nz, boundaryData ) &
+    &        result(neighborCoord)
     integer, intent(in) :: coord(4)
     integer, intent(in) :: nx
     integer, intent(in) :: ny
     integer, intent(in) :: nz
-    type( mus_particle_boundarydata_type), intent(in) :: boundaryData
+    type(mus_particle_boundarydata_type), intent(in) :: boundaryData
     integer :: neighborCoord(4)
     ! ----------------------------- ! 
     integer :: xsize, ysize, zsize
@@ -74,7 +81,7 @@ contains
     ! ----------------------------- ! 
     neighborCoord = coord + (/ nx, ny, nz, 0 /)
   
-    if( boundaryData%useBnd ) then
+    if (boundaryData%useBnd) then
       xmin = boundaryData%bnd_coord(1)
       xmax = boundaryData%bnd_coord(2)
       ymin = boundaryData%bnd_coord(3)
@@ -118,14 +125,14 @@ contains
   
   !> wrapPeriodicCoord modifies the input coord to take into
   !! account periodicity
-  subroutine wrapPeriodicCoord( coord, boundaryData )
+  subroutine wrapPeriodicCoord(coord, boundaryData)
     integer, intent(inout) :: coord(4)
-    type( mus_particle_boundarydata_type), intent(in) :: boundaryData
+    type(mus_particle_boundarydata_type), intent(in) :: boundaryData
     ! ----------------------------- ! 
     integer :: xsize, ysize, zsize
     integer :: xmin, xmax, ymin, ymax, zmin, zmax
     ! ----------------------------- ! 
-    if( boundaryData%useBnd ) then
+    if (boundaryData%useBnd) then
       xmin = boundaryData%bnd_coord(1)
       xmax = boundaryData%bnd_coord(2)
       ymin = boundaryData%bnd_coord(3)
@@ -139,8 +146,8 @@ contains
   
       ! If we have periodic boundaries, wrap the coordinate
       ! x - direction
-      if( boundaryData%periodicBnd(1) ) then
-        if( coord(1) < xmin) then
+      if (boundaryData%periodicBnd(1)) then
+        if (coord(1) < xmin) then
           coord(1) = coord(1) + xsize
         else if( coord(1) > xmax) then
           coord(1) = coord(1) - xsize
@@ -148,8 +155,8 @@ contains
       end if
   
       ! y - direction
-      if( boundaryData%periodicBnd(3) ) then
-        if( coord(2) < ymin) then
+      if (boundaryData%periodicBnd(3)) then
+        if (coord(2) < ymin) then
           coord(2) = coord(2) + ysize
         else if( coord(2) > ymax) then
           coord(2) = coord(2) - ysize
@@ -157,8 +164,8 @@ contains
       end if
   
       ! z - direction
-      if( boundaryData%periodicBnd(5) ) then
-        if( coord(3) < zmin) then
+      if (boundaryData%periodicBnd(5)) then
+        if (coord(3) < zmin) then
           coord(3) = coord(3) + zsize
         else if( coord(3) > zmax) then
           coord(3) = coord(3) - zsize
@@ -169,9 +176,10 @@ contains
   
   ! -------------- FUNCTIONS FOR PERIODIC BOUNDARIES -------------- !
   
-  subroutine wrapPeriodicPos( pos, boundaryData)
+  subroutine wrapPeriodicPos(pos, boundaryData)
     real(kind=rk), intent(inout) :: pos(3)
     type(mus_particle_boundarydata_type) :: boundaryData
+    ! ------------------------------- !
     real(kind=rk) :: xmin 
     real(kind=rk) :: xmax 
     real(kind=rk) :: ymin 
@@ -181,7 +189,7 @@ contains
     ! ------------------------------- !
     ! If particle boundary data is active, use it to incorporate the effect of 
     ! periodic boundaries
-    if( boundaryData%useBnd ) then
+    if (boundaryData%useBnd) then
       xmin = boundaryData%bnd(1)
       xmax = boundaryData%bnd(2)
       ymin = boundaryData%bnd(3)
@@ -189,9 +197,9 @@ contains
       zmin = boundaryData%bnd(5)
       zmax = boundaryData%bnd(6)
   
-      if( pgBndData%periodicBnd(1) ) then
+      if (pgBndData%periodicBnd(1)) then
         ! x - direction
-        if( pos(1) < xmin) then
+        if (pos(1) < xmin) then
           pos(1) = xmax - ( xmin - pos(1) )
         else if( pos(1) > xmax) then
           pos(1) = xmin + ( pos(1) - xmax )
@@ -199,8 +207,8 @@ contains
       end if
   
       ! y - direction
-      if( pgBndData%periodicBnd(3) ) then
-        if( pos(2) < ymin) then
+      if (pgBndData%periodicBnd(3)) then
+        if (pos(2) < ymin) then
           pos(2) = ymax - ( ymin - pos(2) )
         else if( pos(2) > ymax) then
           pos(2) = ymin + ( pos(2) - ymax )
@@ -208,8 +216,8 @@ contains
       end if
   
       ! z - direction
-      if( pgBndData%periodicBnd(5) ) then
-        if( pos(3) < zmin) then
+      if (pgBndData%periodicBnd(5)) then
+        if (pos(3) < zmin) then
           pos(3) = zmax - ( zmin - pos(3) )
         else if( pos(3) > zmax) then
           pos(3) = zmin + ( pos(3) - zmax )
@@ -240,14 +248,15 @@ contains
   
     ! If particle boundary data is active, use it to incorporate the effect of 
     ! periodic boundaries
-    if( boundaryData%useBnd ) then
+    if (boundaryData%useBnd) then
       ! If domain is periodic in x, y, z direction adjust distance computation
       ! in each dimension accordingly
       do i = 1,3
         iBnd = 1 + 2*(i-1)
-        if( boundaryData%periodicBnd(iBnd) ) then
-          if( r12_mag(i) > 0.5*boundaryData%domain_size(i) ) then
-            r12(i) = -1 * ( r12(i) / r12_mag(i) ) * ( boundaryData%domain_size(i) - r12_mag(i) )
+        if (boundaryData%periodicBnd(iBnd)) then
+          if (r12_mag(i) > 0.5*boundaryData%domain_size(i)) then
+            r12(i) = -1 * ( r12(i) / r12_mag(i) ) &
+              &         * ( boundaryData%domain_size(i) - r12_mag(i) )
           end if
         end if
       end do
@@ -303,10 +312,10 @@ contains
   
     i = 1
     do k = 1, 5, 2
-      if( boundaryData%periodicBnd(k) ) then
+      if (boundaryData%periodicBnd(k)) then
         call calcPeriodicDistanceToSurface( ri = r(i),                       &
-                                          & R  = R_particle,                 &
-                                          & L  = boundaryData%domain_size(i) )
+          &                                 R  = R_particle,                 &
+          &                                 L  = boundaryData%domain_size(i) )
       end if
       i = i + 1
     end do
