@@ -90,9 +90,9 @@ module mus_particle_module
     &   print_particles_pIDvectorbuffer,            &
     &   find_particle_comm_procs4,                  &
     &   mus_particles_communication_type,           &
-    &   MPI_pIDvector_type,                         & 
-    &   MPI_particleState_type,                     & 
-    &   MPI_particleInfo_type
+    &   mus_pIDvector_type,                         & 
+    &   mus_particleState_type,                     & 
+    &   mus_particleInfo_type
 
   use mus_particle_comm_module, only:  &
     &   exchangeForces,                &

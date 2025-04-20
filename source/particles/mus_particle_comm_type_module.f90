@@ -54,12 +54,11 @@ module mus_particle_comm_type_module
 
   implicit none
 
-  integer, public :: MPI_pIDvector_type
-  integer, public :: MPI_wallPos_type
-  integer, public :: MPI_particleInfo_type
-  integer, public :: MPI_positionUpdate_type
-  integer, public :: MPI_particleState_type
-
+  integer, public :: mus_pIDvector_type
+  integer, public :: mus_wallPos_type
+  integer, public :: mus_particleInfo_type
+  integer, public :: mus_positionUpdate_type
+  integer, public :: mus_particleState_type
 
   ! ************************************************************************ !
   !> process-wise buffer for particle force contribution data
@@ -469,8 +468,8 @@ contains
 
     ! Create and commit the force contribution MPI type
     call MPI_Type_create_struct(Nblocks, blocklengths, displacements, &
-                               & types, MPI_pIDvector_type, ierror    )
-    call MPI_Type_commit( MPI_pIDvector_type, ierror)
+                               & types, mus_pIDvector_type, ierror    )
+    call MPI_Type_commit( mus_pIDvector_type, ierror)
 
   end subroutine mus_particles_initForceContributionMPItype
 
@@ -501,8 +500,8 @@ contains
 
     ! Create and commit the wallPos MPI type
     call MPI_Type_create_struct(Nblocks, blocklengths, displacements, &
-                               & types, MPI_wallPos_type, ierror    )
-    call MPI_Type_commit( MPI_wallPos_type, ierror)
+                               & types, mus_wallPos_type, ierror    )
+    call MPI_Type_commit( mus_wallPos_type, ierror)
 
   end subroutine mus_particles_initWallPosMPItype
 
@@ -534,8 +533,8 @@ contains
 
     ! Create and commit the force contribution MPI type
     call MPI_Type_create_struct(Nblocks, blocklengths, displacements, &
-                               & types, MPI_positionUpdate_type, ierror )
-    call MPI_Type_commit( MPI_positionUpdate_type, ierror)
+                               & types, mus_positionUpdate_type, ierror )
+    call MPI_Type_commit( mus_positionUpdate_type, ierror)
 
   end subroutine mus_particles_initPositionUpdateMPItype
 
@@ -567,8 +566,8 @@ contains
 
     ! Create and commit the force contribution MPI type
     call MPI_Type_create_struct(Nblocks, blocklengths, displacements, &
-                               & types, MPI_particleState_type, ierror )
-    call MPI_Type_commit( MPI_particleState_type, ierror)
+                               & types, mus_particleState_type, ierror )
+    call MPI_Type_commit( mus_particleState_type, ierror)
 
   end subroutine mus_particles_initParticleStateMPItype
 
@@ -602,8 +601,8 @@ contains
 
     ! Create and commit the force contribution MPI type
     call MPI_Type_create_struct(Nblocks, blocklengths, displacements, &
-                               & types, MPI_particleInfo_type, ierror )
-    call MPI_Type_commit( MPI_particleInfo_type, ierror)
+                               & types, mus_particleInfo_type, ierror )
+    call MPI_Type_commit( mus_particleInfo_type, ierror)
 
   end subroutine mus_particles_initParticleInfoMPItype
 

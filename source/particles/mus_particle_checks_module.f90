@@ -43,13 +43,15 @@ module mus_particle_checks_module
   integer, save :: iMomNow = 2
   integer, save :: iMomLast = 1
 
-  contains
+
+contains
+
 
   !> compute_fluid_momentum calculates the total momentum of the fluid for all 
   !! fluid elements in the global domain. The result "totalMomentum" is returned 
   !! in physical units.
-  subroutine compute_fluid_momentum(scheme, lev, params, totalMomentum,  & 
-    &                               comm, myRank, nProcs )
+  subroutine compute_fluid_momentum(scheme, lev, params, totalMomentum, & 
+    &                               comm, myRank, nProcs                )
     !> scheme for access to auxfield
     type(mus_scheme_type), intent(in) :: scheme
     !> level in the octree to compute total momentum on
@@ -74,8 +76,10 @@ module mus_particle_checks_module
     real(kind=rk) :: convertFac_mom
     ! ---------------------------------------- !
     dx = params%physics%dxLvl(lev)
-    dens_pos     = scheme%varSys%method%val(scheme%derVarPos(1)%density)%auxField_varPos(1)
-    vel_pos      = scheme%varSys%method%val(scheme%derVarPos(1)%velocity)%auxField_varPos(1:3)
+    dens_pos     = scheme%varSys%method%val(scheme%derVarPos(1)%density) &
+      &                  %auxField_varPos(1)
+    vel_pos      = scheme%varSys%method%val(scheme%derVarPos(1)%velocity) &
+      &                  %auxField_varPos(1:3)
     convertFac_mom = params%physics%rho0 * dx**3 * params%physics%fac(lev)%vel
 
     totalMomentum = 0.0_rk
@@ -174,14 +178,12 @@ module mus_particle_checks_module
     end if
   end subroutine compute_particle_momentum
 
-  subroutine swapMomNowMomLast(iMomNow,iMomLast)
+  subroutine swapMomNowMomLast(iMomNow, iMomLast)
     integer, intent(inout) :: iMomNow
     integer, intent(inout) :: iMomLast
     ! --------------------------------- !
     iMomNow = mod(iMomNow,2) + 1
     iMomLast = mod(iMomLast,2) + 1
   end subroutine swapMomNowMomLast
-    
-
 
 end module mus_particle_checks_module
