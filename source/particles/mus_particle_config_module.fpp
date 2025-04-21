@@ -743,8 +743,8 @@ contains
   end subroutine mus_load_particlekind
 
   function check_particle_scheme_kind_compatibility(particle_kind, scheme_kind) result(is_compatible)
-    character(len=labelLen) :: particle_kind
-    character(len=labelLen) :: scheme_kind
+    character(len=*), intent(in) :: particle_kind
+    character(len=*), intent(in) :: scheme_kind
     logical :: is_compatible
     ! ----------------------------------------------- !
 
@@ -893,8 +893,11 @@ contains
       flag = check_particle_scheme_kind_compatibility( &
         &      particle_kind = particle_kind,          &
         &      scheme_kind   = schemeKind              )
-      if( .NOT. flag) then
-        write(logUnit(1),*) 'ERROR: particle kind is not compatible with schemeKind! ABORTING!'
+      if (.NOT. flag) then
+        write(logUnit(1),*) 'ERROR: particle kind ', trim(particle_kind), &
+          &                 ' is not compatible with schemeKind ', &
+          &                 trim(schemeKind), '!'
+        write(logUnit(1),*) 'ABORTING!'
         call tem_abort()
       end if
 

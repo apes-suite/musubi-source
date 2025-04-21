@@ -96,7 +96,8 @@ module mus_program_module
   ! include particle modules
   use mus_particle_module,        only: mus_particle_group_type, &
     &                                   mus_particles_initialize
-  use mus_particle_config_module, only: mus_finalize_particleGroup
+  use mus_particle_config_module, only: mus_load_particles, &
+    &                                   mus_finalize_particleGroup
   use mus_particle_DPS_module,    only: mus_particles_initFluidVolumeFraction
 
   implicit none
@@ -166,6 +167,16 @@ contains
       &                 physics      = params%physics,        &
       &                 scaling      = params%scaling,        &
       &                 general      = params%general         )
+
+    ! load particles
+    call mus_load_particles(                              &
+      &    particleGroup = particleGroup,                 &
+      &    particle_kind = trim(params%particle_kind),    &
+      &    conf          = params%general%solver%conf(1), &
+      &    chunkSize     = 100,                           &
+      &    scheme        = scheme,                        &
+      &    geometry      = geometry,                      &
+      &    myRank        = params%general%proc%rank       )
 
     do iLevel = geometry%tree%global%minLevel, geometry%tree%global%maxLevel
       ! Initialize also nNow since fNeq calculation requires it

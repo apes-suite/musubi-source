@@ -74,8 +74,7 @@ module mus_config_module
 
   ! include particle modules
   use mus_particle_type_module,   only: mus_particle_group_type
-  use mus_particle_config_module, only: mus_load_particlekind, &
-    &                                   mus_load_particles
+  use mus_particle_config_module, only: mus_load_particlekind
 
   implicit none
 
@@ -215,15 +214,6 @@ contains
     call tem_load_adapt( me   = adapt,                        &
       &                  conf = params%general%solver%conf(1) )
 
-    ! load particles table
-    call mus_load_particles(                              &
-      &    particleGroup = particleGroup,                 &
-      &    particle_kind = trim(params%particle_kind),    &
-      &    conf          = params%general%solver%conf(1), &
-      &    chunkSize     = 100,                           &
-      &    scheme        = scheme,                        &
-      &    geometry      = geometry,                      &
-      &    myRank        = params%general%proc%rank       )
 
     call tem_stopTimer( timerHandle = mus_timerHandles%loadMesh )
 
