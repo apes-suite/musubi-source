@@ -911,7 +911,7 @@ contains
         &               ErrCode = iError               )
       call check_aot_error(iError, key = 'nParticles', &
         &    event_string = 'loading particles'        )
-      nParticles = particleGroup%nParticles
+      particleGroup%nParticles = nParticles
 
       !-- INITIALIZE MAXIMUM SIZE OF PARTICLE DYN ARRAYS --!
       ! This should be the greater than the total amount of particles defined
