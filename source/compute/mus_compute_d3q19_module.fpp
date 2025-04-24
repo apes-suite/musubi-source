@@ -72,7 +72,9 @@ module mus_d3q19_module
   private
 
   public :: mus_advRel_kFluid_rBGK_vStd_lD3Q19
+  public :: bgk_advRel_d3q19_GNS 
   public :: mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19
+  public :: mus_advRel_kFluidIncompGNS_rBGK_vStd_lD3Q19 
   public :: mus_advRel_kFluid_rTRT_vStd_lD3Q19
   public :: mus_advRel_kFluidIncomp_rTRT_vStd_lD3Q19
   public :: mus_advRel_kFluid_rBGK_vBlock_lD3Q19
@@ -650,6 +652,548 @@ contains
   end subroutine mus_advRel_kFluid_rBGK_vStd_lD3Q19
 ! **************************************************************************** !
 
+  ! **************************************************************************** !
+  !> Advection relaxation routine for the D3Q19 model with BGK based on the !!
+  !! equilibrium distribution function for the generalized Navier Stokes equations
+  !! (GNS) aka Volume Averaged Navier-Stokes !! equations (VANS).
+  !! feq definition from: Z. Guo and T. S. Zhao, “Lattice Boltzmann model for
+  !! incompressible flows through porous media,” Phys. Rev. E, vol. 66, no. 3, p.
+  !! 036304, Sep. 2002, doi: 10.1103/PhysRevE.66.036304.
+  !!
+  !! \[ f_\alpha(x_i+e_{\alpha,i},t+1) =
+  !! f_\alpha(x_i,t) - \omega(f_\alpha(x_i,t)-f^{eq}_{\alpha}(x_i,t)) \]
+  !!
+  !! The number of floating point operation in this routine is 160 roughly.
+  !!
+  !! This subroutine interface must match the abstract interface definition
+  !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
+  !! via [[mus_scheme_type:compute]] function pointer.
+  subroutine bgk_advRel_d3q19_GNS( fieldProp, inState, outState, auxField, &
+    &                          neigh, nElems, nSolve, level, layout,   &
+    &                          params, varSys, derVarPos )
+! -------------------------------------------------------------------- !
+!> Array of field properties (fluid or species)
+type(mus_field_prop_type), intent(in) :: fieldProp(:)
+!> variable system definition
+type(tem_varSys_type), intent(in) :: varSys
+!> current layout
+type(mus_scheme_layout_type), intent(in) :: layout
+!> number of elements in state Array
+integer, intent(in) :: nElems
+!> input  pdf vector
+real(kind=rk), intent(in)  ::  inState(nElems * varSys%nScalars)
+!> output pdf vector
+real(kind=rk), intent(out) :: outState(nElems * varSys%nScalars)
+!> Auxiliary field computed from pre-collision state
+!! Is updated with correct velocity field for multicomponent models
+real(kind=rk), intent(inout) :: auxField(nElems * varSys%nAuxScalars)
+!> connectivity vector
+integer, intent(in) :: neigh(nElems * layout%fStencil%QQ)
+!> number of elements solved in kernel
+integer, intent(in) :: nSolve
+!> current level
+integer,intent(in) :: level
+!> global parameters
+type(mus_param_type),intent(in) :: params
+!> position of derived quantities in varsys for all fields
+type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
+! -------------------------------------------------------------------- !
+?? IF (SOA) THEN
+integer       :: iElem, minElem, maxElem, ii, iLink
+real(kind=rk) ::      fN00(params%block)
+real(kind=rk) ::      f0N0(params%block)
+real(kind=rk) ::      f00N(params%block)
+real(kind=rk) ::      f100(params%block)
+real(kind=rk) ::      f010(params%block)
+real(kind=rk) ::      f001(params%block)
+real(kind=rk) ::      f0NN(params%block)
+real(kind=rk) ::      f0N1(params%block)
+real(kind=rk) ::      f01N(params%block)
+real(kind=rk) ::      f011(params%block)
+real(kind=rk) ::      fN0N(params%block)
+real(kind=rk) ::      f10N(params%block)
+real(kind=rk) ::      fN01(params%block)
+real(kind=rk) ::      f101(params%block)
+real(kind=rk) ::      fNN0(params%block)
+real(kind=rk) ::      fN10(params%block)
+real(kind=rk) ::      f1N0(params%block)
+real(kind=rk) ::      f110(params%block)
+real(kind=rk) ::      f000(params%block)
+real(kind=rk) :: usqn_o1(1:params%block),&
+  &                  rho(1:params%block),&
+  &                  u_x(1:params%block),&
+  &                  u_y(1:params%block),&
+  &                  u_z(1:params%block),&
+  &                  eps_f_inv(1:params%block),&  ! 1 / local fluid volume frac
+  &                omega(1:params%block)
+real(kind=rk) :: usq
+real(kind=rk) :: sum1, sum2, ui, fac
+integer :: dens_pos, vel_pos(3), elemOff
+integer :: vol_frac_pos
+! -------------------------------------------------------------------- !
+dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
+vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
+vol_frac_pos = varSys%method%val(derVarPos(1)%vol_frac)%auxField_varPos(1)
+
+!$omp do schedule(static)
+
+!NEC$ ivdep
+!DIR$ IVDEP
+nodeloop: do minElem = 1, nSolve, params%block
+
+  ii = 0
+  maxElem = min( minElem + params%block - 1, nSolve )
+
+  !DIR$ IVDEP
+  do iElem = minElem, maxElem
+    ii = ii + 1
+
+    ! First load all local values into temp array
+    fN00(ii) = inState(neigh((qN00-1) * nElems + iElem))
+    f0N0(ii) = inState(neigh((q0N0-1) * nElems + iElem))
+    f00N(ii) = inState(neigh((q00N-1) * nElems + iElem))
+    f100(ii) = inState(neigh((q100-1) * nElems + iElem))
+    f010(ii) = inState(neigh((q010-1) * nElems + iElem))
+    f001(ii) = inState(neigh((q001-1) * nElems + iElem))
+    f0NN(ii) = inState(neigh((q0NN-1) * nElems + iElem))
+    f0N1(ii) = inState(neigh((q0N1-1) * nElems + iElem))
+    f01N(ii) = inState(neigh((q01N-1) * nElems + iElem))
+    f011(ii) = inState(neigh((q011-1) * nElems + iElem))
+    fN0N(ii) = inState(neigh((qN0N-1) * nElems + iElem))
+    f10N(ii) = inState(neigh((q10N-1) * nElems + iElem))
+    fN01(ii) = inState(neigh((qN01-1) * nElems + iElem))
+    f101(ii) = inState(neigh((q101-1) * nElems + iElem))
+    fNN0(ii) = inState(neigh((qNN0-1) * nElems + iElem))
+    fN10(ii) = inState(neigh((qN10-1) * nElems + iElem))
+    f1N0(ii) = inState(neigh((q1N0-1) * nElems + iElem))
+    f110(ii) = inState(neigh((q110-1) * nElems + iElem))
+    f000(ii) = inState(neigh((q000-1) * nElems + iElem))
+
+    ! element offset for auxField array
+    elemOff = (iElem-1) * varSys%nAuxScalars
+    ! local density
+    rho(ii) = auxField(elemOff + dens_pos)
+    ! local x-, y- and z-velocity
+    u_x(ii) = auxField(elemOff + vel_pos(1))
+    u_y(ii) = auxField(elemOff + vel_pos(2))
+    u_z(ii) = auxField(elemOff + vel_pos(3))
+    ! One divided by the local fluid volume fraction
+    eps_f_inv(ii) = 1.0_rk / auxField(elemOff + vol_frac_pos)
+
+    ! square velocity and derived constants
+    usq = (u_x(ii) * u_x(ii)) + (u_y(ii) * u_y(ii)) + (u_z(ii) * u_z(ii))
+
+    omega(ii) = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
+    usqn_o1(ii) = div1_36 * (1._rk - 1.5_rk * usq * eps_f_inv(ii) ) * rho(ii) * omega(ii) ! GNS
+
+  end do ! iElem
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q000-1) * nElems + minElem, (q000-1) * nElems + maxElem
+    ii = ii + 1
+    outState(iLink) = f000(ii) * (1.0_rk - omega(ii)) + 12._rk * usqn_o1(ii)
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q110-1) * nElems + minElem, (q110-1) * nElems + maxElem
+    ii = ii + 1
+    ui = u_x(ii) + u_y(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)   ! GNS
+    outState(iLink) = f110(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (qNN0-1) * nElems + minElem, (qNN0-1) * nElems + maxElem
+    ii = ii + 1
+    ui = u_x(ii) + u_y(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)  ! GNS
+    outState(iLink) = fNN0(ii) * (1.0_rk-omega(ii)) - sum1 + sum2
+  end do
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (qN10-1) * nElems + minElem, (qN10-1) * nElems + maxElem
+    ii = ii + 1
+    ui = -u_x(ii) + u_y(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)  ! GNS
+    outState(iLink) = fN10(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q1N0-1) * nElems + minElem, (q1N0-1) * nElems + maxElem
+    ii = ii + 1
+    ui = -u_x(ii) + u_y(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)      ! GNS
+    outState(iLink) = f1N0(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q101-1) * nElems + minElem, (q101-1) * nElems + maxElem
+    ii = ii + 1
+    ui =  u_x(ii) + u_z(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)      ! GNS
+    outState(iLink) = f101(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (qN0N-1) * nElems + minElem, (qN0N-1) * nElems + maxElem
+    ii = ii + 1
+    ui = u_x(ii) + u_z(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)      ! GNS
+    outState(iLink) = fN0N(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (qN01-1) * nElems + minElem, (qN01-1) * nElems + maxElem
+    ii = ii + 1
+    ui = -u_x(ii) + u_z(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui  * eps_f_inv(ii)  + usqn_o1(ii)   ! GNS
+    outState(iLink) = fN01(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q10N-1) * nElems + minElem, (q10N-1) * nElems + maxElem
+    ii = ii + 1
+    ui = -u_x(ii) + u_z(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui  * eps_f_inv(ii) + usqn_o1(ii)      ! GNS
+    outState(iLink) = f10N(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q011-1) * nElems + minElem, (q011-1) * nElems + maxElem
+    ii = ii + 1
+    ui =  u_y(ii) + u_z(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui  * eps_f_inv(ii) + usqn_o1(ii)    ! GNS
+    outState(iLink)=f011(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q0NN-1) * nElems + minElem, (q0NN-1) * nElems + maxElem
+    ii = ii + 1
+    ui =  u_y(ii) + u_z(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)   ! GNS
+    outState(iLink) = f0NN(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q0N1-1) * nElems + minElem, (q0N1-1) * nElems + maxElem
+    ii = ii + 1
+    ui = -u_y(ii) + u_z(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)  ! GNS
+    outState(iLink) = f0N1(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q01N-1) * nElems + minElem, (q01N-1) * nElems + maxElem
+    ii = ii + 1
+    ui = -u_y(ii) + u_z(ii)
+    fac = div1_8 * omega(ii) * ui * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)   ! GNS
+    outState(iLink) = f01N(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q010-1) * nElems + minElem, (q010-1) * nElems + maxElem
+    ii = ii + 1
+    fac = div2_8 * omega(ii) * u_y(ii) * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * u_y(ii) * eps_f_inv(ii)+ 2d0 * usqn_o1(ii)   ! GNS
+    outState(iLink) = f010(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q0N0-1) * nElems + minElem, (q0N0-1) * nElems + maxElem
+    ii = ii + 1
+    fac = div2_8 * omega(ii) * u_y(ii) * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * u_y(ii) * eps_f_inv(ii)+ 2d0 * usqn_o1(ii)  ! GNS
+    outState(iLink) = f0N0(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (qN00-1) * nElems + minElem, (qN00-1) * nElems + maxElem
+    ii = ii + 1
+    fac = div2_8 * omega(ii) * u_x(ii) * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * u_x(ii) * eps_f_inv(ii) + 2d0 * usqn_o1(ii)  ! GNS
+    outState(iLink) = fN00(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q100-1) * nElems + minElem, (q100-1) * nElems + maxElem
+    ii = ii + 1
+    fac = div2_8 * omega(ii) * u_x(ii) * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * u_x(ii) * eps_f_inv(ii)+ 2d0 * usqn_o1(ii)  ! GNS
+    outState(iLink) = f100(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q00N-1) * nElems + minElem, (q00N-1) * nElems + maxElem
+    ii = ii + 1
+    fac = div2_8 * omega(ii) * u_z(ii) * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * u_z(ii) * eps_f_inv(ii) + 2d0 * usqn_o1(ii) ! GNS
+    outState(iLink) = f00N(ii) * (1.0_rk-omega(ii)) - sum1 +sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+?? copy :: dir_vector
+  do iLink = (q001-1) * nElems + minElem, (q001-1) * nElems + maxElem
+    ii = ii + 1
+    fac = div2_8 * omega(ii) * u_z(ii) * rho(ii)
+    sum1 = fac * div3_4h
+    sum2 = fac * u_z(ii) * eps_f_inv(ii)+ 2d0*usqn_o1(ii)   ! GNS
+    outState(iLink) = f001(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+  end do ! iLink
+  call obscure_setzero(ii)
+
+enddo nodeloop
+!$omp end do nowait
+
+?? ELSE
+integer :: iElem, nScalars
+real(kind=rk) :: fN00, f0N0, f00N, f100, f010, f001, f0NN, f0N1, f01N, &
+  &              f011, fN0N, f10N, fN01, f101, fNN0, fN10, f1N0, f110, &
+  &              f000
+real(kind=rk) :: rho     ! local density
+real(kind=rk) :: u_x     ! local x-velocity
+real(kind=rk) :: u_y     ! local y-velocity
+real(kind=rk) :: u_z     ! local z-velocity
+real(kind=rk) :: eps_f   ! local fluid volume fraction
+real(kind=rk) :: eps_f_inv   ! 1 divided by local fluid volume fraction
+real(kind=rk) :: usq     ! square velocity
+! derived constants
+real(kind=rk) :: usqn, usqn_o1, usqn_o2
+real(kind=rk) :: omega_2, cmpl_o, omega
+real(kind=rk) :: coeff_1, coeff_2
+real(kind=rk) :: ui1, ui3, ui10, ui11, ui12, ui13
+real(kind=rk) :: fac_1, fac_2, fac_3, fac_4, fac_9, fac_10, fac_11, fac_12,&
+  &              fac_13
+real(kind=rk) :: sum1_1, sum1_2, sum2_1, sum2_2, sum3_1, sum3_2, sum4_1,   &
+  &              sum4_2, sum9_1, sum9_2, sum10_1, sum10_2, sum11_1,        &
+  &              sum11_2, sum12_1, sum12_2, sum13_1, sum13_2
+integer :: dens_pos, vel_pos(3), vol_frac_pos, elemOff
+! -------------------------------------------------------------------- !
+dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
+vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
+vol_frac_pos = varSys%method%val(derVarPos(1)%vol_frac)%auxField_varPos(1)
+
+! nElems = size(neigh)/QQ
+nScalars = varSys%nScalars
+
+!$omp do schedule(static)
+
+?? copy :: dir_novec
+nodeloop: do iElem = 1, nSolve
+  ! First load all local values into temp array
+  fN00 = inState(?FETCH?( qN00, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f0N0 = inState(?FETCH?( q0N0, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f00N = inState(?FETCH?( q00N, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f100 = inState(?FETCH?( q100, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f010 = inState(?FETCH?( q010, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f001 = inState(?FETCH?( q001, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f0NN = inState(?FETCH?( q0NN, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f0N1 = inState(?FETCH?( q0N1, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f01N = inState(?FETCH?( q01N, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f011 = inState(?FETCH?( q011, 1, iElem, QQ, nScalars, nElems, neigh ))
+  fN0N = inState(?FETCH?( qN0N, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f10N = inState(?FETCH?( q10N, 1, iElem, QQ, nScalars, nElems, neigh ))
+  fN01 = inState(?FETCH?( qN01, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f101 = inState(?FETCH?( q101, 1, iElem, QQ, nScalars, nElems, neigh ))
+  fNN0 = inState(?FETCH?( qNN0, 1, iElem, QQ, nScalars, nElems, neigh ))
+  fN10 = inState(?FETCH?( qN10, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f1N0 = inState(?FETCH?( q1N0, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f110 = inState(?FETCH?( q110, 1, iElem, QQ, nScalars, nElems, neigh ))
+  f000 = inState(?FETCH?( q000, 1, iElem, QQ, nScalars, nElems, neigh ))
+
+  ! element offset for auxField array
+  elemOff = (iElem-1) * varSys%nAuxScalars
+  ! local density
+  rho = auxField(elemOff + dens_pos)
+  ! local x-, y- and z-velocity
+  u_x = auxField(elemOff + vel_pos(1))
+  u_y = auxField(elemOff + vel_pos(2))
+  u_z = auxField(elemOff + vel_pos(3))
+
+  ! local fluid volume fraction
+  eps_f = auxField(elemOff + vol_frac_pos)
+  eps_f_inv = 1/eps_f
+
+  ! square velocity and derived constants
+  usq  = (u_x * u_x) + (u_y * u_y) + (u_z * u_z)
+
+  ! Modified for Generalized Navier-Stokes!
+  usqn = div1_36 * (1._rk - 1.5_rk * usq * eps_f_inv) * rho
+  ! usqn = div1_36 * (1._rk - 1.5_rk * usq) * rho
+
+  ! read the relaxation parameter omega for the current level
+  omega = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
+  ! pre-calculate partial collision constants
+  cmpl_o = 1._rk - omega
+
+  ! f = (1-w) * f + w * fEq
+
+  ! --- Compute f000: PDF at rest position --- !
+  outState(?SAVE?(q000, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f000*cmpl_o+omega*rho*(div1_3-0.5_rk*usq*eps_f_inv)
+
+  ! --- Compute f110 and fNN0 --- !
+  coeff_1 = div1_8 * omega * rho
+
+  usqn_o1 = omega * usqn
+
+  ui1 = u_x + u_y
+  fac_1 = coeff_1 * ui1
+  sum1_1 = fac_1 * div3_4h
+  sum1_2 = fac_1 * ui1 * eps_f_inv + usqn_o1    ! GNS
+  ! sum1_2 = fac_1 * ui1 + usqn_o1
+
+  outState(?SAVE?(q110, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f110 * cmpl_o + sum1_1 + sum1_2
+  outState(?SAVE?(qNN0, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = fNN0 * cmpl_o - sum1_1 + sum1_2
+
+  ! --- Compute fN10 and f1N0 --- !
+  ui3 = -u_x + u_y
+  fac_3 = coeff_1 * ui3
+  sum3_1 = fac_3 * div3_4h
+  sum3_2 = fac_3 * ui3 * eps_f_inv + usqn_o1   ! GNS
+  ! sum3_2 = fac_3 * ui3 + usqn_o1
+
+  outState(?SAVE?(qN10, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = fN10 * cmpl_o + sum3_1 + sum3_2
+  outState(?SAVE?(q1N0, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f1N0 * cmpl_o - sum3_1 + sum3_2
+
+  ! --- Compute f101 and fN0N --- !
+  ui10 = u_x + u_z
+  fac_10 = coeff_1 * ui10
+  sum10_1 = fac_10 * div3_4h
+  sum10_2 = fac_10 * ui10 * eps_f_inv + usqn_o1   ! GNS
+  ! sum10_2 = fac_10 * ui10 + usqn_o1
+
+  outState(?SAVE?(q101, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f101 * cmpl_o + sum10_1 + sum10_2
+  outState(?SAVE?(qN0N, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = fN0N * cmpl_o - sum10_1 + sum10_2
+
+  ! --- Compute fN01 and f10N --- !
+  ui12 = -u_x + u_z
+  fac_12 = coeff_1 * ui12
+  sum12_1 = fac_12 * div3_4h
+  sum12_2 = fac_12 * ui12 * eps_f_inv + usqn_o1    ! GNS
+  ! sum12_2 = fac_12 * ui12 + usqn_o1
+
+  outState(?SAVE?(qN01, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = fN01 * cmpl_o + sum12_1 + sum12_2
+  outState(?SAVE?(q10N, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f10N * cmpl_o - sum12_1 + sum12_2
+
+  ! --- Compute f011 and f0NN --- !
+  ui11 = u_y + u_z
+  fac_11 = coeff_1 * ui11
+  sum11_1 = fac_11 * div3_4h
+  sum11_2 = fac_11 * ui11 * eps_f_inv + usqn_o1 ! GNS
+  ! sum11_2 = fac_11 * ui11 + usqn_o1 
+
+  outState(?SAVE?(q011, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f011 * cmpl_o + sum11_1 + sum11_2
+  outState(?SAVE?(q0NN, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f0NN * cmpl_o - sum11_1 + sum11_2
+
+  ! --- Compute f0N1 and f01N --- !
+  ui13 = -u_y + u_z
+  fac_13 = coeff_1 * ui13
+  sum13_1 = fac_13 * div3_4h
+  sum13_2 = fac_13 * ui13 * eps_f_inv + usqn_o1 ! GNS
+  ! sum13_2 = fac_13 * ui13 + usqn_o1
+
+  outState(?SAVE?(q0N1, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f0N1 * cmpl_o + sum13_1 + sum13_2
+  outState(?SAVE?(q01N, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f01N * cmpl_o - sum13_1 + sum13_2
+
+  ! --- Compute f010 and f0N0 --- !
+  omega_2 = 2._rk * omega
+  coeff_2 = div1_8 * omega_2 * rho
+  usqn_o2 = omega_2 * usqn
+
+  fac_2 = coeff_2 * u_y
+  sum2_1 = fac_2 * div3_4h
+  sum2_2 = fac_2 * u_y * eps_f_inv + usqn_o2
+
+  outState(?SAVE?(q010, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f010 * cmpl_o + sum2_1 + sum2_2
+  outState(?SAVE?(q0N0, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f0N0 * cmpl_o - sum2_1 + sum2_2
+  
+  ! --- Compute fN00 and f100 --- !
+  fac_4 = coeff_2 * u_x
+  sum4_1 = fac_4 * div3_4h
+  sum4_2 = fac_4 * u_x * eps_f_inv + usqn_o2
+
+  outState(?SAVE?(qN00, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = fN00 * cmpl_o - sum4_1 + sum4_2
+  outState(?SAVE?(q100, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f100 * cmpl_o + sum4_1 + sum4_2
+
+  ! --- Compute f00N and f001 --- !
+  fac_9 = coeff_2 * u_z
+  sum9_1 = fac_9 * div3_4h
+  sum9_2 = fac_9 * u_z * eps_f_inv + usqn_o2
+
+  outState(?SAVE?(q001, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f001 * cmpl_o + sum9_1 + sum9_2
+  outState(?SAVE?(q00N, 1, iElem, QQ, nScalars, nElems, neigh)) &
+    & = f00N * cmpl_o - sum9_1 + sum9_2
+
+enddo nodeloop
+!$omp end do nowait
+?? END IF
+
+end subroutine bgk_advRel_d3q19_GNS
+
 
 ! **************************************************************************** !
   !> Advection relaxation routine for the D3Q19 model with BGK for
@@ -1149,6 +1693,520 @@ contains
 ?? END IF
 
   end subroutine mus_advRel_kFluidIncomp_rBGK_vStd_lD3Q19
+! **************************************************************************** !
+  ! **************************************************************************** !
+  !> Advection relaxation routine for the D3Q19 model with BGK based on the !!
+  !! equilibrium distribution function for the generalized Navier Stokes equations
+  !! (GNS) aka Volume Averaged Navier-Stokes !! equations (VANS).
+  !! feq definition from: Z. Guo and T. S. Zhao, “Lattice Boltzmann model for
+  !! incompressible flows through porous media,” Phys. Rev. E, vol. 66, no. 3, p.
+  !! 036304, Sep. 2002, doi: 10.1103/PhysRevE.66.036304.
+  !! Incompressible version
+  !!
+  !! This subroutine interface must match the abstract interface definition
+  !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
+  !! via [[mus_scheme_type:compute]] function pointer.
+  subroutine mus_advRel_kFluidIncompGNS_rBGK_vStd_lD3Q19( &
+    &          fieldProp, inState, outState, auxField,    &
+    &          neigh, nElems, nSolve, level, layout,      &
+    &          params, varSys, derVarPos                  )
+    ! -------------------------------------------------------------------- !
+    !> Array of field properties (fluid or species)
+    type(mus_field_prop_type), intent(in) :: fieldProp(:)
+    !> variable system definition
+    type(tem_varSys_type), intent(in) :: varSys
+    !> current layout
+    type(mus_scheme_layout_type), intent(in) :: layout
+    !> number of elements in state Array
+    integer, intent(in) :: nElems
+    !> input  pdf vector
+    real(kind=rk), intent(in)  ::  inState(nElems * varSys%nScalars)
+    !> output pdf vector
+    real(kind=rk), intent(out) :: outState(nElems * varSys%nScalars)
+    !> Auxiliary field computed from pre-collision state
+    !! Is updated with correct velocity field for multicomponent models
+    real(kind=rk), intent(inout) :: auxField(nElems * varSys%nAuxScalars)
+    !> connectivity vector
+    integer, intent(in) :: neigh(nElems * layout%fStencil%QQ)
+    !> number of elements solved in kernel
+    integer, intent(in) :: nSolve
+    !> current level
+    integer,intent(in) :: level
+    !> global parameters
+    type(mus_param_type),intent(in) :: params
+    !> position of derived quantities in varsys for all fields
+    type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
+    ! -------------------------------------------------------------------- !
+?? IF (SOA) THEN
+    integer       :: iElem, minElem, maxElem, ii, iLink
+    real(kind=rk) ::      fN00(params%block)
+    real(kind=rk) ::      f0N0(params%block)
+    real(kind=rk) ::      f00N(params%block)
+    real(kind=rk) ::      f100(params%block)
+    real(kind=rk) ::      f010(params%block)
+    real(kind=rk) ::      f001(params%block)
+    real(kind=rk) ::      f0NN(params%block)
+    real(kind=rk) ::      f0N1(params%block)
+    real(kind=rk) ::      f01N(params%block)
+    real(kind=rk) ::      f011(params%block)
+    real(kind=rk) ::      fN0N(params%block)
+    real(kind=rk) ::      f10N(params%block)
+    real(kind=rk) ::      fN01(params%block)
+    real(kind=rk) ::      f101(params%block)
+    real(kind=rk) ::      fNN0(params%block)
+    real(kind=rk) ::      fN10(params%block)
+    real(kind=rk) ::      f1N0(params%block)
+    real(kind=rk) ::      f110(params%block)
+    real(kind=rk) ::      f000(params%block)
+    real(kind=rk) :: usqn_o1(1:params%block),&
+      &                  u_x(1:params%block),&
+      &                  u_y(1:params%block),&
+      &                  u_z(1:params%block),&
+      &                  eps_f_inv(1:params%block),&  ! 1 / local fluid volume frac
+      &                omega(1:params%block)
+    real(kind=rk) :: rho, usq
+    real(kind=rk) :: sum1, sum2, ui, fac
+    integer :: dens_pos, vel_pos(3), elemOff
+    integer :: vol_frac_pos
+    ! -------------------------------------------------------------------- !
+    dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
+    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
+    vol_frac_pos = varSys%method%val(derVarPos(1)%vol_frac)%auxField_varPos(1)
+
+!$omp do schedule(static)
+
+    !NEC$ ivdep
+    !DIR$ IVDEP
+    nodeloop: do minElem = 1, nSolve, params%block
+
+      ii = 0
+      maxElem = min( minElem + params%block - 1, nSolve )
+
+      !DIR$ ivdep
+      do iElem = minElem, maxElem
+        ii = ii + 1
+
+        ! First load all local values into temp array
+        fN00(ii) = inState(neigh((qN00-1) * nElems + iElem ))
+        f0N0(ii) = inState(neigh((q0N0-1) * nElems + iElem ))
+        f00N(ii) = inState(neigh((q00N-1) * nElems + iElem ))
+        f100(ii) = inState(neigh((q100-1) * nElems + iElem ))
+        f010(ii) = inState(neigh((q010-1) * nElems + iElem ))
+        f001(ii) = inState(neigh((q001-1) * nElems + iElem ))
+        f0NN(ii) = inState(neigh((q0NN-1) * nElems + iElem ))
+        f0N1(ii) = inState(neigh((q0N1-1) * nElems + iElem ))
+        f01N(ii) = inState(neigh((q01N-1) * nElems + iElem ))
+        f011(ii) = inState(neigh((q011-1) * nElems + iElem ))
+        fN0N(ii) = inState(neigh((qN0N-1) * nElems + iElem ))
+        f10N(ii) = inState(neigh((q10N-1) * nElems + iElem ))
+        fN01(ii) = inState(neigh((qN01-1) * nElems + iElem ))
+        f101(ii) = inState(neigh((q101-1) * nElems + iElem ))
+        fNN0(ii) = inState(neigh((qNN0-1) * nElems + iElem ))
+        fN10(ii) = inState(neigh((qN10-1) * nElems + iElem ))
+        f1N0(ii) = inState(neigh((q1N0-1) * nElems + iElem ))
+        f110(ii) = inState(neigh((q110-1) * nElems + iElem ))
+        f000(ii) = inState(neigh((q000-1) * nElems + iElem ))
+
+        ! element offset for auxField array
+        elemOff = (iElem-1) * varSys%nAuxScalars
+        ! local density
+        rho = auxField(elemOff + dens_pos)
+        ! local x-, y- and z-velocity
+        u_x(ii) = auxField(elemOff + vel_pos(1))
+        u_y(ii) = auxField(elemOff + vel_pos(2))
+        u_z(ii) = auxField(elemOff + vel_pos(3))
+
+        ! One divided by the local fluid volume fraction
+        eps_f_inv(ii) = 1.0_rk / auxField(elemOff + vol_frac_pos)
+
+        ! square velocity and derived constants
+        usq = (u_x(ii) * u_x(ii)) + (u_y(ii) * u_y(ii)) + (u_z(ii) * u_z(ii))
+
+        omega(ii) = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
+        usqn_o1(ii) = omega(ii) * div1_36 * ( rho - 1.5d0 * usq * eps_f_inv(ii) )
+
+        ! @todo: also write this in a link loop?
+        ! outState(?SAVE?(q000,1,iElem,QQ,QQ,nElems,neigh)) = f000(ii)*cmpl_o + 12d0*usqn_o1(ii)
+
+      end do ! iElem
+      call obscure_setzero(ii)
+
+      !NEC$ ivdep
+?? copy :: dir_vector
+      do iLink = (q000-1) * nElems + minElem, (q000-1) * nElems + maxElem
+        ii = ii + 1
+        outState(iLink) = f000(ii) * cmpl_o + 12d0 * usqn_o1(ii)
+      end do ! iLink
+      call obscure_setzero(ii)
+
+      !NEC$ ivdep
+?? copy :: dir_vector
+      do iLink = (q110-1) * nElems + minElem, (q110-1) * nElems + maxElem
+        ii = ii + 1
+        ui = u_x(ii) + u_y(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)
+        outState(iLink) = f110(ii) * (1.0_rk-omega(ii)) + sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (qNN0-1) * nElems+minElem, (qNN0-1) * nElems + maxElem
+        ii = ii + 1
+        ui = u_x(ii) + u_y(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)  + usqn_o1(ii)
+        outState(iLink) = fNN0(ii) * (1.0_rk-omega(ii)) - sum1 + sum2
+      end do
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (qN10-1) * nElems + minElem, (qN10-1) * nElems + maxElem
+        ii = ii + 1
+        ui = -u_x(ii) + u_y(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii) + usqn_o1(ii)
+        outState(iLink) = fN10(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q1N0-1) * nElems + minElem, (q1N0-1) * nElems + maxElem
+        ii = ii + 1
+        ui = -u_x(ii) + u_y(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)  + usqn_o1(ii)
+        outState(iLink) = f1N0(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q101-1) * nElems + minElem, (q101-1) * nElems + maxElem
+        ii = ii + 1
+        ui = u_x(ii) + u_z(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)+ usqn_o1(ii)
+        outState(iLink) = f101(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (qN0N-1) * nElems + minElem, (qN0N-1) * nElems + maxElem
+        ii = ii + 1
+        ui = u_x(ii) + u_z(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)+ usqn_o1(ii)
+        outState(iLink) = fN0N(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (qN01-1) * nElems + minElem, (qN01-1) * nElems + maxElem
+        ii = ii + 1
+        ui = -u_x(ii) + u_z(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)+ usqn_o1(ii)
+        outState(iLink) = fN01(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q10N-1) * nElems + minElem, (q10N-1) * nElems + maxElem
+        ii = ii + 1
+        ui = -u_x(ii) + u_z(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)+ usqn_o1(ii)
+        outState(iLink) = f10N(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q011-1) * nElems + minElem, (q011-1) * nElems + maxElem
+        ii = ii + 1
+        ui =  u_y(ii) + u_z(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)+ usqn_o1(ii)
+        outState(iLink) = f011(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q0NN-1) * nElems + minElem, (q0NN-1) * nElems + maxElem
+        ii = ii + 1
+        ui = u_y(ii) + u_z(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)+ usqn_o1(ii)
+        outState(iLink) = f0NN(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q0N1-1) * nElems + minElem, (q0N1-1) * nElems + maxElem
+        ii = ii + 1
+        ui = -u_y(ii) + u_z(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)+ usqn_o1(ii)
+        outState(iLink) = f0N1(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q01N-1) * nElems + minElem, (q01N-1) * nElems + maxElem
+        ii = ii + 1
+        ui = -u_y(ii) + u_z(ii)
+        fac = div1_8 * omega(ii) * ui
+        sum1 = fac * div3_4h
+        sum2 = fac * ui * eps_f_inv(ii)+ usqn_o1(ii)
+        outState(iLink) = f01N(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q010-1) * nElems + minElem, (q010-1) * nElems + maxElem
+        ii = ii + 1
+        fac = div2_8 * omega(ii) * u_y(ii)
+        sum1 = fac * div3_4h
+        sum2 = fac * u_y(ii) * eps_f_inv(ii)+ 2d0 * usqn_o1(ii)
+        outState(iLink)=f010(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q0N0-1) * nElems + minElem, (q0N0-1) * nElems + maxElem
+        ii = ii + 1
+        fac = div2_8 * omega(ii) * u_y(ii)
+        sum1 = fac * div3_4h
+        sum2 = fac * u_y(ii) * eps_f_inv(ii)+ 2d0 * usqn_o1(ii)
+        outState(iLink)=f0N0(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (qN00-1) * nElems + minElem, (qN00-1) * nElems + maxElem
+        ii = ii + 1
+        fac = div2_8 * omega(ii) * u_x(ii)
+        sum1 = fac * div3_4h
+        sum2 = fac * u_x(ii) * eps_f_inv(ii)+ 2d0 * usqn_o1(ii)
+        outState(iLink) = fN00(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q100-1) * nElems + minElem, (q100-1) * nElems + maxElem
+        ii = ii + 1
+        fac = div2_8 * omega(ii) * u_x(ii)
+        sum1 = fac * div3_4h
+        sum2 = fac * u_x(ii) * eps_f_inv(ii)+ 2d0 * usqn_o1(ii)
+        outState(iLink) = f100(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q00N-1) * nElems + minElem, (q00N-1) * nElems + maxElem
+        ii = ii + 1
+        fac = div2_8 * omega(ii) * u_z(ii)
+        sum1 = fac * div3_4h
+        sum2 = fac * u_z(ii) * eps_f_inv(ii)+ 2d0 * usqn_o1(ii)
+        outState(iLink) = f00N(ii) * (1.0_rk - omega(ii)) - sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+?? copy :: dir_vector
+      do iLink = (q001-1) * nElems + minElem, (q001-1) * nElems + maxElem
+        ii = ii + 1
+        fac = div2_8 * omega(ii) * u_z(ii)
+        sum1 = fac * div3_4h
+        sum2 = fac * u_z(ii) * eps_f_inv(ii)+ 2d0*usqn_o1(ii)
+        outState(iLink) = f001(ii) * (1.0_rk - omega(ii)) + sum1 + sum2
+      end do ! iLink
+      call obscure_setzero(ii)
+
+    enddo nodeloop
+!$omp end do nowait
+
+?? ELSE !! SOA == FALSE
+    integer :: iElem
+    real(kind=rk) :: fN00, f0N0, f00N, f100, f010, f001, f0NN, f0N1, f01N, &
+      &              f011, fN0N, f10N, fN01, f101, fNN0, fN10, f1N0, f110, &
+      &              f000
+    real(kind=rk) :: rho, u_x, u_y, u_z, usq
+    real(kind=rk) :: eps_f, eps_f_inv
+    real(kind=rk) :: usqn_o1, usqn_o2
+    real(kind=rk) :: cmpl_o, omega
+    real(kind=rk) :: coeff_1, coeff_2
+    real(kind=rk) :: ui1, ui3, ui10, ui11, ui12, ui13
+    real(kind=rk) :: fac_1, fac_2, fac_3, fac_4, fac_9, &
+      &              fac_10, fac_11, fac_12, fac_13
+    real(kind=rk) :: sum1_1, sum1_2, sum2_1, sum2_2, sum3_1, sum3_2, sum4_1, &
+      &              sum4_2, sum9_1, sum9_2, sum10_1, sum10_2, sum11_1,      &
+      &              sum11_2, sum12_1, sum12_2, sum13_1, sum13_2
+    integer :: dens_pos, vel_pos(3), vol_frac_pos, elemOff
+    ! -------------------------------------------------------------------- !
+    dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
+    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
+    vol_frac_pos = varSys%method%val(derVarPos(1)%vol_frac)%auxField_varPos(1)
+
+!$omp do schedule(static)
+
+    !NEC$ ivdep
+?? copy :: dir_novec
+    nodeloop: do iElem=1,nSolve
+      ! First load all local values into temp array
+      fN00 = inState(?FETCH?(qN00, 1, iElem, QQ, QQ, nElems, neigh))
+      f0N0 = inState(?FETCH?(q0N0, 1, iElem, QQ, QQ, nElems, neigh))
+      f00N = inState(?FETCH?(q00N, 1, iElem, QQ, QQ, nElems, neigh))
+      f100 = inState(?FETCH?(q100, 1, iElem, QQ, QQ, nElems, neigh))
+      f010 = inState(?FETCH?(q010, 1, iElem, QQ, QQ, nElems, neigh))
+      f001 = inState(?FETCH?(q001, 1, iElem, QQ, QQ, nElems, neigh))
+      f0NN = inState(?FETCH?(q0NN, 1, iElem, QQ, QQ, nElems, neigh))
+      f0N1 = inState(?FETCH?(q0N1, 1, iElem, QQ, QQ, nElems, neigh))
+      f01N = inState(?FETCH?(q01N, 1, iElem, QQ, QQ, nElems, neigh))
+      f011 = inState(?FETCH?(q011, 1, iElem, QQ, QQ, nElems, neigh))
+      fN0N = inState(?FETCH?(qN0N, 1, iElem, QQ, QQ, nElems, neigh))
+      f10N = inState(?FETCH?(q10N, 1, iElem, QQ, QQ, nElems, neigh))
+      fN01 = inState(?FETCH?(qN01, 1, iElem, QQ, QQ, nElems, neigh))
+      f101 = inState(?FETCH?(q101, 1, iElem, QQ, QQ, nElems, neigh))
+      fNN0 = inState(?FETCH?(qNN0, 1, iElem, QQ, QQ, nElems, neigh))
+      fN10 = inState(?FETCH?(qN10, 1, iElem, QQ, QQ, nElems, neigh))
+      f1N0 = inState(?FETCH?(q1N0, 1, iElem, QQ, QQ, nElems, neigh))
+      f110 = inState(?FETCH?(q110, 1, iElem, QQ, QQ, nElems, neigh))
+      f000 = inState(?FETCH?(q000, 1, iElem, QQ, QQ, nElems, neigh))
+
+      ! element offset for auxField array
+      elemOff = (iElem-1) * varSys%nAuxScalars
+      ! local density
+      rho = auxField(elemOff + dens_pos)
+      ! local x-, y- and z-velocity
+      u_x = auxField(elemOff + vel_pos(1))
+      u_y = auxField(elemOff + vel_pos(2))
+      u_z = auxField(elemOff + vel_pos(3))
+
+      ! local fluid volume fraction
+      eps_f = auxField(elemOff + vol_frac_pos)
+      eps_f_inv = 1/eps_f
+
+      ! square velocity and derived constants
+      usq = u_x * u_x + u_y * u_y + u_z * u_z
+
+      ! read the relaxation parameter omega for the current level
+      omega = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
+      ! pre-calculate partial collision constants
+      cmpl_o = 1._rk - omega
+
+      ! usqn = div1_36 * (rho - 1.5_rk * usq * rho0 )
+      usqn_o1 = omega * div1_36 * ( rho - 1.5d0 * usq * eps_f_inv )
+
+      outState(?SAVE?(q000, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f000 * cmpl_o + 12d0 * usqn_o1
+
+      coeff_1 = div1_8 * omega
+
+      ui1 = u_x + u_y
+      fac_1 = coeff_1 * ui1
+      sum1_1 = fac_1 * div3_4h
+      sum1_2 = fac_1 * ui1 * eps_f_inv + usqn_o1
+
+      outState(?SAVE?(q110, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f110 * cmpl_o + sum1_1 + sum1_2
+      outState(?SAVE?(qNN0, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = fNN0 * cmpl_o - sum1_1 + sum1_2
+
+      ui3 = -u_x + u_y
+      fac_3 = coeff_1 * ui3
+      sum3_1 = fac_3 * div3_4h
+      sum3_2 = fac_3 * ui3 * eps_f_inv + usqn_o1
+
+      outState(?SAVE?(qN10, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = fN10 * cmpl_o + sum3_1 + sum3_2
+      outState(?SAVE?(q1N0, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f1N0 * cmpl_o - sum3_1 + sum3_2
+
+      ui10 = u_x + u_z
+      fac_10 = coeff_1 * ui10
+      sum10_1 = fac_10 * div3_4h
+      sum10_2 = fac_10 * ui10 * eps_f_inv + usqn_o1
+
+      outState(?SAVE?(q101, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f101 * cmpl_o + sum10_1 + sum10_2
+      outState(?SAVE?(qN0N, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = fN0N * cmpl_o - sum10_1 + sum10_2
+
+      ui12 = -u_x + u_z
+      fac_12 = coeff_1 * ui12
+      sum12_1 = fac_12 * div3_4h
+      sum12_2 = fac_12 * ui12 * eps_f_inv + usqn_o1
+
+      outState(?SAVE?(qN01, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = fN01 * cmpl_o + sum12_1 + sum12_2
+      outState(?SAVE?(q10N, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f10N * cmpl_o - sum12_1 + sum12_2
+
+      ui11 = u_y + u_z
+      fac_11 = coeff_1 * ui11
+      sum11_1 = fac_11 * div3_4h
+      sum11_2 = fac_11 * ui11 * eps_f_inv + usqn_o1
+
+      outState(?SAVE?(q011, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f011 * cmpl_o + sum11_1 + sum11_2
+      outState(?SAVE?(q0NN, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f0NN * cmpl_o - sum11_1 + sum11_2
+
+      ui13 = -u_y + u_z
+      fac_13 = coeff_1 * ui13
+      sum13_1 = fac_13 * div3_4h
+      sum13_2 = fac_13 * ui13 * eps_f_inv + usqn_o1
+
+      outState(?SAVE?(q0N1, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f0N1 * cmpl_o + sum13_1 + sum13_2
+      outState(?SAVE?(q01N, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f01N * cmpl_o - sum13_1 + sum13_2
+
+      coeff_2 = div1_8 * omega * 2.0_rk
+      usqn_o2 = 2d0 * usqn_o1
+
+      fac_2 = coeff_2 * u_y
+      sum2_1 = fac_2 * div3_4h
+      sum2_2 = fac_2 * u_y * eps_f_inv + usqn_o2
+
+      outState(?SAVE?(q010, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f010 * cmpl_o + sum2_1 + sum2_2
+      outState(?SAVE?(q0N0, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f0N0 * cmpl_o - sum2_1 + sum2_2
+
+      fac_4 = coeff_2 * u_x
+      sum4_1 = fac_4 * div3_4h
+      sum4_2 = fac_4 * u_x * eps_f_inv + usqn_o2
+
+      outState(?SAVE?(qN00, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = fN00 * cmpl_o - sum4_1 + sum4_2
+      outState(?SAVE?(q100, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f100 * cmpl_o + sum4_1 + sum4_2
+
+      fac_9 = coeff_2 * u_z
+      sum9_1 = fac_9 * div3_4h
+      sum9_2 = fac_9 * u_z * eps_f_inv + usqn_o2
+
+      outState(?SAVE?(q001, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f001 * cmpl_o + sum9_1 + sum9_2
+      outState(?SAVE?(q00N, 1, iElem, QQ, QQ, nElems, neigh)) &
+        & = f00N * cmpl_o - sum9_1 + sum9_2
+
+    enddo nodeloop
+!$omp end do nowait
+?? END IF
+
+  end subroutine mus_advRel_kFluidIncompGNS_rBGK_vStd_lD3Q19
 ! **************************************************************************** !
 
 

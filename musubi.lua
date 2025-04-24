@@ -79,8 +79,6 @@ printRuntimeInfo = true   -- print runtime info after simulation
 
 control_routine = 'multischeme'  -- another option is 'benchmark'
 
-scaling = 'acoustic' -- or diffusive
-
 comm_reduced = true   -- communicate reduced set of links?
 
 init_allElems = false -- besides fluids, initialize ghost and halo elements?

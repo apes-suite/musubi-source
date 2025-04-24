@@ -19,7 +19,7 @@ sure that the compiler really does the correct vectorization.
 
 In *Musubi*, one must use the Structure of Array (SOA) data layout and the
 computer kernel must be implemented in a Block Loop pattern. Such an example can
-be found in [[mus_d3q19_module:bgk_advRel_d3q19]].
+be found in [[mus_d3q19_module:mus_advRel_kFluid_rBGK_vStd_lD3Q19]].
 
 Modern CPU often equipped with a cache structure. The data transfer between CPU
 and memory has to go through the cache. Normally, when the CPU wants to write

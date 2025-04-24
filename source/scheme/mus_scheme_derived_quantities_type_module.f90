@@ -76,7 +76,7 @@ module mus_scheme_derived_quantities_module
       real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
       !> weight along iDir
       real(kind=rk), optional, intent(in) :: weight(:)
-      !> output: equilibrium pdf
+      !> output is equilibrium pdf
       real(kind=rk) :: fEq(QQ)
 
     end function get_pdfEq
@@ -96,7 +96,7 @@ module mus_scheme_derived_quantities_module
       real(kind=rk), intent(in) :: cxDirRK(3)
       !> weight along iDir
       real(kind=rk), intent(in) :: weight
-      !> output: equilibrium pdf
+      !> output is equilibrium pdf
       real(kind=rk) :: fEq
 
     end function get_pdfEq_iDir
@@ -193,12 +193,13 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
   getQuantities%kineticEnergy_from_vel_dens_ptr => null()
   getQuantities%rho0Inv_ptr => null()
 
-  if (trim(label_fluid) == 'fluid') then
+  if ( (trim(label_fluid) == 'fluid' .OR. trim(label_fluid) == 'fluid_GNS') ) then
     getQuantities%pdfEq_iDir_ptr => get_pdfEq_compressible_iDir
     getQuantities%momentum_from_vel_dens_ptr => get_momentum_from_vel_dens_compressible
     getQuantities%kineticEnergy_from_vel_dens_ptr => get_kineticEnergy_from_vel_dens_compressible
     getQuantities%rho0Inv_ptr => get_rho0Inv_compressible
-  else if (trim(label_fluid) == 'fluid_incompressible') then
+  else if ( (trim(label_fluid) == 'fluid_incompressible' &
+          & .OR. trim(label_fluid) == 'fluid_incompressible_GNS' ) ) then
     getQuantities%pdfEq_iDir_ptr => get_pdfEq_incompressible_iDir
     getQuantities%momentum_from_vel_dens_ptr => get_momentum_from_vel_dens_incompressible
     getQuantities%kineticEnergy_from_vel_dens_ptr => get_kineticEnergy_from_vel_dens_incompressible
@@ -210,11 +211,12 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
 
   select case (trim(label_stencil))
   case ('d2q9')
-    if (trim(label_fluid) == 'fluid') then
+    if ((trim(label_fluid) == 'fluid' .OR. trim(label_fluid) == 'fluid_GNS')) then
       getQuantities%pdfEq_ptr => get_pdfEq_d2q9
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d2q9
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d2q9_vectorized
-    else if (trim(label_fluid) == 'fluid_incompressible') then
+    else if ((trim(label_fluid) == 'fluid_incompressible' &
+            & .OR. trim(label_fluid) == 'fluid_incompressible_GNS')) then
       getQuantities%pdfEq_ptr => get_pdfEq_incomp_d2q9
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d2q9_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d2q9_vectorized_incompressible
@@ -224,11 +226,11 @@ function mus_assign_derived_functions_ptr(label_stencil, label_fluid) result(get
       write(logUnit(1),*) "Warning: get_pdfEq not set for fluid type"
     end if
   case ('d3q19')
-    if (trim(label_fluid) == 'fluid') then
+    if (trim(label_fluid) == 'fluid' .OR. trim(label_fluid) == 'fluid_GNS') then
       getQuantities%pdfEq_ptr => get_pdfEq_d3q19
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d3q19
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d3q19_vectorized
-    elseif (trim(label_fluid) == 'fluid_incompressible') then
+    elseif (trim(label_fluid) == 'fluid_incompressible' .OR. trim(label_fluid) == 'fluid_incompressible_GNS') then
       getQuantities%pdfEq_ptr => get_pdfEq_incomp_d3q19
       getQuantities%vel_from_pdf_ptr => get_vel_from_pdf_d3q19_incompressible
       getQuantities%vel_from_pdf_vectorized_ptr => get_vel_from_pdf_d3q19_vectorized_incompressible
@@ -286,7 +288,7 @@ pure function get_pdfEq_incompressible_iDir( rho, vel, iDir, cxDirRK, weight ) &
   real(kind=rk), intent(in) :: cxDirRK(3)
   !> weight along iDir
   real(kind=rk), intent(in) :: weight
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq
   ! --------------------------------------------------------------------------
   fEq = weight * ( rho + rho0 * ( cs2inv * sum(cxDirRK(:)*vel(:))           &
@@ -312,7 +314,7 @@ pure function get_pdfEq_compressible_iDir( rho, vel, iDir, cxDirRK, weight ) &
   real(kind=rk), intent(in) :: cxDirRK(3)
   !> weight along iDir
   real(kind=rk), intent(in) :: weight
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq
   ! --------------------------------------------------------------------------
   fEq = weight * rho * ( 1._rk + ( cs2inv * sum(cxDirRK(:)*vel(:))        &
@@ -339,7 +341,7 @@ pure function get_pdfEq_incompressible( rho, vel, QQ, cxDirRK, weight ) &
   real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
   !> weight along iDir
   real(kind=rk), optional, intent(in) :: weight(:)
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq(QQ)
   ! --------------------------------------------------------------------------
   integer :: iDir
@@ -368,7 +370,7 @@ pure function get_pdfEq_compressible( rho, vel, QQ, cxDirRK, weight ) &
   real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
   !> weight along iDir
   real(kind=rk), optional, intent(in) :: weight(:)
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq(QQ)
   ! --------------------------------------------------------------------------
   integer :: iDir
@@ -388,7 +390,7 @@ pure function get_sigma_d2q9( vel ) result( sigma )
 ! --------------------------------------------------------------------------
   !> velocity
   real(kind=rk), intent(in) :: vel(3)
-  !> output: sigma vector
+  !> output is sigma vector
   real(kind=rk) :: sigma(9)
   ! --------------------------------------------------------------------------
   sigma(9) = vel(1) + vel(2)
@@ -420,7 +422,7 @@ pure function get_pdfEq_d2q9( rho, vel, QQ, cxDirRK, weight ) &
   real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
   !> weight along iDir
   real(kind=rk), optional, intent(in) :: weight(:)
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq(QQ)
   ! --------------------------------------------------------------------------
   real(kind=rk) :: sigma(9), rho_div_9, rho_div_36
@@ -461,7 +463,7 @@ pure function get_pdfEq_incomp_d2q9( rho, vel, QQ, cxDirRK, weight ) &
   real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
   !> weight along iDir
   real(kind=rk), optional, intent(in) :: weight(:)
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq(QQ)
   ! --------------------------------------------------------------------------
   real(kind=rk) :: sigma(9), rho_div_9, rho_div_36, rho0_div_9, rho0_div_36
@@ -495,7 +497,7 @@ pure function get_sigma_d3q19( vel ) result( sigma )
 ! --------------------------------------------------------------------------
   !> velocity
   real(kind=rk), intent(in) :: vel(3)
-  !> output: sigma vector
+  !> output is sigma vector
   real(kind=rk) :: sigma(22)
   ! --------------------------------------------------------------------------
   sigma(22) = vel(1) + vel(2)
@@ -540,7 +542,7 @@ pure function get_pdfEq_d3q19( rho, vel, QQ, cxDirRK, weight ) &
   real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
   !> weight along iDir
   real(kind=rk), optional, intent(in) :: weight(:)
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq(QQ)
   ! --------------------------------------------------------------------------
   real(kind=rk) :: sigma(22), rho_div_18, rho_div_36
@@ -593,7 +595,7 @@ pure function get_pdfEq_incomp_d3q19( rho, vel, QQ, cxDirRK, weight ) &
   real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
   !> weight along iDir
   real(kind=rk), optional, intent(in) :: weight(:)
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq(QQ)
   ! --------------------------------------------------------------------------
   real(kind=rk) :: sigma(22), rho_div_18, rho_div_36, rho0_div_18, rho0_div_36
@@ -639,7 +641,7 @@ pure function get_sigma_d3q27( vel ) result( sigma )
 ! --------------------------------------------------------------------------
   !> velocity
   real(kind=rk), intent(in) :: vel(3)
-  !> output: sigma vector
+  !> output is sigma vector
   real(kind=rk) :: sigma(34)
   ! --------------------------------------------------------------------------
   sigma(34) = vel(1) + vel(2)
@@ -696,7 +698,7 @@ pure function get_pdfEq_d3q27( rho, vel, QQ, cxDirRK, weight ) &
   real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
   !> weight along iDir
   real(kind=rk), optional, intent(in) :: weight(:)
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq(QQ)
   ! --------------------------------------------------------------------------
   real(kind=rk) :: sigma(34), rho_div2_27, rho_div_54, rho_div_216
@@ -759,7 +761,7 @@ pure function get_pdfEq_incomp_d3q27( rho, vel, QQ, cxDirRK, weight ) &
   real(kind=rk), optional, intent(in) :: cxDirRK(:,:)
   !> weight along iDir
   real(kind=rk), optional, intent(in) :: weight(:)
-  !> output: equilibrium pdf
+  !> output is equilibrium pdf
   real(kind=rk) :: fEq(QQ)
   ! --------------------------------------------------------------------------
   real(kind=rk) :: sigma(34), rho_div2_27, rho_div_54, rho_div_216

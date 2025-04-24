@@ -105,6 +105,7 @@ def build(bld):
     pp_sources += bld.path.ant_glob('source/derived/*.fpp')
     pp_sources += bld.path.ant_glob('source/variables/*.fpp')
     pp_sources += bld.path.ant_glob('source/turbulence/*.fpp')
+    pp_sources += bld.path.ant_glob('source/particles/*.fpp')
     pp_sources += bld.path.ant_glob('source/*.fpp')
     mus_sources = bld.path.ant_glob('source/*.f90',
                                        excl=['source/musubi.f90','source/*eNRTL*.f90'])
@@ -117,6 +118,7 @@ def build(bld):
     mus_sources += bld.path.ant_glob('source/derived/*.f90')
     mus_sources += bld.path.ant_glob('source/variables/*.f90')
     mus_sources += bld.path.ant_glob('source/turbulence/*.f90')
+    mus_sources += bld.path.ant_glob('source/particles/*.f90')
     mus_sources += pp_sources
 
     if bld.cmd != 'docu':
@@ -188,6 +190,7 @@ def build(bld):
         features = 'includes coco',
         source   = pp_sources)
 
+      mpp.post()
       mus_preprocessed = []
       for ppm in mpp.tasks:
         for f in ppm.outputs:

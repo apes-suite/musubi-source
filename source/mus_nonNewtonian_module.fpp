@@ -200,7 +200,7 @@ module mus_nonNewtonian_module
       !> contains non-Newtonian model parameters loaded from config file
       class(mus_nNwtn_type), intent(in) :: nNwtn
 
-      !> output: kinematic viscosity from non-Netonian model
+      !> output is kinematic viscosity from non-Netonian model
       real(kind=rk), intent(inout) :: viscKine(:)
 
       !> Kinematic viscosity omega from last timestep
@@ -717,7 +717,7 @@ contains
     ! --------------------------------------------------------------------------
     !> contains non-Newtonian model parameters loaded from config file
     class(mus_nNwtn_type), intent(in) :: nNwtn
-    !> output: physical kinematic viscosity will be overwritten by
+    !> output is physical kinematic viscosity will be overwritten by
     !! non-Netonian model
     real(kind=rk), intent(inout) :: viscKine(:)
     !> Kinematic viscosity omega from last timestep
@@ -827,7 +827,7 @@ contains
     ! --------------------------------------------------------------------------
     !> contains non-Newtonian model parameters loaded from config file
     class(mus_nNwtn_type), intent(in) :: nNwtn
-    !> output: physical kinematic viscosity will be overwritten by
+    !> output is physical kinematic viscosity will be overwritten by
     !! non-Netonian model
     real(kind=rk), intent(inout) :: viscKine(:)
     !> Kinematic viscosity omega from last timestep
@@ -935,7 +935,7 @@ contains
     ! --------------------------------------------------------------------------
     !> contains non-Newtonian model parameters loaded from config file
     class(mus_nNwtn_type), intent(in) :: nNwtn
-    !> output: physical kinematic viscosity will be overwritten by
+    !> output is physical kinematic viscosity will be overwritten by
     !! non-Netonian model
     real(kind=rk), intent(inout) :: viscKine(:)
     !> Kinematic viscosity omega from last timestep
@@ -1053,7 +1053,7 @@ contains
     ! --------------------------------------------------------------------------
     !> contains non-Newtonian model parameters loaded from config file
     class(mus_nNwtn_type), intent(in) :: nNwtn
-    !> output: physical kinematic viscosity will be overwritten by
+    !> output is physical kinematic viscosity will be overwritten by
     !! non-Netonian model
     real(kind=rk), intent(inout) :: viscKine(:)
     !> Kinematic viscosity omega from last timestep
@@ -1160,7 +1160,7 @@ contains
     ! --------------------------------------------------------------------------
     !> contains non-Newtonian model parameters loaded from config file
     class(mus_nNwtn_type), intent(in) :: nNwtn
-    !> output: physical kinematic viscosity will be overwritten by
+    !> output is physical kinematic viscosity will be overwritten by
     !! non-Netonian model
     real(kind=rk), intent(inout) :: viscKine(:)
     !> Kinematic viscosity omega from last timestep
@@ -1269,7 +1269,7 @@ contains
     ! --------------------------------------------------------------------------
     !> contains non-Newtonian model parameters loaded from config file
     class(mus_nNwtn_type), intent(in) :: nNwtn
-    !> output: physical kinematic viscosity will be overwritten by
+    !> output is physical kinematic viscosity will be overwritten by
     !! non-Netonian model
     real(kind=rk), intent(inout) :: viscKine(:)
     !> Kinematic viscosity omega from last timestep
