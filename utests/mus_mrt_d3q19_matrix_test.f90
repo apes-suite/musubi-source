@@ -59,11 +59,12 @@ program mus_mrt_d3q19_matrix_test
   end if
 
 contains
+
   subroutine check_error( a, b, nVals, tolerance, error )
     !---------------------------------------------------------------------------
+    integer, intent(in) :: nVals
     real(kind=rk), intent(in) :: a(nVals)
     real(kind=rk), intent(in) :: b(nVals)
-    integer, intent(in) :: nVals
     real(kind=rk), intent(in) :: tolerance
     logical, intent(out) :: error
     !---------------------------------------------------------------------------
