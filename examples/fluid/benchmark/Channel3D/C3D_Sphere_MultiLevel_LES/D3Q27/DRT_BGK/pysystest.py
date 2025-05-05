@@ -16,12 +16,10 @@ from pysys.constants import *
 from apes.apeshelper import ApesHelper
 class PySysTest(ApesHelper, pysys.basetest.BaseTest):
     def setup(self):
+        self.apes.setupMusubi(sdrfile=None)
         self.copy(self.input + '/seeder.lua', self.output,
                   mappers=[lambda line: line.replace('$!stl_path!$', self.input + '/')])
-        self.copy(self.input + '/musubi.lua', self.output)
         self.mkdir('mesh')
-        self.mkdir('tracking')
-        self.mkdir('restart')
         self.apes.runSeeder()
 
     def execute(self):

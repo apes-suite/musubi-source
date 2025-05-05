@@ -16,9 +16,7 @@ from pysys.constants import *
 from apes.apeshelper import ApesHelper
 class PySysTest(ApesHelper, pysys.basetest.BaseTest):
     def setup(self):
-        self.copy(self.input + '/musubi.lua', self.output)
-        self.mkdir('tracking')
-        self.mkdir('restart')
+        self.apes.setupMusubi(sdrfile=None)
 
     def execute(self):
         musrun = self.apes.runMusubi(np = 2)

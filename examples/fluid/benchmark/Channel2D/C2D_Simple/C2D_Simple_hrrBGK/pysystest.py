@@ -16,12 +16,7 @@ from pysys.constants import *
 from apes.apeshelper import ApesHelper
 class PySysTest(ApesHelper, pysys.basetest.BaseTest):
     def setup(self):
-        self.copy(self.input + '/seeder.lua', self.output)
-        self.copy(self.input + '/musubi.lua', self.output)
-        self.mkdir('mesh')
-        self.mkdir('tracking')
-        self.mkdir('restart')
-        self.apes.runSeeder()
+        self.apes.setupMusubi()
 
     def execute(self):
         musrun = self.apes.runMusubi(np = 2)
