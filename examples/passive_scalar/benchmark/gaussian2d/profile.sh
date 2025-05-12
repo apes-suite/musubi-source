@@ -14,6 +14,7 @@ seeder  # Attention: execution command might differ
 
 # plot with Gnuplot
 # please check "tutorial/1_musubi_config/tut_1_mus_config.md" for more information
+# reference file can be found in "./reference"
 gnuplot -p -e "plot \"tracking/simulation_spc1_p00000_t200.000E+00.res\" \
 using 1:4 title \"simulation\" with points, \
 \"tracking/simulation_spc1_p00000_t200.000E+00.res\" \
