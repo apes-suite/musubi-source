@@ -53,12 +53,12 @@ tracking  = {
   { label     = 'spc1',
     variable  = {'spc1_density', 'concentration_real'},
     shape = {
-      kind = 'all'
-      -- kind  = 'canoND',
-      -- object  = {
-      --   origin = {-nelem-1, 0, 0},
-      --   vec = { {2.0*(nelem+1), 0., 0.0} }
-      -- }
+      -- kind = 'all'
+      kind  = 'canoND',
+      object  = {
+        origin = {-nelem/4-1, 0, 0},
+        vec = { {2.0*(nelem/4+1), 0., 0.0} }
+      }
     },
     folder    = 'tracking/',
     output    = {format = 'asciispatial'},
