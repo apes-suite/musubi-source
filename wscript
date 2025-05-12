@@ -160,10 +160,11 @@ def build(bld):
 
       bld(
         features = 'coco fc fcprogram',
+        name     = 'musubi',
         source   = 'source/musubi.f90',
         use      = ['blas_objs', 'lapack_objs', 'tem_objs', bld.env.mpi_mem_c_obj,
                     'aotus', 'mus_objs']+extLib_objs,
-        target   = 'musubi')
+        target   = bld.path.parent.find_or_declare('musubi'))
 
       if bld.env.build_hvs and not bld.options.no_harvesting:
           mus_hvs_sources = bld.path.ant_glob('source/mus_harvesting/*.fpp')
@@ -175,10 +176,11 @@ def build(bld):
               target   = 'mus_hvs_objs')
           bld(
               features = 'fc fcprogram',
+              name     = 'mus_harvesting',
               source   = 'source/mus_harvesting/mus_harvesting.f90',
               use      = ['tem_objs', 'aotus', 'mus_objs', bld.env.mpi_mem_c_obj,
                           'mus_hvs_objs', 'base64']+extLib_objs,
-              target = 'mus_harvesting')
+              target = bld.path.parent.find_or_declare('mus_harvesting'))
 
       utests(bld, ['lapack_objs', 'aotus', 'tem_objs', bld.env.mpi_mem_c_obj,
                    'mus_objs','utest_objs']+extLib_objs, preprocessor='coco')
