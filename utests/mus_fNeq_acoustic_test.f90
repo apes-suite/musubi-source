@@ -29,7 +29,7 @@ program mus_fNeq_acoustic_test
 
   integer :: iDir, iVal
 
-  call tem_start( 'fNeq acoustic utest', 'utest', general )
+  call tem_start( 'fNeq acoustic utest', general )
   error = .false.
   tolerance = eps * 2500._rk
   max_error = 0.0_rk

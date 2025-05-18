@@ -41,7 +41,7 @@ program mus_cumulant_d3q27_weights_test
   type( mus_scheme_type ), target :: scheme
   type(mus_solver_type), target :: solver
 
-  call tem_start('Cumulant D3Q27 optimized kernel weights utest', 'utest', params%general)
+  call tem_start('Cumulant D3Q27 optimized kernel weights utest', params%general)
   error = .true.
   tolerance = eps * 2500._rk
   write(*,*) 'tolerance', tolerance

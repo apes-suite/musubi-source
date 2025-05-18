@@ -41,8 +41,9 @@ program mus_bgk_block_d3q19_in_weights_test
   type( mus_scheme_type ), target :: scheme
   type( mus_varSys_solverData_type ), target :: solverData
 
-  call tem_start('BGK D3Q19 incompressible BLOCK optimized kernel weights utest', &
-    &            'utest', params%general)
+  call tem_start('BGK D3Q19 incompressible '                &
+    &            // 'BLOCK optimized kernel weights utest', &
+    &            params%general                             )
   tolerance = eps * 2500._rk
   write(*,*) 'tolerance', tolerance
 

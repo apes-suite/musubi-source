@@ -14,7 +14,7 @@ program mus_mrt_matrix_D3Q27_test
   integer :: clock
 
 
-  call tem_start( 'MRT D3Q27 Matrix test', 'utest', general )
+  call tem_start( 'MRT D3Q27 Matrix test', general )
 
   ! initialize f
   CALL SYSTEM_CLOCK( COUNT = clock )

@@ -71,7 +71,7 @@ program mus_intpDiffusive_test
   intpLabel(iFromFiner)   = 'fromFiner'
   intpLabel(iFromCoarser) = 'fromCoarser'
 
-  call tem_start('unit test', 'utest', params%general)
+  call tem_start('unit test', params%general)
   error_limit = eps * 100000._rk
   write(*,*) 'error limit', error_limit
 

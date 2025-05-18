@@ -49,7 +49,7 @@ program mus_mrt_d3q19_incomp_les_test
   type( mus_varSys_solverData_type ), target   :: solverData
   real(kind=rk) :: tot_visc, turbVisc(1) 
 
-  call tem_start('MRT D3Q19 incomp les kernels comparison utest', 'utest', params%general)
+  call tem_start('MRT D3Q19 incomp les kernels comparison utest', params%general)
   error = .true.
   tolerance = 1.0E-11
   write(*,*) 'tolerance = ', tolerance

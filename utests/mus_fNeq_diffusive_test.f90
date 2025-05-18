@@ -37,7 +37,7 @@ program mus_fNeq_diffusive_test
 
   integer :: iDir, iVal, minLevel, maxLevel
 
-  call tem_start( 'fNeq diffusive utest', 'utest', general )
+  call tem_start( 'fNeq diffusive utest', general )
   error = .false.
   tolerance = eps * 2500._rk
   max_error = 0.0_rk
