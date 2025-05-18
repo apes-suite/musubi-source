@@ -55,7 +55,7 @@ program mus_wall_function_schmitt_test
   !> friction velocity, dynamic viscosity and wall distance
   real(kind=rk) :: uTau, nu, y, visc_div_dist, result, velSW
 
-  call tem_start( 'Schmitt wall profile test', 'utest', general )
+  call tem_start( 'Schmitt wall profile test', general )
 
   ! Assume all tests to fail
   error = .true.

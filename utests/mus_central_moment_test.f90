@@ -15,7 +15,7 @@ program mus_central_moment_test
   real(kind=rk) :: ux, uy, uz, rho, inv_rho
   real(kind=rk) :: res_cm, res_split, err_sum
 
-  call tem_start( 'Central Moment Test', 'utest', general )
+  call tem_start( 'Central Moment Test', general )
   error = .false.
   tolerance = eps * 2500._rk
   write(*,"(A,F20.14)") 'tolerance = ', tolerance

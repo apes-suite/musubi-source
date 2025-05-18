@@ -63,7 +63,7 @@ contains
     !---------------------------------------------------------------------------
 
     ! Init the Treelm environment
-    call tem_start('MUSUBI unit test', 'utest', general)
+    call tem_start('MUSUBI unit test', general)
 
     print *, "Hello from loadenv" 
     ! Open the configuration file 

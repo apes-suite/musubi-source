@@ -75,7 +75,7 @@ program mus_intpAcoustic_test
   intpLabel(iFromCoarser) = 'fromCoarser'
   params%scaling = 'acoustic'
 
-  call tem_start('unit test', 'utest', params%general)
+  call tem_start('unit test', params%general)
   error_limit = eps * 250000._rk
   write(*,*) 'error limit', error_limit
 

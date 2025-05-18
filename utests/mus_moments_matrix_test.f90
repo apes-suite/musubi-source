@@ -29,7 +29,7 @@ program mus_moments_matrix_test
   real(kind=rk) :: omega, rho0
   integer :: ii, QQ
 
-  call tem_start( 'Moments matrix utest', 'utest', general )
+  call tem_start( 'Moments matrix utest', general )
   error = .false.
   tolerance = eps * 2500._rk
   write(*,*) 'tolerance = ', tolerance

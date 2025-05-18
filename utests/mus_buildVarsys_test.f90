@@ -17,7 +17,7 @@ program mus_buildVarsys_test
   type( mus_scheme_type ),target :: scheme
   type( mus_varSys_solverData_type ), target :: solverData
 
-  call tem_start('Build varSys unit test', 'utest', general)
+  call tem_start('Build varSys unit test', general)
 
   solverData%scheme => scheme
   scheme%nFields = 1

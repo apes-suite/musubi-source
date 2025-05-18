@@ -65,7 +65,7 @@ program mus_fNeq_fromPDF_test
   type( mus_scheme_layout_type ) :: layout
   type( tem_general_type ) :: general
 
-  call tem_start('fNeq from PDF calculation utest', 'utest', general)
+  call tem_start('fNeq from PDF calculation utest', general)
   error = .false.
   tolerance = eps * 25._rk
   write(*,*) 'tolerance = ', tolerance

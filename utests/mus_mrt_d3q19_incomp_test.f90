@@ -45,7 +45,7 @@ program mus_mrt_d3q19_test
   type( mus_scheme_type ), target             :: scheme
   type( mus_varSys_solverData_type ), target  :: solverData
 
-  call tem_start('MRT D3Q19 kernels comparison utest', 'utest', params%general)
+  call tem_start('MRT D3Q19 kernels comparison utest', params%general)
   error = .true.
   tolerance = 1.E-11_rk
   write(*,*) 'tolerance = ', tolerance

@@ -51,7 +51,7 @@ program mus_interpolation_test
   logical :: error
   type(mus_param_type) :: params
 
-  call tem_start('unit test', 'utest', params%general%solver, params%general%proc)
+  call tem_start('unit test', params%general%solver, params%general%proc)
   
   error = .false.
   write(logUnit(1),*) 'Running interpolation_test...'

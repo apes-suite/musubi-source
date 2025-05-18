@@ -49,7 +49,7 @@ program mus_wall_function_reichardt_test
   !> friction velocity, dynamic viscosity and wall distance
   real(kind=rk) :: uTau, nu, y
 
-  call tem_start( 'Reichardt wall profile test', 'utest', general )
+  call tem_start( 'Reichardt wall profile test', general )
 
   ! Assume all tests to fail
   error = .true.

@@ -21,7 +21,7 @@ program mus_mrt_d3q19_matrix_test
   real(kind=rk) :: m_explicit(19)
   real(kind=rk) :: Imatrix(19,19)
 
-  call tem_start( 'MRT D3Q19 Matrix test', 'utest', general )
+  call tem_start( 'MRT D3Q19 Matrix test', general )
   tolerance = eps * 2500._rk
   write(*,*) 'tolerance = ', tolerance
 

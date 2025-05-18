@@ -50,7 +50,7 @@ program mus_bgk_d3q19_weights_test
   type( mus_scheme_type ), target :: scheme
   type(mus_varSys_solverData_type), target :: solverData
 
-  call tem_start('BGK D3Q19 optimized kernel weights utest', 'utest', params%general)
+  call tem_start('BGK D3Q19 optimized kernel weights utest', params%general)
   error = .true.
   tolerance = eps * 2500._rk
   write(*,*) 'tolerance', tolerance

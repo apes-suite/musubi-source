@@ -46,7 +46,7 @@ program mus_bgk_d3q19_incomp_compare_test
   type( mus_varSys_solverData_type ), target   :: solverData
 
   call tem_start('BGK D3Q19 BLOCK in kernels comparison utest', &
-    &            'utest', params%general)
+    &            params%general                                 )
   tolerance = eps * 2500._rk
   write(*,*) 'tolerance = ', tolerance
 

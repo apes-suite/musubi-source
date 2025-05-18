@@ -17,7 +17,7 @@ program mus_cm_to_pdf_test
   real(kind=rk) :: ux, uy, uz, rho, inv_rho
   real(kind=rk) :: err_sum
 
-  call tem_start( 'CM to PDF Test', 'utest', general )
+  call tem_start( 'CM to PDF Test', general )
   error = .false.
   tolerance = eps * 2500._rk
   write(*,"(A,F20.14)") 'tolerance = ', tolerance

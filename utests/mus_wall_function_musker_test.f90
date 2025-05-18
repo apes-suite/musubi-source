@@ -49,7 +49,7 @@ program mus_wall_function_musker_test
   !> friction velocity, dynamic viscosity and wall distance
   real(kind=rk) :: uTau, nu, y
 
-  call tem_start( 'Musker wall profile test', 'utest', general )
+  call tem_start( 'Musker wall profile test', general )
 
   ! Assume all tests to fail
   error = .true.
