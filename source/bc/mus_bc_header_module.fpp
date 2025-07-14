@@ -446,6 +446,7 @@ module mus_bc_header_module
     !! It is allocated in routine update_BClists
     !! It is filled in fill_neighBuffer
     real(kind=rk), allocatable :: neighBufferPost(:,:)
+    real(kind=rk), allocatable :: velNeighBuffer(:,:)
 
     !> Post-collision state values of neighbors on all directions at
     !! current time step.
@@ -891,6 +892,7 @@ contains
           ! Also, this BC works only if 1st neigh is local fluid not halo.
           me( myBCID )%nNeighs = 2
           me( myBCID )%requireNeighBufPre_nNext = .true.
+          me( myBCID )%requireNeighBufPost = .true.
           select case( trim( bc_header%BC_kind(iBC) ))
           case ('turbulent_wall')
             me( myBCID )%useComputeNeigh = .true.
@@ -2341,8 +2343,10 @@ contains
             & deallocate( me(iBC)%neigh( iLevel )%neighBufferPre_nNext )
           if( me(iBC)%requireNeighBufPre  ) &
             & deallocate( me(iBC)%neigh( iLevel )%neighBufferPre )
-          if( me(iBC)%requireNeighBufPost ) &
-            & deallocate( me(iBC)%neigh( iLevel )%neighBufferPost )
+          if( me(iBC)%requireNeighBufPost ) then
+            deallocate( me(iBC)%neigh( iLevel )%neighBufferPost )
+            deallocate( me(iBC)%neigh( iLevel )%velNeighBuffer )
+          end if
           deallocate( me(iBC)%elemLvl( iLevel )%stencilPos )
           deallocate( me(iBC)%elemLvl( iLevel )%posInNghElems )
         end do

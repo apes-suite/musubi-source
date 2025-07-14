@@ -251,7 +251,8 @@ contains
       &                varSys      = scheme%varSys,                 &
       &                mixture     = scheme%mixture,                &
       &                derVarPos   = scheme%derVarPos,              &
-      &                globBC      = scheme%globBC                  )
+      &                globBC      = scheme%globBC,                 &
+      &                auxField    = scheme%auxField(iLevel)%val      )
     ! -------------------------------------------------------------------------
 
 
@@ -698,7 +699,8 @@ contains
       &                varSys      = scheme%varSys,                 &
       &                mixture     = scheme%mixture,                &
       &                derVarPos   = scheme%derVarPos,              &
-      &                globBC      = scheme%globBC                  )
+      &                globBC      = scheme%globBC,                 &
+      &                auxField    = scheme%auxField(iLevel)%val        )
     ! --------------------------------------------------------------------------
 
     ! swap double buffer index for current level
@@ -892,7 +894,8 @@ contains
       &                varSys      = scheme%varSys,              &
       &                mixture     = scheme%mixture,             &
       &                derVarPos   = scheme%derVarPos,           &
-      &                globBC      = scheme%globBC               )
+      &                globBC      = scheme%globBC,              &
+      &                auxField    = scheme%auxField(iLevel)%val     )
     ! --------------------------------------------------------------------------
 
     ! swap double buffer index for current level

@@ -177,7 +177,7 @@ contains
   !! before the compute (advection_relaxation) kernel call
   subroutine set_boundary( field, pdf, levelDesc, tree, iLevel, nBCs, params, &
     &                      layout, varSys, derVarPos, globBC, mixture,        &
-    &                      physics, state )
+    &                      physics, state, auxfield )
     ! ---------------------------------------------------------------------------
     !> fluid parameters and properties
     type( mus_field_type ), intent(inout) :: field(:)
@@ -207,6 +207,8 @@ contains
     type( mus_physics_type ), intent(in) :: physics
     !> mixture info
     type(mus_mixture_type), intent(in) :: mixture
+    !> auxilary field array
+    real(kind=rk), intent(in) :: auxField(:)
     ! --------------------------------------------------------------------------
     integer :: iField, nFields, iBnd
     ! --------------------------------------------------------------------------
@@ -240,7 +242,9 @@ contains
         &    varSys = varSys,                      &
         &    QQ     = layout%fStencil%QQ,          &
         &    nSize  = pdf%nSize,                   &
-        &    iLevel = iLevel                       )
+        &    iLevel = iLevel,                      &
+        &    derVarPos = derVarPos,             &
+        &    auxField  = auxField                  )
 
       ! loop over fields
       do iField = 1, nFields
@@ -1579,7 +1583,7 @@ contains
   !! @todo: for PUSH, post-collision is not correct yet.
   !!
   subroutine fill_neighBuffer( prevstate, currstate, neigh, globBC, nBCs, &
-    &                          field, varSys, QQ, nSize, iLevel )
+    &                          field, varSys, QQ, nSize, iLevel, auxField, derVarPos )
     !---------------------------------------------------------------------------
     !> Previous state vector of iLevel
     real(kind=rk),intent(in) :: prevstate(:)
@@ -1601,11 +1605,17 @@ contains
     integer, intent(in) :: nSize
     !> the iLevel on which this boundary was invoked
     integer, intent(in) :: iLevel
+    !> auxilary field array
+    real(kind=rk), intent(in) :: auxField(:)
+    !> position of derived quantities in varsys for all fields
+    type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
     ! ---------------------------------------------------------------------------
-    integer :: iField, iElem, iDir, iBnd, iNeigh
+    integer :: iField, iElem, iDir, iBnd, iNeigh, velPos(3)
     integer :: pdfVarPos(QQ), neighPos, myPos
     ! ---------------------------------------------------------------------------
     ! write(dbgUnit(5),*) 'Fill neighBufferPre and neighBufferPost'
+    
+    velpos(1:3) = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     do iField = 1, size( field )
 
@@ -1685,6 +1695,11 @@ contains
 !   & ?IDX?( pdfVarPos(iDir), neighPos, varSys%nScalars, nSize ), &
 !   & ')'
               end do ! iDir
+              do iDir = 1, 3
+                field(iField)%bc( iBnd )%neigh( iLevel )%velNeighBuffer(    &
+                  & iNeigh, (iElem-1)*3 + iDir ) =         &
+                  & auxField( (neighPos-1)*varSys%nAuxScalars + velpos(iDir) )
+              end do
             end do ! iElem
           end do ! iNeigh
         end if !neighBufferPost

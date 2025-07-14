@@ -1608,6 +1608,13 @@ contains
                 &         scheme%layout%fStencil%QQ ) )
               scheme%field(iField)%bc(iBnd)%neigh(iLevel)%neighBufferPost &
                 & = -1._rk
+              
+              allocate( scheme%field( iField )%bc( iBnd )%                     &
+                & neigh( iLevel )%velNeighBuffer(                              &
+                &         scheme%field( iField )%bc( iBnd )%nNeighs,           &
+                &         scheme%globBC( iBnd )%nElems( iLevel )*3 )           )
+              scheme%field(iField)%bc(iBnd)%neigh(iLevel)%velNeighBuffer &
+                & = -1._rk
             end if
 
             if ( scheme%field(iField)%bc(iBnd)%useComputeNeigh ) then

@@ -167,7 +167,7 @@ contains
       & turbwallFunc   = me%turbwallFunc,                         &
       & nElems         = globBC%nElems(iLevel),                   &
       & elemPos        = globBC%elemLvl(iLevel)%elem%val(:),      &
-      & neighBufferPre = me%neigh(iLevel)%neighBufferPre_nNext,   &
+      & velNeighBuffer = me%neigh(iLevel)%velNeighBuffer,   &
       & viscKine       = fieldProp%fluid%viscKine,                &
       & turbulence     = fieldProp%fluid%turbulence,              &
       & stencil        = layout%fStencil,                         &
@@ -183,12 +183,10 @@ contains
       ! is valid for qVal=0.5
       f_pre = me%neigh(iLevel)%computeNeighBuf( (iElem-1)*QQ+1: iElem*QQ )
       ! Compute density and velocity from pre-collision state on neighbor
-      f_neigh = me%neigh(iLevel)%neighBufferPre_nNext( 1,         &
+      f_neigh = me%neigh(iLevel)%neighBufferPre_nnext( 1,         &
         &                          (iElem-1)*QQ+1:(iElem-1)*QQ+QQ )
       dens = sum(f_pre)
       dens_neigh = sum(f_neigh)
-      ! velocity
-      vel_neigh = layout%quantities%vel_from_pdf_ptr(pdf = f_neigh, dens = dens_neigh)
 
       ! stream-wise velocity on boundary element from wall model
       velSW = velSW_bnd(iElem) * unitSW(:, iElem)
@@ -340,7 +338,7 @@ contains
       & turbwallFunc   = me%turbwallFunc,                         &
       & nElems         = globBC%nElems(iLevel),                   &
       & elemPos        = globBC%elemLvl(iLevel)%elem%val(:),      &
-      & neighBufferPre = me%neigh(iLevel)%neighBufferPre_nNext,   &
+      & velNeighBuffer = me%neigh(iLevel)%velNeighBuffer,   &
       & viscKine       = fieldProp%fluid%viscKine,                &
       & turbulence     = fieldProp%fluid%turbulence,              &
       & stencil        = layout%fStencil,                         &
@@ -512,7 +510,7 @@ contains
       & turbwallFunc   = me%turbwallFunc,                         &
       & nElems         = globBC%nElems(iLevel),                   &
       & elemPos        = globBC%elemLvl(iLevel)%elem%val(:),      &
-      & neighBufferPre = me%neigh(iLevel)%neighBufferPre_nNext,   &
+      & velNeighBuffer = me%neigh(iLevel)%velNeighBuffer,   &
       & viscKine       = fieldProp%fluid%viscKine,                &
       & turbulence     = fieldProp%fluid%turbulence,              &
       & stencil        = layout%fStencil,                         &
@@ -677,7 +675,7 @@ contains
       & turbwallFunc   = me%turbwallFunc,                         &
       & nElems         = globBC%nElems(iLevel),                   &
       & elemPos        = globBC%elemLvl(iLevel)%elem%val(:),      &
-      & neighBufferPre = me%neigh(iLevel)%neighBufferPre_nNext,   &
+      & velNeighBuffer = me%neigh(iLevel)%velNeighBuffer,   &
       & viscKine       = fieldProp%fluid%viscKine,                &
       & turbulence     = fieldProp%fluid%turbulence,              &
       & stencil        = layout%fStencil,                         &
@@ -828,7 +826,7 @@ contains
       & turbwallFunc   = me%turbwallFunc,                         &
       & nElems         = globBC%nElems(iLevel),                   &
       & elemPos        = globBC%elemLvl(iLevel)%elem%val(:),      &
-      & neighBufferPre = me%neigh(iLevel)%neighBufferPre_nNext,   &
+      & velNeighBuffer = me%neigh(iLevel)%velNeighBuffer,   &
       & viscKine       = fieldProp%fluid%viscKine,                &
       & turbulence     = fieldProp%fluid%turbulence,              &
       & stencil        = layout%fStencil,                         &
@@ -982,7 +980,7 @@ contains
       & turbwallFunc   = me%turbwallFunc,                         &
       & nElems         = globBC%nElems(iLevel),                   &
       & elemPos        = globBC%elemLvl(iLevel)%elem%val(:),      &
-      & neighBufferPre = me%neigh(iLevel)%neighBufferPre_nNext,   &
+      & velNeighBuffer = me%neigh(iLevel)%velNeighBuffer,   &
       & viscKine       = fieldProp%fluid%viscKine,                &
       & turbulence     = fieldProp%fluid%turbulence,              &
       & stencil        = layout%fStencil,                         &
@@ -1040,7 +1038,7 @@ contains
   !! friction velocity, stream-wise unit vector and turbulent viscosity with
   !! mixing length formulation.
   subroutine calcVelSW_unitSW_velTau_tVisc(velSW, unitSW, turbwallFunc, &
-    &          nElems, elemPos, neighBufferPre, viscKine, turbulence,   &
+    &          nElems, elemPos, velNeighBuffer, viscKine, turbulence,   &
     &          stencil, iLevel, quantities)
     ! --------------------------------------------------------------------------
     !> Stream-wise velocity component from wall function
@@ -1055,7 +1053,7 @@ contains
     !> Current element position in state array. (Used to access viscosity)
     integer, intent(in) :: elemPos(:)
     !> Pre-collision from 1st and 2nd fluid neighbor
-    real(kind=rk), intent(in) :: neighBufferPre(:,:)
+    real(kind=rk), intent(in) :: velNeighBuffer(:,:)
     !> Kinematic viscosity
     type(mus_viscosity_type) :: viscKine
     !> turbulence model type
@@ -1081,7 +1079,7 @@ contains
     do iElem = 1, nElems
       ! Get density and velocity on second fluid element along the normal
       ! direction i.e. 1st neighbor.
-      f_neigh = neighBufferPre(1, (iElem-1)*QQ+1:(iElem-1)*QQ+QQ)
+      f_neigh = neighBufferPre(2, (iElem-1)*QQ+1:(iElem-1)*QQ+QQ)
       dens_neigh = sum(f_neigh)
 
       ! Get velocity from pdf, inverse of density and stencil as input.
@@ -1167,7 +1165,6 @@ contains
     end if
   end subroutine calcVelSW_unitSW_velTau_tVisc
   ! ************************************************************************** !
-
 
   ! ************************************************************************** !
   !> This routine computes bndForce on boundary elements using momentum

@@ -56,7 +56,8 @@ module mus_auxFieldVar_module
   use tem_compileconf_module,        only: vlen
   use tem_debug_module,    only:dbgunit
 
-  use mus_varSys_module,         only: mus_varSys_data_type
+  use mus_varSys_module,         only: mus_varSys_data_type,            &
+    &                                  mus_createSrcElemInTreeForGetPoint
   use mus_scheme_type_module,    only: mus_scheme_type
   use mus_scheme_header_module,  only: mus_scheme_header_type
   use mus_derVarPos_module,      only: mus_derVarPos_type
@@ -67,7 +68,6 @@ module mus_auxFieldVar_module
   use mus_gradData_module,       only: mus_gradData_type
   use mus_scheme_type_module,    only: mus_scheme_type
   use mus_scheme_layout_module,  only: mus_scheme_layout_type
-  use mus_connectivity_module,   only: mus_intp_getSrcElemPosInTree
   use mus_scheme_derived_quantities_module, only: mus_scheme_derived_quantities_type
 
   implicit none
@@ -240,47 +240,53 @@ contains
     ! -------------------------------------------------------------------- !
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
-    integer :: elemPos, statePos, iPnt, iLevel
-    real(kind=rk), allocatable :: srcRes(:), pntVal(:), weights(:)
-    integer :: iSrc, iComp, nSrcElems
-    integer, allocatable :: srcElemPos(:)
+    integer :: elemPos, statePos, iPnt, iLevel, posInPntData, first, last
+    real(kind=rk), allocatable :: srcRes(:), pntVal(:)
+    real(kind=rk) :: weight
+    integer :: iSrc, iComp, iSrcElem, nTreeIds
     ! -------------------------------------------------------------------- !
 !write(dbgUnit(1),*) 'Derive for point :'//trim(varSys%varname%val(fun%myPos))
     call C_F_POINTER( fun%method_Data, fPtr )
     scheme => fPtr%solverData%scheme
     allocate(srcRes(scheme%layout%fStencil%QQ*fun%nComponents))
     allocate(pntVal(fun%nComponents))
-    allocate(weights(scheme%layout%fStencil%QQ))
-    allocate(srcElemPos(scheme%layout%fStencil%QQ))
+
+    ! Create source element list for all points and store them in
+    ! pointData type. To avoid adding a point twice, a unique treeID
+    ! is created at finesh possible level in treelm i.e. level 20.
+    ! The position of this treeID in the unique dynamic array is used
+    ! to access the source element position in pointData type.
+    call mus_createSrcElemInTreeForGetPoint(                      &
+      & pntDataMapToTree = fPtr%pointData%mapToTree,              &
+      & point            = point,                                 &
+      & nPnts            = nPnts,                                 &
+      & stencil          = scheme%layout%fStencil,                &
+      & tree             = tree,                                  &
+      & levelPointer     = fPtr%solverData%geometry%levelPointer, &
+      & levelDesc        = scheme%levelDesc(:)                    )
 
     res = 0.0_rk
+    nTreeIds = fPtr%pointData%mapToTree%treeID%nVals
     do iPnt = 1, nPnts
       srcRes = 0.0_rk
+      posInPntData = tem_PosofId(                                             &
+        &              tem_IdOfCoord( tem_CoordOfReal(tree, point(iPnt,:)) ), &
+        &              fPtr%pointData%mapToTree%treeID%val(1:nTreeIds) )
 
-      ! get position of source element position in global tree for 
-      ! interpolation.
-      ! Also calculate weights for interpolation using distance between the
-      ! point and source element barycenter
-      call mus_intp_getSrcElemPosInTree(          &
-        & srcElemPos   = srcElemPos,              &
-        & weights      = weights,                 &
-        & nSrcElems    = nSrcElems,               &
-        & point        = point(iPnt,:),           &
-        & stencil      = scheme%layout%fStencil,  &
-        & tree         = tree,                    &
-        & levelPointer = fPtr%solverData%geometry &
-        &                    %levelPointer,       &
-        & levelDesc    = scheme%levelDesc         )
+      first = fPtr%pointData%mapToTree%srcElem%first%val(posInPntData)
+      last = fPtr%pointData%mapToTree%srcElem%last%val(posInPntData)
 
       ! get source element values
-      do iSrc = 1, nSrcElems
+      iSrcElem = 0
+      do iSrc = first, last
+        iSrcElem = iSrcElem + 1
         ! position in global tree
-        elemPos = srcElemPos(iSrc)
+        elemPos = fPtr%pointData%mapToTree%srcElem%elemPos%val(iSrc)
         ! position of element in levelDesc total list
         statePos = fPtr%solverData%geometry%levelPointer( elemPos )
         iLevel = tem_levelOf( tree%treeID( elemPos ) )
         do iComp = 1, fun%nComponents
-          srcRes( (iSrc-1)*fun%nComponents + iComp )                       &
+          srcRes( (iSrcElem-1)*fun%nComponents + iComp )                   &
             & = scheme%auxField( iLevel )%val(                             &
             & (statePos-1)*varSys%nAuxScalars + fun%auxField_varPos(iComp) )
         end do !iComp
@@ -288,9 +294,12 @@ contains
 
       ! Linear interpolation res = sum(weight_i*phi_i)
       pntVal = 0.0_rk
-      do iSrc = 1, nSrcElems
-        pntVal(:) = pntVal(:) + weights(iSrc)                         &
-          & * srcRes((iSrc-1)*fun%nComponents+1 : iSrc*fun%nComponents)
+      iSrcElem = 0
+      do iSrc = first, last
+        weight = fPtr%pointData%mapToTree%srcElem%weight%val(iSrc)
+        iSrcElem = iSrcElem + 1
+        pntVal(:) = pntVal(:) + weight                                        &
+          & * srcRes((iSrcElem-1)*fun%nComponents+1 : iSrcElem*fun%nComponents)
       end do
       res( (iPnt-1)*fun%nComponents+1 : iPnt*fun%nComponents ) = pntVal
 
