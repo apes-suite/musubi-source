@@ -1095,6 +1095,10 @@ contains
       vec_mag = sqrt(dot_product(vec, vec))
 
       if ( tem_isnan(vec_mag) ) then
+        write(logUnit(1), *) 'ERROR occured in turbulent wall model for iElem=', iElem
+        write(logUnit(1), *) 'f_neigh = ', f_neigh
+        write(logUnit(1), *) 'vel_neigh = ', vel_neigh
+        write(logUnit(1), *) 'unitNormal = ', unitNormal
         call tem_abort("Error: In calcVelSW_unitSW_velTau_tVisc. " &
           &          //"Stream-wise velocity mag is NaN.")
       end if
