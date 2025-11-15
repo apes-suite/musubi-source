@@ -9,6 +9,7 @@
 ! Copyright (c) 2018 Raphael Haupt <raphael.haupt@uni-siegen.de>
 ! Copyright (c) 2020 Peter Vitt <peter.vitt2@uni-siegen.de>
 ! Copyright (c) 2021-2022 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2025-2027 Mengyu Wang <m.wang-2@utwente.nl>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -85,7 +86,7 @@ module mus_d3q19_module
   public :: bgk_HybridRecursiveRegularizedCorr_d3q19
   public :: bgk_DualRelaxationTime_RR_d3q19
 
-  ! passive scalar routines
+  ! passive scalar routines (anisotropic diffusion)
   public :: mus_advRel_kPS_rBGK_vEmodel_lD3Q19
   public :: mus_advRel_kPS_rTRT_vEmodel_lD3Q19
   public :: mus_advRel_kPS_rBGK_vEmodelCorr_lD3Q19

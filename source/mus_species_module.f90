@@ -5,6 +5,7 @@
 ! Copyright (c) 2015-2016 Jiaxing Qi <jiaxing.qi@uni-siegen.de>
 ! Copyright (c) 2016 Tobias Schneider <tobias1.schneider@student.uni-siegen.de>
 ! Copyright (c) 2019 Seyfettin Bilgi <seyfettin.bilgi@student.uni-siegen.de>
+! Copyright (c) 2025-2027 Mengyu Wang <m.wang-2@utwente.nl>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -72,6 +73,15 @@ module mus_species_module
     real(kind=rk), allocatable :: omegaMomForce(:,:)
   end type mrt_species_type
 
+  type mus_diff_tensor_type
+    real(kind=rk) :: Dxx
+    real(kind=rk) :: Dyy
+    real(kind=rk) :: Dzz
+    real(kind=rk) :: Dxy
+    real(kind=rk) :: Dxz
+    real(kind=rk) :: Dyz
+  end type mus_diff_tensor_type
+
   !> this type contains species parameters
   !! @todo KM: extent level dependent parameter for multilevel
   type mus_species_type
@@ -87,6 +97,8 @@ module mus_species_module
     !> coefficient of resisivity of species which is
     !! reciprocal of diffusivity of the species
     real(kind=rk), allocatable :: resi_coeff(:)
+    !> full diffusion tensor of the species
+    type(mus_diff_tensor_type) :: diff_tensor
     !! KM:@todo set diffusivity and resistivity for multilevel
     !> molar fraction of this species in the mixture
 !    real(kind=rk) :: molarFrac
@@ -206,6 +218,10 @@ contains
       if ( sub_handle == 0 ) then
         ! coefficients are not defined as a table. try to load single constant
         ! value
+        ! In the case of isotropic diffusion, there is no diffusion tensor
+        ! In the case of anisotropic diffusion, diff_coeff is usually set 
+        ! as the averaged diagonal diffusivity:
+        ! \(D = (D_xx + D_yy + D_zz) / 3 \)
         allocate(me%diff_coeff(nCoeff))
         allocate(me%resi_coeff(nCoeff))
         ! diff_coeff may be single constant value
@@ -275,12 +291,90 @@ contains
       call tem_abort()
     endif
 
+    !> Get diffusivity tensor if defined
+    call aot_table_open( L = conf,                                             &
+      &                  parent = spc_handle,                                  &
+      &                  thandle = sub_handle,                                 &
+      &                  key = 'diff_tensor')
+
+    if ( sub_handle /= 0 ) then
+      call aot_get_val( L = conf,                                              &
+        &               thandle = sub_handle,                                  &
+        &               key = 'Dxx',                                           &
+        &               val = me%diff_tensor%Dxx,                              &
+        &               ErrCode = iError,                                      &
+        &               default = 0.0_rk )
+
+      call aot_get_val( L = conf,                                              &
+        &               thandle = sub_handle,                                  &
+        &               key = 'Dyy',                                           &
+        &               val = me%diff_tensor%Dyy,                              &
+        &               ErrCode = iError, &
+        &               default = 0.0_rk )
+      
+      call aot_get_val( L = conf,                                              &
+        &               thandle = sub_handle,                                  &
+        &               key = 'Dzz',                                           &
+        &               val = me%diff_tensor%Dzz,                              &
+        &               ErrCode = iError,                                      &
+        &               default = 0.0_rk )
+
+      call aot_get_val( L = conf,                                              &
+        &               thandle = sub_handle,                                  &
+        &               key = 'Dxy',                                           &
+        &               val = me%diff_tensor%Dxy,                              &
+        &               ErrCode = iError,                                      &
+        &               default = 0.0_rk )
+
+      call aot_get_val( L = conf,                                              &
+        &               thandle = sub_handle,                                  &
+        &               key = 'Dxz',                                           &
+        &               val = me%diff_tensor%Dxz,                              &
+        &               ErrCode = iError,                                      &
+        &               default = 0.0_rk )
+
+      call aot_get_val( L = conf,                                              &
+        &               thandle = sub_handle,                                  &
+        &               key = 'Dyz',                                           &
+        &               val = me%diff_tensor%Dyz,                              &
+        &               ErrCode = iError,                                      &
+        &               default = 0.0_rk )
+
+      if (me%diff_tensor%Dxx == 0.0_rk .and. me%diff_tensor%Dyy == 0.0_rk .and.     &
+        &    me%diff_tensor%Dzz == 0.0_rk .and. me%diff_tensor%Dxy == 0.0_rk .and.  &
+        &    me%diff_tensor%Dxz == 0.0_rk .and. me%diff_tensor%Dyz == 0.0_rk ) then
+        write(logUnit(1),*) ' Error: diffusion tensor is defined but all '//    &
+          &                 'components are zero!'
+        call tem_abort()       
+      else
+        write(logUnit(1),*) ' Species diffusion is anisotropic.'
+        write(logUnit(1),*) '   Diffusion tensor components:'
+        write(logUnit(1),*) '    Dxx: ', real(me%diff_tensor%Dxx)
+        write(logUnit(1),*) '    Dyy: ', real(me%diff_tensor%Dyy)
+        write(logUnit(1),*) '    Dzz: ', real(me%diff_tensor%Dzz)
+        write(logUnit(1),*) '    Dxy: ', real(me%diff_tensor%Dxy)
+        write(logUnit(1),*) '    Dxz: ', real(me%diff_tensor%Dxz)
+        write(logUnit(1),*) '    Dyz: ', real(me%diff_tensor%Dyz)
+
+        me%diff_tensor%Dxx = me%diff_tensor%Dxx/physics%fac(minLevel)%diffusivity
+        me%diff_tensor%Dyy = me%diff_tensor%Dyy/physics%fac(minLevel)%diffusivity
+        me%diff_tensor%Dzz = me%diff_tensor%Dzz/physics%fac(minLevel)%diffusivity
+        me%diff_tensor%Dxy = me%diff_tensor%Dxy/physics%fac(minLevel)%diffusivity
+        me%diff_tensor%Dxz = me%diff_tensor%Dxz/physics%fac(minLevel)%diffusivity
+        me%diff_tensor%Dyz = me%diff_tensor%Dyz/physics%fac(minLevel)%diffusivity
+      end if
+    endif
+
+    call aot_table_close( L = conf, thandle = sub_handle )
+
     !> convert physics to lattice unit
     me%diff_coeff = me%diff_coeff/physics%fac(minLevel)%diffusivity
     me%resi_coeff = 1.0_rk/me%diff_coeff
 
     ! Relaxation parameter omega is compted from diffusivity coefficient.
     ! Used for Nernst-Planck equation
+    ! For Emodel(Corr) used in passive scalar transport,
+    ! omega is used as the free parameter to adjust stability 
     !> \todo KM: Compute omega for each level
     me%omega = 1.0_rk/(me%diff_coeff(1)/cs_lattice**2 + 0.5_rk)
 
