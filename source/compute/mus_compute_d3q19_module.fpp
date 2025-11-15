@@ -85,6 +85,14 @@ module mus_d3q19_module
   public :: bgk_HybridRecursiveRegularizedCorr_d3q19
   public :: bgk_DualRelaxationTime_RR_d3q19
 
+  ! passive scalar routines
+  public :: mus_advRel_kPS_rBGK_vEmodel_lD3Q19
+  public :: mus_advRel_kPS_rTRT_vEmodel_lD3Q19
+  public :: mus_advRel_kPS_rBGK_vEmodelCorr_lD3Q19
+  public :: mus_advRel_kPS_rTRT_vEmodelCorr_lD3Q19
+  public :: mus_advRel_kPS_rTRT_vLmodel_lD3Q19
+  public :: mus_advRel_kPS_rMRT_vEmodelCorr_lD3Q19
+
   ! ============================================================================
   ! D3Q19 flow model
   ! ============================================================================
