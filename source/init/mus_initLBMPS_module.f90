@@ -1,7 +1,7 @@
 ! Copyright (c) 2013 Kannan Masilamani <kannan.masilamani@uni-siegen.de>
 ! Copyright (c) 2015 Jiaxing Qi <jiaxing.qi@uni-siegen.de>
 ! Copyright (c) 2016 Tobias Schneider <tobias1.schneider@student.uni-siegen.de>
-! Copyright (c) 2025-2027 Mengyu Wang <m.wang-2@utwente.nl>
+! Copyright (c) 2025 Mengyu Wang <m.wang-2@utwente.nl>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -36,8 +36,8 @@ module mus_initLBMPS_module
   ! include musubi modules
   use mus_compute_passiveScalar_module, only: mus_advRel_kPS_rBGK_v1st_l,      &
     &                                         mus_advRel_kPS_rBGK_v2nd_l,      &
-    &                                         mus_advRel_kPS_rTRT_vStdNoOpt_l, &
-    &                                         mus_advRel_kPS_rBGK_vEmodel_lD3Q19, &
+    &                                         mus_advRel_kPS_rTRT_vStdNoOpt_l
+  use mus_d3q19_module,                 only: mus_advRel_kPS_rBGK_vEmodel_lD3Q19, &
     &                                         mus_advRel_kPS_rTRT_vEmodel_lD3Q19, &
     &                                         mus_advRel_kPS_rBGK_vEmodelCorr_lD3Q19, &
     &                                         mus_advRel_kPS_rTRT_vEmodelCorr_lD3Q19, &

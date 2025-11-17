@@ -9,7 +9,7 @@
 ! Copyright (c) 2018 Raphael Haupt <raphael.haupt@uni-siegen.de>
 ! Copyright (c) 2020 Peter Vitt <peter.vitt2@uni-siegen.de>
 ! Copyright (c) 2021-2022 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
-! Copyright (c) 2025-2027 Mengyu Wang <m.wang-2@utwente.nl>
+! Copyright (c) 2025 Mengyu Wang <m.wang-2@utwente.nl>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -4434,17 +4434,17 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       ! for isotropic diffusion factor, it turns out to be 1st order bgk
       d_omega = fieldProp(1)%species%omega
       nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-      a_e = (fieldProp(1)%species%diff_coeff%Dxx + fieldProp(1)%species%diff_coeff%Dyy + &
-        & fieldProp(1)%species%diff_coeff%Dzz) / 3.0_rk / nu - 1.0_rk
-      a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_coeff%Dxx - 0.5_rk * &
-        & (fieldProp(1)%species%diff_coeff%Dyy + fieldProp(1)%species%diff_coeff%Dzz))
-      a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_coeff%Dyy - &
-        & fieldProp(1)%species%diff_coeff%Dzz)
+      a_e = (fieldProp(1)%species%diff_tensor%Dxx + fieldProp(1)%species%diff_tensor%Dyy + &
+        & fieldProp(1)%species%diff_tensor%Dzz) / 3.0_rk / nu - 1.0_rk
+      a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
+        & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
+      a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
+        & fieldProp(1)%species%diff_tensor%Dzz)
   
       ! attention: D_ab has a multiplier of 2 in ADE
-      a_xy = fieldProp(1)%species%diff_coeff%Dxy / nu
-      a_xz = fieldProp(1)%species%diff_coeff%Dxz / nu
-      a_yz = fieldProp(1)%species%diff_coeff%Dyz / nu
+      a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
+      a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
+      a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
   
       nodeloop: do iElem = 1, nSolve
         ! x-, y- and z-velocity from transport field
@@ -4452,7 +4452,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
         do iDir = 1, layout%fStencil%QQ
           pdfTmp( iDir ) = &
-            & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+            & instate( neigh (( idir-1)* nelems+ ielem)+ &
+            & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
         end do
         rho = sum( pdfTmp )
   
@@ -4470,17 +4471,20 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           P_e = (19 * cq2 - 30) / 42
           P_xx = (3 * cqx2 - cq2) / 12
           P_ww = (cqy2 - cqz2) / 6
-          P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(2, iDir))) / 4
-          P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(3, iDir))) / 4
-          P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * dble( layout%fStencil%cxDir(3, iDir))) / 4
+          P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * &
+            & dble( layout%fStencil%cxDir(2, iDir))) / 4
+          P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * &
+            & dble( layout%fStencil%cxDir(3, iDir))) / 4
+          P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * &
+            & dble( layout%fStencil%cxDir(3, iDir))) / 4
   
           feq = rho * ( layout%weight( iDir ) +                  &   ! e_0
-            & layout%weight( iDir ) * cs2inv * uc +           &   ! C_\alpha
+            & layout%weight( iDir ) * cs2inv * uc +              &   ! C_\alpha
             & cs2 * (a_e * P_e + a_xy * P_xy + a_xz * P_xz + a_yz * P_yz + &
             & a_xx * P_xx + a_ww * P_ww) )
   
-          outstate(                                                                       &
-            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =            &
+          outstate(                                                             &
+            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
             &                pdfTmp( iDir ) + d_omega * (feq - pdfTmp( iDir ))
   
         end do
@@ -4573,17 +4577,17 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           
         ! for isotropic diffusion factor, it turns out to be 1st order trt
         nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-        a_e = (fieldProp(1)%species%diff_coeff%Dxx + fieldProp(1)%species%diff_coeff%Dyy + &
-          & fieldProp(1)%species%diff_coeff%Dzz) / 3.0_rk / nu - 1.0_rk
-        a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_coeff%Dxx - 0.5_rk * &
-          & (fieldProp(1)%species%diff_coeff%Dyy + fieldProp(1)%species%diff_coeff%Dzz))
-        a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_coeff%Dyy - &
-          & fieldProp(1)%species%diff_coeff%Dzz)
+        a_e = (fieldProp(1)%species%diff_tensor%Dxx + fieldProp(1)%species%diff_tensor%Dyy + &
+          & fieldProp(1)%species%diff_tensor%Dzz) / 3.0_rk / nu - 1.0_rk
+        a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
+          & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
+        a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
+          & fieldProp(1)%species%diff_tensor%Dzz)
     
         ! attention: D_ab has a multiplier of 2 in ADE
-        a_xy = fieldProp(1)%species%diff_coeff%Dxy / nu
-        a_xz = fieldProp(1)%species%diff_coeff%Dxz / nu
-        a_yz = fieldProp(1)%species%diff_coeff%Dyz / nu
+        a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
+        a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
+        a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
     
     
         nodeloop: do iElem = 1, nSolve
@@ -4592,7 +4596,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     
           do iDir = 1, layout%fStencil%QQ
             pdfTmp( iDir ) = &
-              & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+              & instate( neigh (( idir-1)* nelems+ ielem)+ &
+              & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
           end do
           rho = sum( pdfTmp )
     
@@ -4610,9 +4615,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
             P_e = (19 * cq2 - 30) / 42
             P_xx = (3 * cqx2 - cq2) / 12
             P_ww = (cqy2 - cqz2) / 6
-            P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(2, iDir))) / 4
-            P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(3, iDir))) / 4
-            P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * dble( layout%fStencil%cxDir(3, iDir))) / 4
+            P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * &
+              & dble( layout%fStencil%cxDir(2, iDir))) / 4
+            P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * &
+              & dble( layout%fStencil%cxDir(3, iDir))) / 4
+            P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * &
+              & dble( layout%fStencil%cxDir(3, iDir))) / 4
     
             ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
             feqPlus = rho * (layout%weight( iDir ) +                  &   ! e_0
@@ -4626,8 +4634,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
             fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
     
             outstate(                                                            &
-              & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =     &
-              &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)              &
+              & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) = &
+              &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)   &
               &                + aux_omega * (feqPlus - fPlus)
           end do
     
@@ -4720,17 +4728,17 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       ! for isotropic diffusion factor, it turns out to be 1st order bgk
       d_omega = fieldProp(1)%species%omega
       nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-      a_e = (fieldProp(1)%species%diff_coeff%Dxx + fieldProp(1)%species%diff_coeff%Dyy + &
-        & fieldProp(1)%species%diff_coeff%Dzz) / 3.0_rk / nu - 1.0_rk
-      a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_coeff%Dxx - 0.5_rk * &
-        & (fieldProp(1)%species%diff_coeff%Dyy + fieldProp(1)%species%diff_coeff%Dzz))
-      a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_coeff%Dyy - &
-        & fieldProp(1)%species%diff_coeff%Dzz)
+      a_e = (fieldProp(1)%species%diff_tensor%Dxx + fieldProp(1)%species%diff_tensor%Dyy + &
+        & fieldProp(1)%species%diff_tensor%Dzz) / 3.0_rk / nu - 1.0_rk
+      a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
+        & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
+      a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
+        & fieldProp(1)%species%diff_tensor%Dzz)
   
       ! attention: D_ab has a multiplier of 2 in ADE
-      a_xy = fieldProp(1)%species%diff_coeff%Dxy / nu
-      a_xz = fieldProp(1)%species%diff_coeff%Dxz / nu
-      a_yz = fieldProp(1)%species%diff_coeff%Dyz / nu
+      a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
+      a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
+      a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
   
       nodeloop: do iElem = 1, nSolve
         ! x-, y- and z-velocity from transport field
@@ -4738,7 +4746,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
         do iDir = 1, layout%fStencil%QQ
           pdfTmp( iDir ) = &
-            & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+            & instate( neigh (( idir-1)* nelems+ ielem)+ &
+            & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
         end do
         rho = sum( pdfTmp )
   
@@ -4758,17 +4767,20 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           P_e = (19 * cq2 - 30) / 42
           P_xx = (3 * cqx2 - cq2) / 12
           P_ww = (cqy2 - cqz2) / 6
-          P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(2, iDir))) / 4
-          P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(3, iDir))) / 4
-          P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * dble( layout%fStencil%cxDir(3, iDir))) / 4
+          P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * &
+            & dble( layout%fStencil%cxDir(2, iDir))) / 4
+          P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * &
+            & dble( layout%fStencil%cxDir(3, iDir))) / 4
+          P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * &
+            & dble( layout%fStencil%cxDir(3, iDir))) / 4
   
-          feq = rho * layout%weight( iDir ) * ( 1 + cs2inv * uc +     &   ! e_0 + C_\alpha
-            & +  cs4inv * uc * uc * 0.5_rk -  usq * 0.5_rk * cs2inv ) + & ! Correction of numerical diffusion
+          feq = rho * layout%weight( iDir ) * ( 1 + cs2inv * uc +    & ! e_0 + C_\alpha
+            & cs4inv * uc * uc * 0.5_rk -  usq * 0.5_rk * cs2inv ) + & ! Correction of numerical diffusion
             & rho * cs2 * (a_e * P_e + a_xy * P_xy + a_xz * P_xz + a_yz * P_yz + &
             & a_xx * P_xx + a_ww * P_ww)
   
-          outstate(                                                                       &
-            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =            &
+          outstate(                                                             &
+            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
             &                pdfTmp( iDir ) + d_omega * (feq - pdfTmp( iDir ))
   
         end do
@@ -4835,7 +4847,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
         real(kind=rk) :: P_e, P_xx, P_ww, P_xy, P_xz, P_yz
         integer :: vel_varPos ! position of transport velocity variable in varSys
-        real(kind=rk) :: inv_vel, u_fluid(3), xc(3)
+        real(kind=rk) :: inv_vel, u_fluid(3)
         ! --------------------------------------------------------------------------
         ! access scheme via 1st variable method data which is a state variable
         call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
@@ -4864,17 +4876,17 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           
         ! for isotropic diffusion factor, it turns out to be 1st order trt
         nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-        a_e = (fieldProp(1)%species%diff_coeff%Dxx + fieldProp(1)%species%diff_coeff%Dyy + &
-          & fieldProp(1)%species%diff_coeff%Dzz) / 3.0_rk / nu - 1.0_rk
-        a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_coeff%Dxx - 0.5_rk * &
-          & (fieldProp(1)%species%diff_coeff%Dyy + fieldProp(1)%species%diff_coeff%Dzz))
-        a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_coeff%Dyy - &
-          & fieldProp(1)%species%diff_coeff%Dzz)
+        a_e = (fieldProp(1)%species%diff_tensor%Dxx + fieldProp(1)%species%diff_tensor%Dyy + &
+          & fieldProp(1)%species%diff_tensor%Dzz) / 3.0_rk / nu - 1.0_rk
+        a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
+          & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
+        a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
+          & fieldProp(1)%species%diff_tensor%Dzz)
     
         ! attention: D_ab has a multiplier of 2 in ADE
-        a_xy = fieldProp(1)%species%diff_coeff%Dxy / nu
-        a_xz = fieldProp(1)%species%diff_coeff%Dxz / nu
-        a_yz = fieldProp(1)%species%diff_coeff%Dyz / nu
+        a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
+        a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
+        a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
     
     
         nodeloop: do iElem = 1, nSolve
@@ -4883,7 +4895,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     
           do iDir = 1, layout%fStencil%QQ
             pdfTmp( iDir ) = &
-              & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+              & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
+              & layout%fstencil%qq+ varsys%nscalars*0 )
           end do
           rho = sum( pdfTmp )
     
@@ -4903,27 +4916,18 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
             P_e = (19 * cq2 - 30) / 42
             P_xx = (3 * cqx2 - cq2) / 12
             P_ww = (cqy2 - cqz2) / 6
-            P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(2, iDir))) / 4
-            P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(3, iDir))) / 4
-            P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * dble( layout%fStencil%cxDir(3, iDir))) / 4
+            P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * &
+              & dble( layout%fStencil%cxDir(2, iDir))) / 4
+            P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * &
+              & dble( layout%fStencil%cxDir(3, iDir))) / 4
+            P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * &
+              & dble( layout%fStencil%cxDir(3, iDir))) / 4
     
             ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
             feqPlus = rho * layout%weight( iDir ) * ( 1 +                  &   ! e_0
             & cs4inv * uc * uc * 0.5_rk -  usq * 0.5_rk * cs2inv ) +       &   ! Correction
             & rho * cs2 * (a_e * P_e + a_xy * P_xy + a_xz * P_xz + a_yz * P_yz + &
             & a_xx * P_xx + a_ww * P_ww) 
-
-            if (rho < 0) then
-              xc(1:3) = tem_BaryOfId( fPtr%solverData%geometry%tree,     &
-                &                           scheme%levelDesc(level)%total(iElem))
-              write(logUnit(1), *) "coord = ", xc(1:3)
-              write(logUnit(1), *) "feqPlus, iDir = ", feqPlus, iDir
-              write(logUnit(1), *) "a_e, a_xx, a_ww, a_xy, a_xz, a_yz = ", a_e, a_xx, a_ww, a_xy, a_xz, a_yz
-              write(logUnit(1), *) "P_e, P_xx, P_ww, P_xy, P_xz, P_yz = ", P_e, P_xx, P_ww, P_xy, P_xz, P_yz
-              write(logUnit(1), *) "Dxx = ", 1 + a_xx + a_e
-              write(logUnit(1), *) "Dyy = ", 1 - 0.5_rk * a_xx + a_e + a_ww
-              write(logUnit(1), *) "Dzz = ", 1 - 0.5_rk * a_xx + a_e - a_ww
-            end if
     
             feqMinus = rho * layout%weight( iDir ) * 3._rk * uc
     
@@ -4932,8 +4936,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
             fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
     
             outstate(                                                            &
-              & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =     &
-              &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)              &
+              & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) = &
+              &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)   &
               &                + aux_omega * (feqPlus - fPlus)
 
           end do
@@ -5019,40 +5023,40 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       
       ! define the 3 free parameters
       sxy = ( &
-        abs(fieldProp(1)%species%diff_coeff%Dxy) &
+        abs(fieldProp(1)%species%diff_tensor%Dxy) &
         & + min( &
-          & fieldProp(1)%species%diff_coeff%Dxx, &
-          & fieldProp(1)%species%diff_coeff%Dyy &
+          & fieldProp(1)%species%diff_tensor%Dxx, &
+          & fieldProp(1)%species%diff_tensor%Dyy &
         & ) &
       & ) / 2 ! free parameter for xy direction
 
       sxz = ( &
-        abs(fieldProp(1)%species%diff_coeff%Dxz) &
+        abs(fieldProp(1)%species%diff_tensor%Dxz) &
         & + min( &
-          & fieldProp(1)%species%diff_coeff%Dxx, &
-          & fieldProp(1)%species%diff_coeff%Dzz &
+          & fieldProp(1)%species%diff_tensor%Dxx, &
+          & fieldProp(1)%species%diff_tensor%Dzz &
         & ) &
       & ) / 2 ! free parameter for xz direction
 
       syz = ( &
-        abs(fieldProp(1)%species%diff_coeff%Dyz) &
+        abs(fieldProp(1)%species%diff_tensor%Dyz) &
         & + min( &
-          & fieldProp(1)%species%diff_coeff%Dyy, &
-          & fieldProp(1)%species%diff_coeff%Dzz &
+          & fieldProp(1)%species%diff_tensor%Dyy, &
+          & fieldProp(1)%species%diff_tensor%Dzz &
         & ) &
       & ) / 2 ! free parameter for xz direction
       
       ! \Lambda_xx, yy, zz with t_1 = 1/6
-      omega(1) = (fieldProp(1)%species%diff_coeff%Dxx - sxy - sxz) * 9.0_rk 
-      omega(2) = (fieldProp(1)%species%diff_coeff%Dyy - sxy - syz) * 9.0_rk 
-      omega(3) = (fieldProp(1)%species%diff_coeff%Dzz - sxz - syz) * 9.0_rk 
+      omega(1) = (fieldProp(1)%species%diff_tensor%Dxx - sxy - sxz) * 9.0_rk 
+      omega(2) = (fieldProp(1)%species%diff_tensor%Dyy - sxy - syz) * 9.0_rk 
+      omega(3) = (fieldProp(1)%species%diff_tensor%Dzz - sxz - syz) * 9.0_rk 
       ! \Lambda_\pn xy, \pn xz, \pn yz with t_2 = 1/12
-      omega(4) = 9.0_rk * (sxy + fieldProp(1)%species%diff_coeff%Dxy)
-      omega(5) = 9.0_rk * (sxy - fieldProp(1)%species%diff_coeff%Dxy)
-      omega(6) = 9.0_rk * (sxz + fieldProp(1)%species%diff_coeff%Dxz)
-      omega(7) = 9.0_rk * (sxz - fieldProp(1)%species%diff_coeff%Dxz)
-      omega(8) = 9.0_rk * (syz + fieldProp(1)%species%diff_coeff%Dyz)
-      omega(9) = 9.0_rk * (syz - fieldProp(1)%species%diff_coeff%Dyz)
+      omega(4) = 9.0_rk * (sxy + fieldProp(1)%species%diff_tensor%Dxy)
+      omega(5) = 9.0_rk * (sxy - fieldProp(1)%species%diff_tensor%Dxy)
+      omega(6) = 9.0_rk * (sxz + fieldProp(1)%species%diff_tensor%Dxz)
+      omega(7) = 9.0_rk * (sxz - fieldProp(1)%species%diff_tensor%Dxz)
+      omega(8) = 9.0_rk * (syz + fieldProp(1)%species%diff_tensor%Dyz)
+      omega(9) = 9.0_rk * (syz - fieldProp(1)%species%diff_tensor%Dyz)
       ! get omega from \Lambda
       omega = 1.0_rk / (omega + 0.5_rk)
       aux_omega = 1.0_rk ! free parameter
@@ -5063,7 +5067,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
         do iDir = 1, layout%fStencil%QQ
           pdfTmp( iDir ) = &
-            & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+            & instate( neigh (( idir-1)* nelems+ ielem)+ &
+            & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
         end do
         rho = sum( pdfTmp )
         
@@ -5089,24 +5094,42 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         !!  18    !<                  y+,x+
         !!  19    !< rest density is last
         !!         
-        p(1) = aux_omega * (rho * layout%weight(4) - 0.5_rk * (pdfTmp(4) + pdfTmp(1)))
-        m(1) = omega(1) * (rho * layout%weight(4) * 3.0_rk * u_fluid(1) - 0.5_rk * (pdfTmp(4) - pdfTmp(1)))
-        p(2) = aux_omega * (rho * layout%weight(5) - 0.5_rk * (pdfTmp(5) + pdfTmp(2)))
-        m(2) = omega(2) * (rho * layout%weight(5) * 3.0_rk * u_fluid(2) - 0.5_rk * (pdfTmp(5) - pdfTmp(2)))
-        p(3) = aux_omega * (rho * layout%weight(6) - 0.5_rk * (pdfTmp(6) + pdfTmp(3)))
-        m(3) = omega(3) * (rho * layout%weight(6) * 3.0_rk * u_fluid(3) - 0.5_rk * (pdfTmp(6) - pdfTmp(3)))
-        p(4) = aux_omega * (rho * layout%weight(18) - 0.5_rk * (pdfTmp(18) + pdfTmp(15)))
-        m(4) = omega(4) * (rho * layout%weight(18) * 3.0_rk * (u_fluid(1) + u_fluid(2)) - 0.5_rk * (pdfTmp(18) - pdfTmp(15)))
-        p(5) = aux_omega * (rho * layout%weight(17) - 0.5_rk * (pdfTmp(17) + pdfTmp(16)))
-        m(5) = omega(5) * (rho * layout%weight(17) * 3.0_rk * (u_fluid(1) - u_fluid(2)) - 0.5_rk * (pdfTmp(17) - pdfTmp(16)))
-        p(6) = aux_omega * (rho * layout%weight(14) - 0.5_rk * (pdfTmp(14) + pdfTmp(11)))
-        m(6) = omega(6) * (rho * layout%weight(14) * 3.0_rk * (u_fluid(1) + u_fluid(3)) - 0.5_rk * (pdfTmp(14) - pdfTmp(11)))
-        p(7) = aux_omega * (rho * layout%weight(12) - 0.5_rk * (pdfTmp(12) + pdfTmp(13)))
-        m(7) = omega(7) * (rho * layout%weight(12) * 3.0_rk * (u_fluid(1) - u_fluid(3)) - 0.5_rk * (pdfTmp(12) - pdfTmp(13)))
-        p(8) = aux_omega * (rho * layout%weight(10) - 0.5_rk * (pdfTmp(10) + pdfTmp(7)))
-        m(8) = omega(8) * (rho * layout%weight(10) * 3.0_rk * (u_fluid(2) + u_fluid(3)) - 0.5_rk * (pdfTmp(10) - pdfTmp(7)))
-        p(9) = aux_omega * (rho * layout%weight(9) - 0.5_rk * (pdfTmp(9) + pdfTmp(8)))
-        m(9) = omega(9) * (rho * layout%weight(9) * 3.0_rk * (u_fluid(2) - u_fluid(3)) - 0.5_rk * (pdfTmp(9) - pdfTmp(8)))
+        p(1) = aux_omega * (rho * layout%weight(4) - 0.5_rk * &
+          &  (pdfTmp(4) + pdfTmp(1)))
+        m(1) = omega(1) * (rho * layout%weight(4) * 3.0_rk *  &
+          & u_fluid(1) - 0.5_rk * (pdfTmp(4) - pdfTmp(1)))
+        p(2) = aux_omega * (rho * layout%weight(5) - 0.5_rk * &
+          &  (pdfTmp(5) + pdfTmp(2)))
+        m(2) = omega(2) * (rho * layout%weight(5) * 3.0_rk *  &
+          & u_fluid(2) - 0.5_rk * (pdfTmp(5) - pdfTmp(2)))
+        p(3) = aux_omega * (rho * layout%weight(6) - 0.5_rk * &
+          &  (pdfTmp(6) + pdfTmp(3)))
+        m(3) = omega(3) * (rho * layout%weight(6) * 3.0_rk *  &
+          & u_fluid(3) - 0.5_rk * (pdfTmp(6) - pdfTmp(3)))
+        p(4) = aux_omega * (rho * layout%weight(18) - 0.5_rk  &
+          & * (pdfTmp(18) + pdfTmp(15)))
+        m(4) = omega(4) * (rho * layout%weight(18) * 3.0_rk * &
+          &  (u_fluid(1) + u_fluid(2)) - 0.5_rk * (pdfTmp(18) - pdfTmp(15)))
+        p(5) = aux_omega * (rho * layout%weight(17) - 0.5_rk  &
+          & * (pdfTmp(17) + pdfTmp(16)))
+        m(5) = omega(5) * (rho * layout%weight(17) * 3.0_rk * &
+          &  (u_fluid(1) - u_fluid(2)) - 0.5_rk * (pdfTmp(17) - pdfTmp(16)))
+        p(6) = aux_omega * (rho * layout%weight(14) - 0.5_rk  &
+          & * (pdfTmp(14) + pdfTmp(11)))
+        m(6) = omega(6) * (rho * layout%weight(14) * 3.0_rk * &
+          &  (u_fluid(1) + u_fluid(3)) - 0.5_rk * (pdfTmp(14) - pdfTmp(11)))
+        p(7) = aux_omega * (rho * layout%weight(12) - 0.5_rk  &
+          & * (pdfTmp(12) + pdfTmp(13)))
+        m(7) = omega(7) * (rho * layout%weight(12) * 3.0_rk * &
+          &  (u_fluid(1) - u_fluid(3)) - 0.5_rk * (pdfTmp(12) - pdfTmp(13)))
+        p(8) = aux_omega * (rho * layout%weight(10) - 0.5_rk  &
+          & * (pdfTmp(10) + pdfTmp(7)))
+        m(8) = omega(8) * (rho * layout%weight(10) * 3.0_rk * &
+          &  (u_fluid(2) + u_fluid(3)) - 0.5_rk * (pdfTmp(10) - pdfTmp(7)))
+        p(9) = aux_omega * (rho * layout%weight(9) - 0.5_rk * &
+          &  (pdfTmp(9) + pdfTmp(8)))
+        m(9) = omega(9) * (rho * layout%weight(9) * 3.0_rk *  &
+          & (u_fluid(2) - u_fluid(3)) - 0.5_rk * (pdfTmp(9) - pdfTmp(8)))
 
         outstate(( ielem-1)* varsys%nscalars+4) = pdfTmp(4) + p(1) + m(1)
         outstate(( ielem-1)* varsys%nscalars+1) = pdfTmp(1) + p(1) - m(1)
@@ -5126,7 +5149,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         outstate(( ielem-1)* varsys%nscalars+7) = pdfTmp(7) + p(8) - m(8)
         outstate(( ielem-1)* varsys%nscalars+9) = pdfTmp(9) + p(9) + m(9)
         outstate(( ielem-1)* varsys%nscalars+8) = pdfTmp(8) + p(9) - m(9)
-        outstate(( ielem-1)* varsys%nscalars+19) = pdfTmp(19) + aux_omega * (rho * layout%weight(19) - pdfTmp(19))
+        outstate(( ielem-1)* varsys%nscalars+19) = pdfTmp(19) + aux_omega * &
+          & (rho * layout%weight(19) - pdfTmp(19))
         
       end do nodeloop
   
@@ -5235,17 +5259,17 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           
         ! for isotropic diffusion factor, it turns out to be 1st order trt
         nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-        a_e = (fieldProp(1)%species%diff_coeff%Dxx + fieldProp(1)%species%diff_coeff%Dyy + &
-          & fieldProp(1)%species%diff_coeff%Dzz) / 3.0_rk / nu - 1.0_rk
-        a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_coeff%Dxx - 0.5_rk * &
-          & (fieldProp(1)%species%diff_coeff%Dyy + fieldProp(1)%species%diff_coeff%Dzz))
-        a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_coeff%Dyy - &
-          & fieldProp(1)%species%diff_coeff%Dzz)
+        a_e = (fieldProp(1)%species%diff_tensor%Dxx + fieldProp(1)%species%diff_tensor%Dyy + &
+          & fieldProp(1)%species%diff_tensor%Dzz) / 3.0_rk / nu - 1.0_rk
+        a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
+          & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
+        a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
+          & fieldProp(1)%species%diff_tensor%Dzz)
     
         ! attention: D_ab has a multiplier of 2 in ADE
-        a_xy = fieldProp(1)%species%diff_coeff%Dxy / nu
-        a_xz = fieldProp(1)%species%diff_coeff%Dxz / nu
-        a_yz = fieldProp(1)%species%diff_coeff%Dyz / nu
+        a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
+        a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
+        a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
         
         magicParam = 0.25_rk
         aux_omega = 1.0_rk / (magicParam / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
@@ -5307,7 +5331,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           rho = 0.0_rk
           do iDir = 1, layout%fStencil%QQ
             rho = rho + &
-              & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+              & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
+              & layout%fstencil%qq+ varsys%nscalars*0 )
           end do
 
           ! compute the equilibrium moments of the pdf
