@@ -292,10 +292,10 @@ contains
     endif
 
     !> Get diffusivity tensor if defined
-    call aot_table_open( L = conf,                                             &
-      &                  parent = spc_handle,                                  &
-      &                  thandle = sub_handle,                                 &
-      &                  key = 'diff_tensor')
+    call aot_table_open( L = conf,             &
+      &                  parent = spc_handle,  &
+      &                  thandle = sub_handle, &
+      &                  key = 'diff_tensor'   )
 
     if ( sub_handle /= 0 ) then
       call aot_get_val( L = conf,                                              &
