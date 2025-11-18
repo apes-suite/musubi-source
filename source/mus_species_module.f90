@@ -298,12 +298,12 @@ contains
       &                  key = 'diff_tensor'   )
 
     if ( sub_handle /= 0 ) then
-      call aot_get_val( L = conf,                                              &
-        &               thandle = sub_handle,                                  &
-        &               key = 'Dxx',                                           &
-        &               val = me%diff_tensor(Dxx),                              &
-        &               ErrCode = iError,                                      &
-        &               default = 0.0_rk )
+      call aot_get_val( L = conf,                  &
+        &               thandle = sub_handle,      &
+        &               key = 'Dxx',               &
+        &               val = me%diff_tensor(Dxx), &
+        &               ErrCode = iError,          &
+        &               default = 0.0_rk           )
 
       call aot_get_val( L = conf,                                              &
         &               thandle = sub_handle,                                  &
