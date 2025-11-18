@@ -129,8 +129,8 @@ contains
         case( 'd3q19' )
           compute => mus_advRel_kPS_rTRT_vLmodel_lD3Q19
         case default
-          write(logUnit(1),*) 'The selected layout is not supported: '//       &
-            &                  trim(layout)
+          write(logUnit(1),*) 'The selected layout is not supported: ' &
+            &                  // trim(layout)
           call tem_abort()
         end select
       case default
