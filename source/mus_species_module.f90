@@ -319,12 +319,12 @@ contains
         &               ErrCode = iError,          &
         &               default = 0.0_rk           )
 
-      call aot_get_val( L = conf,                                              &
-        &               thandle = sub_handle,                                  &
-        &               key = 'Dxy',                                           &
-        &               val = me%diff_tensor(Dxy),                              &
-        &               ErrCode = iError,                                      &
-        &               default = 0.0_rk )
+      call aot_get_val( L = conf,                  &
+        &               thandle = sub_handle,      &
+        &               key = 'Dxy',               &
+        &               val = me%diff_tensor(Dxy), &
+        &               ErrCode = iError,          &
+        &               default = 0.0_rk           )
 
       call aot_get_val( L = conf,                  &
         &               thandle = sub_handle,      &
