@@ -4368,9 +4368,157 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rBGK_vEmodel_lD3Q19( fieldProp, inState, outState,   &
-      &                            auxField, neigh, nElems, nSolve, level, layout, &
-      &                            params, varSys, derVarPos                       )
+  subroutine mus_advRel_kPS_rBGK_vEmodel_lD3Q19( fieldProp, inState, outState,   &
+    &                            auxField, neigh, nElems, nSolve, level, layout, &
+    &                            params, varSys, derVarPos                       )
+    ! -------------------------------------------------------------------- !
+    !> Array of field properties (fluid or species)
+    type(mus_field_prop_type), intent(in) :: fieldProp(:)
+    !> variable system definition
+    type(tem_varSys_type), intent(in) :: varSys
+    !> current layout
+    type(mus_scheme_layout_type), intent(in) :: layout
+    !> number of elements in state Array
+    integer, intent(in) :: nElems
+    !> input  pdf vector
+    real(kind=rk), intent(in)  ::  inState(nElems * varSys%nScalars)
+    !> output pdf vector
+    real(kind=rk), intent(out) :: outState(nElems * varSys%nScalars)
+    !> Auxiliary field computed from pre-collision state
+    !! Is updated with correct velocity field for multicomponent models
+    real(kind=rk), intent(inout) :: auxField(nElems * varSys%nAuxScalars)
+    !> connectivity vector
+    integer, intent(in) :: neigh(nElems * layout%fStencil%QQ)
+    !> number of elements solved in kernel
+    integer, intent(in) :: nSolve
+    !> current level
+    integer,intent(in) :: level
+    !> global parameters
+    type(mus_param_type),intent(in) :: params
+    !> position of derived quantities in varsys for all fields
+    type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
+    ! -------------------------------------------------------------------- !
+    integer :: iElem, iDir
+    type(mus_varSys_data_type), pointer :: fPtr
+    type(mus_scheme_type), pointer :: scheme
+    real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
+    real(kind=rk) :: rho, feq
+    real(kind=rk) :: d_omega, nu_q
+    real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
+    real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2
+    real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
+    real(kind=rk) :: P_e, P_xx, P_ww, P_xy, P_xz, P_yz
+    integer :: vel_varPos ! position of transport velocity variable in varSys
+    real(kind=rk) :: inv_vel, u_fluid(3)
+    ! --------------------------------------------------------------------------
+    ! access scheme via 1st variable method data which is a state variable
+    call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
+    scheme => fPtr%solverData%scheme
+
+    ! passive scalar has only one transport Variable
+    vel_varPos = scheme%transVar%method(1)%data_varPos
+    ! Get velocity field
+    call varSys%method%val(vel_varPos)%get_valOfIndex( &
+      & varSys  = varSys,                              &
+      & time    = params%general%simControl%now,       &
+      & iLevel  = level,                               &
+      & idx     = scheme%transVar%method(1)            &
+      &           %pntIndex%indexLvl(level)            &
+      &           %val(1:nSolve),                      &
+      & nVals   = nSolve,                              &
+      & res     = transVel                             )
+
+    ! convert physical velocity into LB velocity
+    inv_vel = 1.0_rk / params%physics%fac( level )%vel
+    transVel = transVel * inv_vel
+
+    ! for isotropic diffusion factor, it turns out to be 1st order bgk
+    d_omega = fieldProp(1)%species%omega
+    ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
+    nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
+    a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  &
+      &    + fieldProp(1)%species%diff_tensor(Dyy) &
+      &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+    a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)              &
+      &                          - 0.5_rk * ( fieldProp(1)%species%diff_tensor(Dyy)    &
+      &                                      + fieldProp(1)%species%diff_tensor(Dzz) ) &
+      &                          )
+    a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy)  &
+      &                     - fieldProp(1)%species%diff_tensor(Dzz) )
+
+    ! attention: D_ab has a multiplier of 2 in ADE
+    a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
+    a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
+    a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
+
+    elemloop: do iElem = 1, nSolve
+      ! x-, y- and z-velocity from transport field
+      u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
+
+      do iDir = 1, layout%fStencil%QQ
+        pdfTmp( iDir ) =                                  &
+          & instate( neigh (( idir-1)* nelems+ ielem)+    &
+          & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+      end do
+      rho = sum( pdfTmp )
+
+      do iDir = 1, layout%fStencil%QQ
+        ! compute c_i * u
+        uc = real(layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
+          & + real(layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
+          & + real(layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
+
+        cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
+          &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
+        cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
+          &   * real( layout%fStencil%cxDir(2, iDir), kind=rk ) 
+        cqz2 = real( layout%fStencil%cxDir(3, iDir), kind=rk ) &
+          &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )
+        cq2 = cqx2 + cqy2 + cqz2   
+
+        P_e = (19 * cq2 - 30) / 42
+        P_xx = (3 * cqx2 - cq2) / 12
+        P_ww = (cqy2 - cqz2) / 6
+        P_xy = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+          &   * real( layout%fStencil%cxDir(2, iDir), kind=rk )) / 4
+        P_xz = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+          &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
+        P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
+          &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
+
+        feq = rho * ( layout%weight( iDir )               &   ! e_0
+          &         + layout%weight( iDir ) * cs2inv * uc &   ! C_\alpha
+          &         + cs2 * (a_e * P_e + a_xy * P_xy      &
+          &                 + a_xz * P_xz + a_yz * P_yz   &
+          &                 + a_xx * P_xx + a_ww * P_ww)  )
+
+        outstate(                                                             &
+          & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
+          &                pdfTmp( iDir ) + d_omega * (feq - pdfTmp( iDir ))
+
+      end do
+
+    end do elemloop
+
+    end subroutine mus_advRel_kPS_rBGK_vEmodel_lD3Q19
+  ! ****************************************************************************** !
+  
+  
+! **************************************************************************** !
+  !> Advection relaxation routine based on the E-Model for the D3Q19
+  !! Lattice Boltzmann model for the generic advection and anisotropic-dispersion
+  !! equation
+  !!
+  !!   Irina Ginzburg (2005), "Equilibrium-type and link-type lattice Boltzmann
+  !!   models for generic advection and anisotropic-dispersion equation",
+  !!   Advances in Water Resources, Volume 28, Issue 11
+  !!
+  !! This subroutine interface must match the abstract interface definition
+  !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
+  !! via [[mus_scheme_type:compute]] function pointer.
+  subroutine mus_advRel_kPS_rTRT_vEmodel_lD3Q19( fieldProp, inState, outState,   &
+    &                            auxField, neigh, nElems, nSolve, level, layout, &
+    &                            params, varSys, derVarPos               )
       ! -------------------------------------------------------------------- !
       !> Array of field properties (fluid or species)
       type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -4398,12 +4546,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       !> position of derived quantities in varsys for all fields
       type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
       ! -------------------------------------------------------------------- !
-      integer :: iElem, iDir
+      integer :: iElem, iDir, invDir
       type(mus_varSys_data_type), pointer :: fPtr
       type(mus_scheme_type), pointer :: scheme
       real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
-      real(kind=rk) :: rho, feq
-      real(kind=rk) :: d_omega, nu_q
+      real(kind=rk) :: rho, feqPlus, feqMinus, fPlus, fMinus
+      real(kind=rk) :: d_omega, aux_omega, nu_q, d_lambda
       real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
       real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2
       real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
@@ -4431,19 +4579,22 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       ! convert physical velocity into LB velocity
       inv_vel = 1.0_rk / params%physics%fac( level )%vel
       transVel = transVel * inv_vel
-  
-      ! for isotropic diffusion factor, it turns out to be 1st order bgk
+
       d_omega = fieldProp(1)%species%omega
+      d_lambda = fieldProp(1)%species%lambda
+      aux_omega = 1.0_rk / (d_lambda / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
+        
+      ! for isotropic diffusion factor, it turns out to be 1st order trt
       ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
       nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
-      a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  &
-        &    + fieldProp(1)%species%diff_tensor(Dyy) &
+      a_e = ( fieldProp(1)%species%diff_tensor(Dxx)   &
+        &    + fieldProp(1)%species%diff_tensor(Dyy)  &
         &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
-      a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)              &
-        &                          - 0.5_rk * ( fieldProp(1)%species%diff_tensor(Dyy)    &
-        &                                      + fieldProp(1)%species%diff_tensor(Dzz) ) &
-        &                          )
-      a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy)  &
+      a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)             &
+        &                          - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    & 
+        &                                      + fieldProp(1)%species%diff_tensor(Dzz)) &
+        &                            )
+      a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy) &
         &                     - fieldProp(1)%species%diff_tensor(Dzz) )
   
       ! attention: D_ab has a multiplier of 2 in ADE
@@ -4451,23 +4602,24 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
       a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
   
+  
       elemloop: do iElem = 1, nSolve
         ! x-, y- and z-velocity from transport field
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
   
         do iDir = 1, layout%fStencil%QQ
-          pdfTmp( iDir ) =                                  &
-            & instate( neigh (( idir-1)* nelems+ ielem)+    &
+          pdfTmp( iDir ) = &
+            & instate( neigh (( idir-1)* nelems+ ielem)+ &
             & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
         end do
         rho = sum( pdfTmp )
   
         do iDir = 1, layout%fStencil%QQ
           ! compute c_i * u
-          uc = real(layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
-            & + real(layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
-            & + real(layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
-  
+          uc = real( layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
+            & + real( layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
+            & + real( layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
+
           cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
             &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
           cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
@@ -4486,181 +4638,29 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
             &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
   
-          feq = rho * ( layout%weight( iDir )               &   ! e_0
-            &         + layout%weight( iDir ) * cs2inv * uc &   ! C_\alpha
-            &         + cs2 * (a_e * P_e + a_xy * P_xy      &
-            &                 + a_xz * P_xz + a_yz * P_yz   &
-            &                 + a_xx * P_xx + a_ww * P_ww)  )
+          ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
+          feqPlus = rho * ( layout%weight( iDir )                & ! e_0
+            &              + cs2 * (a_e * P_e + a_xy * P_xy      &
+            &                       + a_xz * P_xz + a_yz * P_yz  &
+            &                       + a_xx * P_xx + a_ww * P_ww) &
+            &              )
   
-          outstate(                                                             &
-            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
-            &                pdfTmp( iDir ) + d_omega * (feq - pdfTmp( iDir ))
+          feqMinus = rho * layout%weight( iDir ) * 3._rk * uc
   
+          invDir = layout%fStencil%cxDirInv(iDir)
+          fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
+          fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
+  
+          outstate(                                                            &
+            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) = &
+            &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)   &
+            &                + aux_omega * (feqPlus - fPlus)
         end do
   
       end do elemloop
   
-      end subroutine mus_advRel_kPS_rBGK_vEmodel_lD3Q19
+      end subroutine mus_advRel_kPS_rTRT_vEmodel_lD3Q19
     ! ****************************************************************************** !
-  
-  
-! **************************************************************************** !
-  !> Advection relaxation routine based on the E-Model for the D3Q19
-  !! Lattice Boltzmann model for the generic advection and anisotropic-dispersion
-  !! equation
-  !!
-  !!   Irina Ginzburg (2005), "Equilibrium-type and link-type lattice Boltzmann
-  !!   models for generic advection and anisotropic-dispersion equation",
-  !!   Advances in Water Resources, Volume 28, Issue 11
-  !!
-  !! This subroutine interface must match the abstract interface definition
-  !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
-  !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rTRT_vEmodel_lD3Q19( fieldProp, inState, outState,   &
-      &                            auxField, neigh, nElems, nSolve, level, layout, &
-      &                            params, varSys, derVarPos               )
-        ! -------------------------------------------------------------------- !
-        !> Array of field properties (fluid or species)
-        type(mus_field_prop_type), intent(in) :: fieldProp(:)
-        !> variable system definition
-        type(tem_varSys_type), intent(in) :: varSys
-        !> current layout
-        type(mus_scheme_layout_type), intent(in) :: layout
-        !> number of elements in state Array
-        integer, intent(in) :: nElems
-        !> input  pdf vector
-        real(kind=rk), intent(in)  ::  inState(nElems * varSys%nScalars)
-        !> output pdf vector
-        real(kind=rk), intent(out) :: outState(nElems * varSys%nScalars)
-        !> Auxiliary field computed from pre-collision state
-        !! Is updated with correct velocity field for multicomponent models
-        real(kind=rk), intent(inout) :: auxField(nElems * varSys%nAuxScalars)
-        !> connectivity vector
-        integer, intent(in) :: neigh(nElems * layout%fStencil%QQ)
-        !> number of elements solved in kernel
-        integer, intent(in) :: nSolve
-        !> current level
-        integer,intent(in) :: level
-        !> global parameters
-        type(mus_param_type),intent(in) :: params
-        !> position of derived quantities in varsys for all fields
-        type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
-        ! -------------------------------------------------------------------- !
-        integer :: iElem, iDir, invDir
-        type(mus_varSys_data_type), pointer :: fPtr
-        type(mus_scheme_type), pointer :: scheme
-        real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
-        real(kind=rk) :: rho, feqPlus, feqMinus, fPlus, fMinus
-        real(kind=rk) :: d_omega, aux_omega, nu_q, d_lambda
-        real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
-        real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2
-        real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
-        real(kind=rk) :: P_e, P_xx, P_ww, P_xy, P_xz, P_yz
-        integer :: vel_varPos ! position of transport velocity variable in varSys
-        real(kind=rk) :: inv_vel, u_fluid(3)
-        ! --------------------------------------------------------------------------
-        ! access scheme via 1st variable method data which is a state variable
-        call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
-        scheme => fPtr%solverData%scheme
-    
-        ! passive scalar has only one transport Variable
-        vel_varPos = scheme%transVar%method(1)%data_varPos
-        ! Get velocity field
-        call varSys%method%val(vel_varPos)%get_valOfIndex( &
-          & varSys  = varSys,                              &
-          & time    = params%general%simControl%now,       &
-          & iLevel  = level,                               &
-          & idx     = scheme%transVar%method(1)            &
-          &           %pntIndex%indexLvl(level)            &
-          &           %val(1:nSolve),                      &
-          & nVals   = nSolve,                              &
-          & res     = transVel                             )
-    
-        ! convert physical velocity into LB velocity
-        inv_vel = 1.0_rk / params%physics%fac( level )%vel
-        transVel = transVel * inv_vel
-
-        d_omega = fieldProp(1)%species%omega
-        d_lambda = fieldProp(1)%species%lambda
-        aux_omega = 1.0_rk / (d_lambda / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
-          
-        ! for isotropic diffusion factor, it turns out to be 1st order trt
-        ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
-        nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
-        a_e = ( fieldProp(1)%species%diff_tensor(Dxx)   &
-          &    + fieldProp(1)%species%diff_tensor(Dyy)  &
-          &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
-        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)             &
-          &                          - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    & 
-          &                                      + fieldProp(1)%species%diff_tensor(Dzz)) &
-          &                            )
-        a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy) &
-          &                     - fieldProp(1)%species%diff_tensor(Dzz) )
-    
-        ! attention: D_ab has a multiplier of 2 in ADE
-        a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
-        a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
-        a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
-    
-    
-        elemloop: do iElem = 1, nSolve
-          ! x-, y- and z-velocity from transport field
-          u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
-    
-          do iDir = 1, layout%fStencil%QQ
-            pdfTmp( iDir ) = &
-              & instate( neigh (( idir-1)* nelems+ ielem)+ &
-              & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
-          end do
-          rho = sum( pdfTmp )
-    
-          do iDir = 1, layout%fStencil%QQ
-            ! compute c_i * u
-            uc = real( layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
-              & + real( layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
-              & + real( layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
-  
-            cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
-              &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
-            cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
-              &   * real( layout%fStencil%cxDir(2, iDir), kind=rk ) 
-            cqz2 = real( layout%fStencil%cxDir(3, iDir), kind=rk ) &
-              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )
-            cq2 = cqx2 + cqy2 + cqz2   
-    
-            P_e = (19 * cq2 - 30) / 42
-            P_xx = (3 * cqx2 - cq2) / 12
-            P_ww = (cqy2 - cqz2) / 6
-            P_xy = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
-              &   * real( layout%fStencil%cxDir(2, iDir), kind=rk )) / 4
-            P_xz = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
-              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
-            P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
-              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
-    
-            ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
-            feqPlus = rho * ( layout%weight( iDir )                & ! e_0
-              &              + cs2 * (a_e * P_e + a_xy * P_xy      &
-              &                       + a_xz * P_xz + a_yz * P_yz  &
-              &                       + a_xx * P_xx + a_ww * P_ww) &
-              &              )
-    
-            feqMinus = rho * layout%weight( iDir ) * 3._rk * uc
-    
-            invDir = layout%fStencil%cxDirInv(iDir)
-            fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
-            fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
-    
-            outstate(                                                            &
-              & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) = &
-              &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)   &
-              &                + aux_omega * (feqPlus - fPlus)
-          end do
-    
-        end do elemloop
-    
-        end subroutine mus_advRel_kPS_rTRT_vEmodel_lD3Q19
-      ! ****************************************************************************** !
     
 
         
@@ -4679,9 +4679,164 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rBGK_vEmodelCorr_lD3Q19( fieldProp, inState, outState, &
-      &                            auxField, neigh, nElems, nSolve, level, layout,   &
-      &                            params, varSys, derVarPos               )
+  subroutine mus_advRel_kPS_rBGK_vEmodelCorr_lD3Q19( fieldProp, inState, outState, &
+    &                            auxField, neigh, nElems, nSolve, level, layout,   &
+    &                            params, varSys, derVarPos               )
+    ! -------------------------------------------------------------------- !
+    !> Array of field properties (fluid or species)
+    type(mus_field_prop_type), intent(in) :: fieldProp(:)
+    !> variable system definition
+    type(tem_varSys_type), intent(in) :: varSys
+    !> current layout
+    type(mus_scheme_layout_type), intent(in) :: layout
+    !> number of elements in state Array
+    integer, intent(in) :: nElems
+    !> input  pdf vector
+    real(kind=rk), intent(in)  ::  inState(nElems * varSys%nScalars)
+    !> output pdf vector
+    real(kind=rk), intent(out) :: outState(nElems * varSys%nScalars)
+    !> Auxiliary field computed from pre-collision state
+    !! Is updated with correct velocity field for multicomponent models
+    real(kind=rk), intent(inout) :: auxField(nElems * varSys%nAuxScalars)
+    !> connectivity vector
+    integer, intent(in) :: neigh(nElems * layout%fStencil%QQ)
+    !> number of elements solved in kernel
+    integer, intent(in) :: nSolve
+    !> current level
+    integer,intent(in) :: level
+    !> global parameters
+    type(mus_param_type),intent(in) :: params
+    !> position of derived quantities in varsys for all fields
+    type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
+    ! -------------------------------------------------------------------- !
+    integer :: iElem, iDir
+    type(mus_varSys_data_type), pointer :: fPtr
+    type(mus_scheme_type), pointer :: scheme
+    real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
+    real(kind=rk) :: rho, feq
+    real(kind=rk) :: d_omega, nu_q
+    real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
+    real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2, usq
+    real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
+    real(kind=rk) :: P_e, P_xx, P_ww, P_xy, P_xz, P_yz
+    integer :: vel_varPos ! position of transport velocity variable in varSys
+    real(kind=rk) :: inv_vel, u_fluid(3)
+    ! --------------------------------------------------------------------------
+    ! access scheme via 1st variable method data which is a state variable
+    call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
+    scheme => fPtr%solverData%scheme
+
+    ! passive scalar has only one transport Variable
+    vel_varPos = scheme%transVar%method(1)%data_varPos
+    ! Get velocity field
+    call varSys%method%val(vel_varPos)%get_valOfIndex( &
+      & varSys  = varSys,                              &
+      & time    = params%general%simControl%now,       &
+      & iLevel  = level,                               &
+      & idx     = scheme%transVar%method(1)            &
+      &           %pntIndex%indexLvl(level)            &
+      &           %val(1:nSolve),                      &
+      & nVals   = nSolve,                              &
+      & res     = transVel                             )
+
+    ! convert physical velocity into LB velocity
+    inv_vel = 1.0_rk / params%physics%fac( level )%vel
+    transVel = transVel * inv_vel
+
+    ! for isotropic diffusion factor, it turns out to be 1st order bgk
+    d_omega = fieldProp(1)%species%omega
+    ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
+    nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
+    a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  &
+      &    + fieldProp(1)%species%diff_tensor(Dyy) &
+      &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+    a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)            &
+      &                         - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
+      &                                     + fieldProp(1)%species%diff_tensor(Dzz)) &
+      &                            )
+    a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy)  &
+      &                     - fieldProp(1)%species%diff_tensor(Dzz) )
+
+    ! attention: D_ab has a multiplier of 2 in ADE
+    a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
+    a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
+    a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
+
+    elemloop: do iElem = 1, nSolve
+      ! x-, y- and z-velocity from transport field
+      u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
+
+      do iDir = 1, layout%fStencil%QQ
+        pdfTmp( iDir ) = &
+          & instate( neigh (( idir-1)* nelems+ ielem)+ &
+          & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+      end do
+      rho = sum( pdfTmp )
+
+      do iDir = 1, layout%fStencil%QQ
+        ! compute c_i * u
+        uc = real( layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
+          & + real( layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
+          & + real( layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
+
+        usq = u_fluid(1)*u_fluid(1) + u_fluid(2)*u_fluid(2) + u_fluid(3)*u_fluid(3)
+
+        cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
+          &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
+        cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
+          &   * real( layout%fStencil%cxDir(2, iDir), kind=rk ) 
+        cqz2 = real( layout%fStencil%cxDir(3, iDir), kind=rk ) &
+          &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )
+        cq2 = cqx2 + cqy2 + cqz2   
+
+        P_e = (19 * cq2 - 30) / 42
+        P_xx = (3 * cqx2 - cq2) / 12
+        P_ww = (cqy2 - cqz2) / 6
+        P_xy = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+          &   * real( layout%fStencil%cxDir(2, iDir), kind=rk )) / 4
+        P_xz = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+          &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
+        P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
+          &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
+
+        feq = rho * layout%weight( iDir )               &
+          &   * ( 1 + cs2inv * uc                       & ! e_0 + C_\alpha
+          &     + cs4inv * uc * uc * 0.5_rk             &
+          &     - usq * 0.5_rk * cs2inv )               & ! Correction of numerical diffusion
+          &   + rho * cs2 * ( a_e * P_e + a_xy * P_xy   &
+          &                 + a_xz * P_xz + a_yz * P_yz &
+          &                 + a_xx * P_xx + a_ww * P_ww )
+
+        outstate(                                                             &
+          & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
+          &                pdfTmp( iDir ) + d_omega * (feq - pdfTmp( iDir ))
+
+      end do
+
+    end do elemloop
+
+    end subroutine mus_advRel_kPS_rBGK_vEmodelCorr_lD3Q19
+  ! ****************************************************************************** !
+  
+  
+! **************************************************************************** !
+  !> Advection relaxation routine based on the E-Model for the D3Q19
+  !! Lattice Boltzmann model for the generic advection and anisotropic-dispersion
+  !! equation. The E-Model is corrected to account for the effect of numerical
+  !! diffusion with the nonlinear equilibrium correction
+  !! \[ f_i^{eq,cor} = f_i^{eq} + \frac{w_i}{2 c_s^4} (c_{i\alpha} c_{i\beta} 
+  !!      - c_s^2 \delta_{\alpha\beta}) u_\alpha u_\beta \]
+  !!
+  !!   Irina Ginzburg (2005), "Equilibrium-type and link-type lattice Boltzmann
+  !!   models for generic advection and anisotropic-dispersion equation",
+  !!   Advances in Water Resources, Volume 28, Issue 11
+  !!
+  !! This subroutine interface must match the abstract interface definition
+  !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
+  !! via [[mus_scheme_type:compute]] function pointer.
+  subroutine mus_advRel_kPS_rTRT_vEmodelCorr_lD3Q19( fieldProp, inState, outState, &
+    &                            auxField, neigh, nElems, nSolve, level, layout,   &
+    &                            params, varSys, derVarPos               )
       ! -------------------------------------------------------------------- !
       !> Array of field properties (fluid or species)
       type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -4709,12 +4864,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       !> position of derived quantities in varsys for all fields
       type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
       ! -------------------------------------------------------------------- !
-      integer :: iElem, iDir
+      integer :: iElem, iDir, invDir
       type(mus_varSys_data_type), pointer :: fPtr
       type(mus_scheme_type), pointer :: scheme
       real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
-      real(kind=rk) :: rho, feq
-      real(kind=rk) :: d_omega, nu_q
+      real(kind=rk) :: rho, feqPlus, feqMinus, fPlus, fMinus
+      real(kind=rk) :: d_omega, aux_omega, nu_q, d_lambda
       real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
       real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2, usq
       real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
@@ -4742,9 +4897,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       ! convert physical velocity into LB velocity
       inv_vel = 1.0_rk / params%physics%fac( level )%vel
       transVel = transVel * inv_vel
-  
-      ! for isotropic diffusion factor, it turns out to be 1st order bgk
+
       d_omega = fieldProp(1)%species%omega
+      d_lambda = fieldProp(1)%species%lambda
+      aux_omega = 1.0_rk / (d_lambda / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
+        
+      ! for isotropic diffusion factor, it turns out to be 1st order trt
       ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
       nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
       a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  &
@@ -4754,13 +4912,14 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         &                         - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
         &                                     + fieldProp(1)%species%diff_tensor(Dzz)) &
         &                            )
-      a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy)  &
-        &                     - fieldProp(1)%species%diff_tensor(Dzz) )
+      a_ww = 0.5_rk * nu_q * (fieldProp(1)%species%diff_tensor(Dyy)  &
+        &                     - fieldProp(1)%species%diff_tensor(Dzz))
   
       ! attention: D_ab has a multiplier of 2 in ADE
       a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
       a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
       a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
+  
   
       elemloop: do iElem = 1, nSolve
         ! x-, y- and z-velocity from transport field
@@ -4768,8 +4927,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
         do iDir = 1, layout%fStencil%QQ
           pdfTmp( iDir ) = &
-            & instate( neigh (( idir-1)* nelems+ ielem)+ &
-            & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+            & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
+            & layout%fstencil%qq+ varsys%nscalars*0 )
         end do
         rho = sum( pdfTmp )
   
@@ -4780,7 +4939,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
             & + real( layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
 
           usq = u_fluid(1)*u_fluid(1) + u_fluid(2)*u_fluid(2) + u_fluid(3)*u_fluid(3)
-  
+
           cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
             &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
           cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
@@ -4799,190 +4958,31 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
             &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
   
-          feq = rho * layout%weight( iDir )               &
-            &   * ( 1 + cs2inv * uc                       & ! e_0 + C_\alpha
-            &     + cs4inv * uc * uc * 0.5_rk             &
-            &     - usq * 0.5_rk * cs2inv )               & ! Correction of numerical diffusion
-            &   + rho * cs2 * ( a_e * P_e + a_xy * P_xy   &
-            &                 + a_xz * P_xz + a_yz * P_yz &
-            &                 + a_xx * P_xx + a_ww * P_ww )
+          ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
+          feqPlus = rho * layout%weight( iDir ) * ( 1                        & ! e_0
+            &                                    + cs4inv * uc * uc * 0.5_rk &
+            &                                    - usq * 0.5_rk * cs2inv )   & ! Correction
+            &       + rho * cs2 * ( a_e * P_e + a_xy * P_xy                  &
+            &                      + a_xz * P_xz + a_yz * P_yz               &
+            &                      + a_xx * P_xx + a_ww * P_ww               ) 
   
-          outstate(                                                             &
-            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
-            &                pdfTmp( iDir ) + d_omega * (feq - pdfTmp( iDir ))
+          feqMinus = rho * layout%weight( iDir ) * 3._rk * uc
   
+          invDir = layout%fStencil%cxDirInv(iDir)
+          fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
+          fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
+  
+          outstate(                                                            &
+            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) = &
+            &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)   &
+            &                + aux_omega * (feqPlus - fPlus)
+
         end do
   
       end do elemloop
   
-      end subroutine mus_advRel_kPS_rBGK_vEmodelCorr_lD3Q19
+      end subroutine mus_advRel_kPS_rTRT_vEmodelCorr_lD3Q19
     ! ****************************************************************************** !
-  
-  
-! **************************************************************************** !
-  !> Advection relaxation routine based on the E-Model for the D3Q19
-  !! Lattice Boltzmann model for the generic advection and anisotropic-dispersion
-  !! equation. The E-Model is corrected to account for the effect of numerical
-  !! diffusion with the nonlinear equilibrium correction
-  !! \[ f_i^{eq,cor} = f_i^{eq} + \frac{w_i}{2 c_s^4} (c_{i\alpha} c_{i\beta} 
-  !!      - c_s^2 \delta_{\alpha\beta}) u_\alpha u_\beta \]
-  !!
-  !!   Irina Ginzburg (2005), "Equilibrium-type and link-type lattice Boltzmann
-  !!   models for generic advection and anisotropic-dispersion equation",
-  !!   Advances in Water Resources, Volume 28, Issue 11
-  !!
-  !! This subroutine interface must match the abstract interface definition
-  !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
-  !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rTRT_vEmodelCorr_lD3Q19( fieldProp, inState, outState, &
-      &                            auxField, neigh, nElems, nSolve, level, layout,   &
-      &                            params, varSys, derVarPos               )
-        ! -------------------------------------------------------------------- !
-        !> Array of field properties (fluid or species)
-        type(mus_field_prop_type), intent(in) :: fieldProp(:)
-        !> variable system definition
-        type(tem_varSys_type), intent(in) :: varSys
-        !> current layout
-        type(mus_scheme_layout_type), intent(in) :: layout
-        !> number of elements in state Array
-        integer, intent(in) :: nElems
-        !> input  pdf vector
-        real(kind=rk), intent(in)  ::  inState(nElems * varSys%nScalars)
-        !> output pdf vector
-        real(kind=rk), intent(out) :: outState(nElems * varSys%nScalars)
-        !> Auxiliary field computed from pre-collision state
-        !! Is updated with correct velocity field for multicomponent models
-        real(kind=rk), intent(inout) :: auxField(nElems * varSys%nAuxScalars)
-        !> connectivity vector
-        integer, intent(in) :: neigh(nElems * layout%fStencil%QQ)
-        !> number of elements solved in kernel
-        integer, intent(in) :: nSolve
-        !> current level
-        integer,intent(in) :: level
-        !> global parameters
-        type(mus_param_type),intent(in) :: params
-        !> position of derived quantities in varsys for all fields
-        type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
-        ! -------------------------------------------------------------------- !
-        integer :: iElem, iDir, invDir
-        type(mus_varSys_data_type), pointer :: fPtr
-        type(mus_scheme_type), pointer :: scheme
-        real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
-        real(kind=rk) :: rho, feqPlus, feqMinus, fPlus, fMinus
-        real(kind=rk) :: d_omega, aux_omega, nu_q, d_lambda
-        real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
-        real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2, usq
-        real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
-        real(kind=rk) :: P_e, P_xx, P_ww, P_xy, P_xz, P_yz
-        integer :: vel_varPos ! position of transport velocity variable in varSys
-        real(kind=rk) :: inv_vel, u_fluid(3)
-        ! --------------------------------------------------------------------------
-        ! access scheme via 1st variable method data which is a state variable
-        call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
-        scheme => fPtr%solverData%scheme
-    
-        ! passive scalar has only one transport Variable
-        vel_varPos = scheme%transVar%method(1)%data_varPos
-        ! Get velocity field
-        call varSys%method%val(vel_varPos)%get_valOfIndex( &
-          & varSys  = varSys,                              &
-          & time    = params%general%simControl%now,       &
-          & iLevel  = level,                               &
-          & idx     = scheme%transVar%method(1)            &
-          &           %pntIndex%indexLvl(level)            &
-          &           %val(1:nSolve),                      &
-          & nVals   = nSolve,                              &
-          & res     = transVel                             )
-    
-        ! convert physical velocity into LB velocity
-        inv_vel = 1.0_rk / params%physics%fac( level )%vel
-        transVel = transVel * inv_vel
-
-        d_omega = fieldProp(1)%species%omega
-        d_lambda = fieldProp(1)%species%lambda
-        aux_omega = 1.0_rk / (d_lambda / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
-          
-        ! for isotropic diffusion factor, it turns out to be 1st order trt
-        ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
-        nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
-        a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  &
-          &    + fieldProp(1)%species%diff_tensor(Dyy) &
-          &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
-        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)            &
-          &                         - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
-          &                                     + fieldProp(1)%species%diff_tensor(Dzz)) &
-          &                            )
-        a_ww = 0.5_rk * nu_q * (fieldProp(1)%species%diff_tensor(Dyy)  &
-          &                     - fieldProp(1)%species%diff_tensor(Dzz))
-    
-        ! attention: D_ab has a multiplier of 2 in ADE
-        a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
-        a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
-        a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
-    
-    
-        elemloop: do iElem = 1, nSolve
-          ! x-, y- and z-velocity from transport field
-          u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
-    
-          do iDir = 1, layout%fStencil%QQ
-            pdfTmp( iDir ) = &
-              & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
-              & layout%fstencil%qq+ varsys%nscalars*0 )
-          end do
-          rho = sum( pdfTmp )
-    
-          do iDir = 1, layout%fStencil%QQ
-            ! compute c_i * u
-            uc = real( layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
-              & + real( layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
-              & + real( layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
-
-            usq = u_fluid(1)*u_fluid(1) + u_fluid(2)*u_fluid(2) + u_fluid(3)*u_fluid(3)
-  
-            cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
-              &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
-            cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
-              &   * real( layout%fStencil%cxDir(2, iDir), kind=rk ) 
-            cqz2 = real( layout%fStencil%cxDir(3, iDir), kind=rk ) &
-              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )
-            cq2 = cqx2 + cqy2 + cqz2   
-    
-            P_e = (19 * cq2 - 30) / 42
-            P_xx = (3 * cqx2 - cq2) / 12
-            P_ww = (cqy2 - cqz2) / 6
-            P_xy = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
-              &   * real( layout%fStencil%cxDir(2, iDir), kind=rk )) / 4
-            P_xz = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
-              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
-            P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
-              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
-    
-            ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
-            feqPlus = rho * layout%weight( iDir ) * ( 1                        & ! e_0
-              &                                    + cs4inv * uc * uc * 0.5_rk &
-              &                                    - usq * 0.5_rk * cs2inv )   & ! Correction
-              &       + rho * cs2 * ( a_e * P_e + a_xy * P_xy                  &
-              &                      + a_xz * P_xz + a_yz * P_yz               &
-              &                      + a_xx * P_xx + a_ww * P_ww               ) 
-    
-            feqMinus = rho * layout%weight( iDir ) * 3._rk * uc
-    
-            invDir = layout%fStencil%cxDirInv(iDir)
-            fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
-            fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
-    
-            outstate(                                                            &
-              & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) = &
-              &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)   &
-              &                + aux_omega * (feqPlus - fPlus)
-
-          end do
-    
-        end do elemloop
-    
-        end subroutine mus_advRel_kPS_rTRT_vEmodelCorr_lD3Q19
-      ! ****************************************************************************** !
 
 
 ! **************************************************************************** !
@@ -4997,9 +4997,242 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rTRT_vLmodel_lD3Q19( fieldProp, inState, outState,   &
-      &                            auxField, neigh, nElems, nSolve, level, layout, &
-      &                            params, varSys, derVarPos               )
+  subroutine mus_advRel_kPS_rTRT_vLmodel_lD3Q19( fieldProp, inState, outState,   &
+    &                            auxField, neigh, nElems, nSolve, level, layout, &
+    &                            params, varSys, derVarPos               )
+    ! -------------------------------------------------------------------- !
+    !> Array of field properties (fluid or species)
+    type(mus_field_prop_type), intent(in) :: fieldProp(:)
+    !> variable system definition
+    type(tem_varSys_type), intent(in) :: varSys
+    !> current layout
+    type(mus_scheme_layout_type), intent(in) :: layout
+    !> number of elements in state Array
+    integer, intent(in) :: nElems
+    !> input  pdf vector
+    real(kind=rk), intent(in)  ::  inState(nElems * varSys%nScalars)
+    !> output pdf vector
+    real(kind=rk), intent(out) :: outState(nElems * varSys%nScalars)
+    !> Auxiliary field computed from pre-collision state
+    !! Is updated with correct velocity field for multicomponent models
+    real(kind=rk), intent(inout) :: auxField(nElems * varSys%nAuxScalars)
+    !> connectivity vector
+    integer, intent(in) :: neigh(nElems * layout%fStencil%QQ)
+    !> number of elements solved in kernel
+    integer, intent(in) :: nSolve
+    !> current level
+    integer,intent(in) :: level
+    !> global parameters
+    type(mus_param_type),intent(in) :: params
+    !> position of derived quantities in varsys for all fields
+    type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
+    ! -------------------------------------------------------------------- !
+    integer :: iElem, iDir
+    type(mus_varSys_data_type), pointer :: fPtr
+    type(mus_scheme_type), pointer :: scheme
+    real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
+    real(kind=rk) :: rho, sxy, sxz, syz
+    real(kind=rk) :: omega(9), aux_omega
+    real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
+    integer :: vel_varPos ! position of transport velocity variable in varSys
+    real(kind=rk) :: inv_vel, u_fluid(3)
+    ! symmetric and antisymmetric pairs in L-Model
+    integer, parameter :: p = 1
+    integer, parameter :: m = 2
+    real(kind=rk) :: pm(2, 9)
+    ! --------------------------------------------------------------------------
+    ! access scheme via 1st variable method data which is a state variable
+    call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
+    scheme => fPtr%solverData%scheme
+
+    ! passive scalar has only one transport Variable
+    vel_varPos = scheme%transVar%method(1)%data_varPos
+    ! Get velocity field
+    call varSys%method%val(vel_varPos)%get_valOfIndex( &
+      & varSys  = varSys,                              &
+      & time    = params%general%simControl%now,       &
+      & iLevel  = level,                               &
+      & idx     = scheme%transVar%method(1)            &
+      &           %pntIndex%indexLvl(level)            &
+      &           %val(1:nSolve),                      &
+      & nVals   = nSolve,                              &
+      & res     = transVel                             )
+
+    ! convert physical velocity into LB velocity
+    inv_vel = 1.0_rk / params%physics%fac( level )%vel
+    transVel = transVel * inv_vel
+    
+    ! define the 3 free parameters
+    sxy = ( abs(fieldProp(1)%species%diff_tensor(Dxy))      &
+      &      + min( fieldProp(1)%species%diff_tensor(Dxx),  &
+      &             fieldProp(1)%species%diff_tensor(Dyy) ) &
+      &    ) / 2 ! free parameter for xy direction
+
+    sxz = ( abs(fieldProp(1)%species%diff_tensor(Dxz))      &
+      &      + min( fieldProp(1)%species%diff_tensor(Dxx),  &
+      &             fieldProp(1)%species%diff_tensor(Dzz) ) &
+      &    ) / 2 ! free parameter for xz direction
+
+    syz = ( abs(fieldProp(1)%species%diff_tensor(Dyz))      &
+      &      + min( fieldProp(1)%species%diff_tensor(Dyy),  &
+      &             fieldProp(1)%species%diff_tensor(Dzz) ) &
+      &    ) / 2 ! free parameter for xz direction
+    
+    ! \Lambda_xx, yy, zz with t_1 = 1/6
+    omega(1) = (fieldProp(1)%species%diff_tensor(Dxx) - sxy - sxz) * 9.0_rk 
+    omega(2) = (fieldProp(1)%species%diff_tensor(Dyy) - sxy - syz) * 9.0_rk 
+    omega(3) = (fieldProp(1)%species%diff_tensor(Dzz) - sxz - syz) * 9.0_rk 
+    ! \Lambda_\pn xy, \pn xz, \pn yz with t_2 = 1/12
+    omega(4) = 9.0_rk * (sxy + fieldProp(1)%species%diff_tensor(Dxy))
+    omega(5) = 9.0_rk * (sxy - fieldProp(1)%species%diff_tensor(Dxy))
+    omega(6) = 9.0_rk * (sxz + fieldProp(1)%species%diff_tensor(Dxz))
+    omega(7) = 9.0_rk * (sxz - fieldProp(1)%species%diff_tensor(Dxz))
+    omega(8) = 9.0_rk * (syz + fieldProp(1)%species%diff_tensor(Dyz))
+    omega(9) = 9.0_rk * (syz - fieldProp(1)%species%diff_tensor(Dyz))
+    ! get omega from \Lambda
+    omega = 1.0_rk / (omega + 0.5_rk)
+    aux_omega = 1.0_rk ! free parameter
+
+    elemloop: do iElem = 1, nSolve
+      ! x-, y- and z-velocity from transport field
+      u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
+
+      do iDir = 1, layout%fStencil%QQ
+        pdfTmp( iDir ) = &
+          & instate( neigh (( idir-1)* nelems+ ielem)+ &
+          & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+      end do
+      rho = sum( pdfTmp )
+      
+      !> compute the link-wise omega
+      !! the directions of omegas are
+      !!  1     !< west             x-
+      !!  2     !< south            y-
+      !!  3     !< bottom           z-
+      !!  4     !< east             x+
+      !!  5     !< north            y+
+      !!  6     !< top              z+
+      !!  7     !<                  z-,y-
+      !!  8     !<                  z+,y-
+      !!  9     !<                  z-,y+
+      !!  10    !<                  z+,y+
+      !!  11    !<                  x-,z-
+      !!  12    !<                  x+,z-
+      !!  13    !<                  x-,z+
+      !!  14    !<                  x+,z+
+      !!  15    !<                  y-,x-
+      !!  16    !<                  y+,x-
+      !!  17    !<                  y-,x+
+      !!  18    !<                  y+,x+
+      !!  19    !< rest density is last
+      !!         
+      pm(p, 1) = aux_omega * (rho * layout%weight(4) - 0.5_rk  &
+        &       * (pdfTmp(4) + pdfTmp(1)))
+      pm(m, 1) = omega(1) * (rho * layout%weight(4) * 3.0_rk   &
+        &       * u_fluid(1) - 0.5_rk * (pdfTmp(4) - pdfTmp(1)))
+
+      pm(p, 2) = aux_omega * (rho * layout%weight(5) - 0.5_rk  &
+        &       * (pdfTmp(5) + pdfTmp(2)))
+      pm(m, 2) = omega(2) * (rho * layout%weight(5) * 3.0_rk   &
+        &       * u_fluid(2) - 0.5_rk * (pdfTmp(5) - pdfTmp(2)))
+
+      pm(p, 3) = aux_omega * (rho * layout%weight(6) - 0.5_rk  &
+        &       * (pdfTmp(6) + pdfTmp(3)))
+      pm(m, 3) = omega(3) * (rho * layout%weight(6) * 3.0_rk   &
+        &       * u_fluid(3) - 0.5_rk * (pdfTmp(6) - pdfTmp(3)))
+
+      pm(p, 4) = aux_omega * (rho * layout%weight(18) - 0.5_rk &
+        &       * (pdfTmp(18) + pdfTmp(15)))
+      pm(m, 4) = omega(4) * (rho * layout%weight(18) * 3.0_rk  &
+        &       * (u_fluid(1) + u_fluid(2)) - 0.5_rk * (pdfTmp(18) - pdfTmp(15)))
+
+      pm(p, 5) = aux_omega * (rho * layout%weight(17) - 0.5_rk &
+        &       * (pdfTmp(17) + pdfTmp(16)))
+      pm(m, 5) = omega(5) * (rho * layout%weight(17) * 3.0_rk  &
+        &       * (u_fluid(1) - u_fluid(2)) - 0.5_rk * (pdfTmp(17) - pdfTmp(16)))
+
+      pm(p, 6) = aux_omega * (rho * layout%weight(14) - 0.5_rk &
+        &       * (pdfTmp(14) + pdfTmp(11)))
+      pm(m, 6) = omega(6) * (rho * layout%weight(14) * 3.0_rk  &
+        &       * (u_fluid(1) + u_fluid(3)) - 0.5_rk * (pdfTmp(14) - pdfTmp(11)))
+
+      pm(p, 7) = aux_omega * (rho * layout%weight(12) - 0.5_rk &
+        &       * (pdfTmp(12) + pdfTmp(13)))
+      pm(m, 7) = omega(7) * (rho * layout%weight(12) * 3.0_rk  &
+        &       * (u_fluid(1) - u_fluid(3)) - 0.5_rk * (pdfTmp(12) - pdfTmp(13)))
+
+      pm(p, 8) = aux_omega * (rho * layout%weight(10) - 0.5_rk &
+        &       * (pdfTmp(10) + pdfTmp(7)))
+      pm(m, 8) = omega(8) * (rho * layout%weight(10) * 3.0_rk  &
+        &       * (u_fluid(2) + u_fluid(3)) - 0.5_rk * (pdfTmp(10) - pdfTmp(7)))
+
+      pm(p, 9) = aux_omega * (rho * layout%weight(9) - 0.5_rk  &
+        &       * (pdfTmp(9) + pdfTmp(8)))
+      pm(m, 9) = omega(9) * (rho * layout%weight(9) * 3.0_rk   &
+        &       * (u_fluid(2) - u_fluid(3)) - 0.5_rk * (pdfTmp(9) - pdfTmp(8)))
+
+        
+      outstate(( ielem-1)* varsys%nscalars+4) = pdfTmp(4) + pm(p, 1) + pm(m, 1)
+      outstate(( ielem-1)* varsys%nscalars+1) = pdfTmp(1) + pm(p, 1) - pm(m, 1)
+
+      outstate(( ielem-1)* varsys%nscalars+5) = pdfTmp(5) + pm(p, 2) + pm(m, 2)
+      outstate(( ielem-1)* varsys%nscalars+2) = pdfTmp(2) + pm(p, 2) - pm(m, 2)
+
+      outstate(( ielem-1)* varsys%nscalars+6) = pdfTmp(6) + pm(p, 3) + pm(m, 3)
+      outstate(( ielem-1)* varsys%nscalars+3) = pdfTmp(3) + pm(p, 3) - pm(m, 3)
+
+      outstate(( ielem-1)* varsys%nscalars+18) = pdfTmp(18) + pm(p, 4) + pm(m, 4)
+      outstate(( ielem-1)* varsys%nscalars+15) = pdfTmp(15) + pm(p, 4) - pm(m, 4)
+
+      outstate(( ielem-1)* varsys%nscalars+17) = pdfTmp(17) + pm(p, 5) + pm(m, 5)
+      outstate(( ielem-1)* varsys%nscalars+16) = pdfTmp(16) + pm(p, 5) - pm(m, 5)
+
+      outstate(( ielem-1)* varsys%nscalars+14) = pdfTmp(14) + pm(p, 6) + pm(m, 6)
+      outstate(( ielem-1)* varsys%nscalars+11) = pdfTmp(11) + pm(p, 6) - pm(m, 6)
+
+      outstate(( ielem-1)* varsys%nscalars+12) = pdfTmp(12) + pm(p, 7) + pm(m, 7)
+      outstate(( ielem-1)* varsys%nscalars+13) = pdfTmp(13) + pm(p, 7) - pm(m, 7)
+
+      outstate(( ielem-1)* varsys%nscalars+10) = pdfTmp(10) + pm(p, 8) + pm(m, 8)
+      outstate(( ielem-1)* varsys%nscalars+7) = pdfTmp(7) + pm(p, 8) - pm(m, 8)
+
+      outstate(( ielem-1)* varsys%nscalars+9) = pdfTmp(9) + pm(p, 9) + pm(m, 9)
+      outstate(( ielem-1)* varsys%nscalars+8) = pdfTmp(8) + pm(p, 9) - pm(m, 9)
+
+      outstate(( ielem-1)* varsys%nscalars+19) = pdfTmp(19) + aux_omega &
+        &                                   * (rho * layout%weight(19) - pdfTmp(19))
+      
+    end do elemloop
+
+    end subroutine mus_advRel_kPS_rTRT_vLmodel_lD3Q19
+    ! ****************************************************************************** !
+      
+
+! **************************************************************************** !
+  !> Advection relaxation routine based on the E-Model for the D3Q19
+  !! Lattice Boltzmann model for the generic advection and anisotropic-dispersion
+  !! equation. The E-Model is corrected to account for the effect of numerical
+  !! diffusion with the nonlinear equilibrium correction
+  !! \[ f_i^{eq,cor} = f_i^{eq} + \frac{w_i}{2 c_s^4} (c_{i\alpha} c_{i\beta} 
+  !!      - c_s^2 \delta_{\alpha\beta}) u_\alpha u_\beta \]
+  !!
+  !!   Irina Ginzburg (2005), "Equilibrium-type and link-type lattice Boltzmann
+  !!   models for generic advection and anisotropic-dispersion equation",
+  !!   Advances in Water Resources, Volume 28, Issue 11
+  !!
+  !! The MRT model is based on:
+  !!
+  !!   Dominique d’Humières. “Multiple–relaxation–time lattice Boltzmann models
+  !!   in three dimensions”. In: Philosophical Transactions of the Royal Society 
+  !!   A: Mathematical, Physical and Engineering Sciences 360.1792 (2002),
+  !!   pp. 437–451. doi: 10.1098/rsta.2001.0955
+  !!
+  !! This subroutine interface must match the abstract interface definition
+  !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
+  !! via [[mus_scheme_type:compute]] function pointer.
+  subroutine mus_advRel_kPS_rMRT_vEmodelCorr_lD3Q19( fieldProp, inState, outState, &
+    &                            auxField, neigh, nElems, nSolve, level, layout,   &
+    &                            params, varSys, derVarPos               )
       ! -------------------------------------------------------------------- !
       !> Array of field properties (fluid or species)
       type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -5030,17 +5263,31 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       integer :: iElem, iDir
       type(mus_varSys_data_type), pointer :: fPtr
       type(mus_scheme_type), pointer :: scheme
-      real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
-      real(kind=rk) :: rho, p(9), m(9), sxy, sxz, syz
-      real(kind=rk) :: omega(9), aux_omega
+      real(kind=rk) :: rho
+      real(kind=rk) :: d_omega, nu_q, d_lambda, aux_omega
       real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
+      real(kind=rk) :: usq
+      real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
       integer :: vel_varPos ! position of transport velocity variable in varSys
       real(kind=rk) :: inv_vel, u_fluid(3)
+      real(kind=rk) :: s_1, s_2, s_4, s_9, s_10, s_13, s_16 ! relaxation parameters
+      real(kind=rk) :: s_mrt( layout%fStencil%QQ ) ! relaxation parameters for MRT
+      real(kind=rk) :: meq( layout%fStencil%QQ ) ! equilibrium moments
+      real(kind=rk) :: mneq( layout%fStencil%QQ ) ! non-equilibrium moments of the pdf
+      real(kind=rk) :: sum_2x, sum_2y, sum_2z ! sums of the 2nd order moments
+      real(kind=rk) :: sum_4x, sum_4y, sum_4z ! sums of the 4th order moments
+      real(kind=rk) :: sum_6, sum_12
+      real(kind=rk) :: t2_1, t2_2, t4_1, t4_2, t4_3, t6_1, t6_2, t8_1, t8_2, &
+                        t8_3, t8_4, t8_5, t8_6, t10_1, t10_2, t12_1, t12_2
+      real(kind=rk) :: fN00, f0N0, f00N, f100, f010, f001, f0NN, f0N1, f01N, &
+        &              f011, fN0N, f10N, fN01, f101, fNN0, fN10, f1N0, f110, &
+        &              f000 ! local pdf values
+      ! logical :: switch_neg, switch_print
       ! --------------------------------------------------------------------------
       ! access scheme via 1st variable method data which is a state variable
       call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
       scheme => fPtr%solverData%scheme
-  
+      ! switch_neg = .true.
       ! passive scalar has only one transport Variable
       vel_varPos = scheme%transVar%method(1)%data_varPos
       ! Get velocity field
@@ -5057,447 +5304,222 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       ! convert physical velocity into LB velocity
       inv_vel = 1.0_rk / params%physics%fac( level )%vel
       transVel = transVel * inv_vel
-      
-      ! define the 3 free parameters
-      sxy = ( abs(fieldProp(1)%species%diff_tensor(Dxy))      &
-        &      + min( fieldProp(1)%species%diff_tensor(Dxx),  &
-        &             fieldProp(1)%species%diff_tensor(Dyy) ) &
-        &    ) / 2 ! free parameter for xy direction
 
-      sxz = ( abs(fieldProp(1)%species%diff_tensor(Dxz))      &
-        &      + min( fieldProp(1)%species%diff_tensor(Dxx),  &
-        &             fieldProp(1)%species%diff_tensor(Dzz) ) &
-        &    ) / 2 ! free parameter for xz direction
-
-      syz = ( abs(fieldProp(1)%species%diff_tensor(Dyz))      &
-        &      + min( fieldProp(1)%species%diff_tensor(Dyy),  &
-        &             fieldProp(1)%species%diff_tensor(Dzz) ) &
-        &    ) / 2 ! free parameter for xz direction
-      
-      ! \Lambda_xx, yy, zz with t_1 = 1/6
-      omega(1) = (fieldProp(1)%species%diff_tensor(Dxx) - sxy - sxz) * 9.0_rk 
-      omega(2) = (fieldProp(1)%species%diff_tensor(Dyy) - sxy - syz) * 9.0_rk 
-      omega(3) = (fieldProp(1)%species%diff_tensor(Dzz) - sxz - syz) * 9.0_rk 
-      ! \Lambda_\pn xy, \pn xz, \pn yz with t_2 = 1/12
-      omega(4) = 9.0_rk * (sxy + fieldProp(1)%species%diff_tensor(Dxy))
-      omega(5) = 9.0_rk * (sxy - fieldProp(1)%species%diff_tensor(Dxy))
-      omega(6) = 9.0_rk * (sxz + fieldProp(1)%species%diff_tensor(Dxz))
-      omega(7) = 9.0_rk * (sxz - fieldProp(1)%species%diff_tensor(Dxz))
-      omega(8) = 9.0_rk * (syz + fieldProp(1)%species%diff_tensor(Dyz))
-      omega(9) = 9.0_rk * (syz - fieldProp(1)%species%diff_tensor(Dyz))
-      ! get omega from \Lambda
-      omega = 1.0_rk / (omega + 0.5_rk)
-      aux_omega = 1.0_rk ! free parameter
+      d_omega = fieldProp(1)%species%omega
+        
+      ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
+      nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
+      a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  & 
+        &    + fieldProp(1)%species%diff_tensor(Dyy) &
+        &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+      a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)            &
+        &                         - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
+        &                                     + fieldProp(1)%species%diff_tensor(Dzz)) &
+        &                           )
+      a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy) &
+        &                     - fieldProp(1)%species%diff_tensor(Dzz) )
   
+      ! attention: D_ab has a multiplier of 2 in ADE
+      a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
+      a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
+      a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
+      
+      d_lambda = 0.25_rk
+      aux_omega = 1.0_rk / (d_lambda / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
+      s_1 = 1.2_rk
+      s_2 = aux_omega
+      s_4 = d_omega
+      s_9 = aux_omega
+      s_10 = s_2
+      s_13 = s_9
+      s_16 = d_omega
+
+      s_mrt(1) = 0.0_rk
+      s_mrt(2) = s_1 / 2394._rk
+      s_mrt(3) = s_2 / 252._rk
+      s_mrt(4) = d_omega / 10._rk
+      s_mrt(5) = s_4 / 40._rk
+      s_mrt(6) = d_omega / 10._rk
+      s_mrt(7) = s_4 / 40._rk
+      s_mrt(8) = d_omega / 10._rk
+      s_mrt(9) = s_4 / 40._rk
+      s_mrt(10) = s_9 / 36._rk
+      s_mrt(11) = s_10 / 72._rk
+      s_mrt(12) = s_9 / 12._rk
+      s_mrt(13) = s_10 / 24._rk
+      s_mrt(14) = s_13 / 4._rk
+      s_mrt(15) = s_13 / 4._rk
+      s_mrt(16) = s_13 / 4._rk
+      s_mrt(17) = s_16 / 8._rk
+      s_mrt(18) = s_16 / 8._rk
+      s_mrt(19) = s_16 / 8._rk
+
       elemloop: do iElem = 1, nSolve
+
+        !> First load all local values into temp array
+        fN00 = inState(?FETCH?( qN00, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f0N0 = inState(?FETCH?( q0N0, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f00N = inState(?FETCH?( q00N, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f100 = inState(?FETCH?( q100, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f010 = inState(?FETCH?( q010, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f001 = inState(?FETCH?( q001, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f0NN = inState(?FETCH?( q0NN, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f0N1 = inState(?FETCH?( q0N1, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f01N = inState(?FETCH?( q01N, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f011 = inState(?FETCH?( q011, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        fN0N = inState(?FETCH?( qN0N, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f10N = inState(?FETCH?( q10N, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        fN01 = inState(?FETCH?( qN01, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f101 = inState(?FETCH?( q101, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        fNN0 = inState(?FETCH?( qNN0, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        fN10 = inState(?FETCH?( qN10, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f1N0 = inState(?FETCH?( q1N0, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f110 = inState(?FETCH?( q110, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+        f000 = inState(?FETCH?( q000, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
+
         ! x-, y- and z-velocity from transport field
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
-  
-        do iDir = 1, layout%fStencil%QQ
-          pdfTmp( iDir ) = &
-            & instate( neigh (( idir-1)* nelems+ ielem)+ &
-            & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
-        end do
-        rho = sum( pdfTmp )
-        
-        !> compute the link-wise omega
-        !! the directions of omegas are
-        !!  1     !< west             x-
-        !!  2     !< south            y-
-        !!  3     !< bottom           z-
-        !!  4     !< east             x+
-        !!  5     !< north            y+
-        !!  6     !< top              z+
-        !!  7     !<                  z-,y-
-        !!  8     !<                  z+,y-
-        !!  9     !<                  z-,y+
-        !!  10    !<                  z+,y+
-        !!  11    !<                  x-,z-
-        !!  12    !<                  x+,z-
-        !!  13    !<                  x-,z+
-        !!  14    !<                  x+,z+
-        !!  15    !<                  y-,x-
-        !!  16    !<                  y+,x-
-        !!  17    !<                  y-,x+
-        !!  18    !<                  y+,x+
-        !!  19    !< rest density is last
-        !!         
-        p(1) = aux_omega * (rho * layout%weight(4) - 0.5_rk * &
-          &  (pdfTmp(4) + pdfTmp(1)))
-        m(1) = omega(1) * (rho * layout%weight(4) * 3.0_rk *  &
-          & u_fluid(1) - 0.5_rk * (pdfTmp(4) - pdfTmp(1)))
-        p(2) = aux_omega * (rho * layout%weight(5) - 0.5_rk * &
-          &  (pdfTmp(5) + pdfTmp(2)))
-        m(2) = omega(2) * (rho * layout%weight(5) * 3.0_rk *  &
-          & u_fluid(2) - 0.5_rk * (pdfTmp(5) - pdfTmp(2)))
-        p(3) = aux_omega * (rho * layout%weight(6) - 0.5_rk * &
-          &  (pdfTmp(6) + pdfTmp(3)))
-        m(3) = omega(3) * (rho * layout%weight(6) * 3.0_rk *  &
-          & u_fluid(3) - 0.5_rk * (pdfTmp(6) - pdfTmp(3)))
-        p(4) = aux_omega * (rho * layout%weight(18) - 0.5_rk  &
-          & * (pdfTmp(18) + pdfTmp(15)))
-        m(4) = omega(4) * (rho * layout%weight(18) * 3.0_rk * &
-          &  (u_fluid(1) + u_fluid(2)) - 0.5_rk * (pdfTmp(18) - pdfTmp(15)))
-        p(5) = aux_omega * (rho * layout%weight(17) - 0.5_rk  &
-          & * (pdfTmp(17) + pdfTmp(16)))
-        m(5) = omega(5) * (rho * layout%weight(17) * 3.0_rk * &
-          &  (u_fluid(1) - u_fluid(2)) - 0.5_rk * (pdfTmp(17) - pdfTmp(16)))
-        p(6) = aux_omega * (rho * layout%weight(14) - 0.5_rk  &
-          & * (pdfTmp(14) + pdfTmp(11)))
-        m(6) = omega(6) * (rho * layout%weight(14) * 3.0_rk * &
-          &  (u_fluid(1) + u_fluid(3)) - 0.5_rk * (pdfTmp(14) - pdfTmp(11)))
-        p(7) = aux_omega * (rho * layout%weight(12) - 0.5_rk  &
-          & * (pdfTmp(12) + pdfTmp(13)))
-        m(7) = omega(7) * (rho * layout%weight(12) * 3.0_rk * &
-          &  (u_fluid(1) - u_fluid(3)) - 0.5_rk * (pdfTmp(12) - pdfTmp(13)))
-        p(8) = aux_omega * (rho * layout%weight(10) - 0.5_rk  &
-          & * (pdfTmp(10) + pdfTmp(7)))
-        m(8) = omega(8) * (rho * layout%weight(10) * 3.0_rk * &
-          &  (u_fluid(2) + u_fluid(3)) - 0.5_rk * (pdfTmp(10) - pdfTmp(7)))
-        p(9) = aux_omega * (rho * layout%weight(9) - 0.5_rk * &
-          &  (pdfTmp(9) + pdfTmp(8)))
-        m(9) = omega(9) * (rho * layout%weight(9) * 3.0_rk *  &
-          & (u_fluid(2) - u_fluid(3)) - 0.5_rk * (pdfTmp(9) - pdfTmp(8)))
+        usq = u_fluid(1) * u_fluid(1) + u_fluid(2) * u_fluid(2) + u_fluid(3) * u_fluid(3)
 
-        outstate(( ielem-1)* varsys%nscalars+4) = pdfTmp(4) + p(1) + m(1)
-        outstate(( ielem-1)* varsys%nscalars+1) = pdfTmp(1) + p(1) - m(1)
-        outstate(( ielem-1)* varsys%nscalars+5) = pdfTmp(5) + p(2) + m(2)
-        outstate(( ielem-1)* varsys%nscalars+2) = pdfTmp(2) + p(2) - m(2)
-        outstate(( ielem-1)* varsys%nscalars+6) = pdfTmp(6) + p(3) + m(3)
-        outstate(( ielem-1)* varsys%nscalars+3) = pdfTmp(3) + p(3) - m(3)
-        outstate(( ielem-1)* varsys%nscalars+18) = pdfTmp(18) + p(4) + m(4)
-        outstate(( ielem-1)* varsys%nscalars+15) = pdfTmp(15) + p(4) - m(4)
-        outstate(( ielem-1)* varsys%nscalars+17) = pdfTmp(17) + p(5) + m(5)
-        outstate(( ielem-1)* varsys%nscalars+16) = pdfTmp(16) + p(5) - m(5)
-        outstate(( ielem-1)* varsys%nscalars+14) = pdfTmp(14) + p(6) + m(6)
-        outstate(( ielem-1)* varsys%nscalars+11) = pdfTmp(11) + p(6) - m(6)
-        outstate(( ielem-1)* varsys%nscalars+12) = pdfTmp(12) + p(7) + m(7)
-        outstate(( ielem-1)* varsys%nscalars+13) = pdfTmp(13) + p(7) - m(7)
-        outstate(( ielem-1)* varsys%nscalars+10) = pdfTmp(10) + p(8) + m(8)
-        outstate(( ielem-1)* varsys%nscalars+7) = pdfTmp(7) + p(8) - m(8)
-        outstate(( ielem-1)* varsys%nscalars+9) = pdfTmp(9) + p(9) + m(9)
-        outstate(( ielem-1)* varsys%nscalars+8) = pdfTmp(8) + p(9) - m(9)
-        outstate(( ielem-1)* varsys%nscalars+19) = pdfTmp(19) + aux_omega * &
-          & (rho * layout%weight(19) - pdfTmp(19))
+        rho = 0.0_rk
+        do iDir = 1, layout%fStencil%QQ
+          rho = rho + instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
+            &                 layout%fstencil%qq+ varsys%nscalars*0 )
+        end do
+
+        ! compute the equilibrium moments of the pdf
+        meq = 0._rk
+        meq(2) = rho * (19._rk * (usq + a_e) - 11._rk)
+        meq(3) = 3._rk * rho - 11._rk / 2._rk * rho * usq
+        meq(4) = rho * u_fluid(1)
+        meq(5) = -2._rk / 3._rk * meq(4)
+        meq(6) = rho * u_fluid(2)
+        meq(7) = -2._rk / 3._rk * meq(6)
+        meq(8) = rho * u_fluid(3)
+        meq(9) = -2._rk / 3._rk * meq(8)
+        meq(10) = rho * (2._rk * u_fluid(1)*u_fluid(1) - u_fluid(2)*u_fluid(2) - &
+          & u_fluid(3)*u_fluid(3) + a_xx)
+        meq(11) = -meq(10) / 2._rk
+        meq(12) = rho * (u_fluid(2)*u_fluid(2) - u_fluid(3)*u_fluid(3) + &
+          & a_ww * 2._rk / 3._rk)
+        meq(13) = -meq(12) / 2._rk
+        meq(14) = rho * (u_fluid(1)*u_fluid(2) + &
+          & a_xy / 3._rk)
+        meq(15) = rho * (u_fluid(2)*u_fluid(3) + &
+          & a_yz / 3._rk)
+        meq(16) = rho * (u_fluid(1)*u_fluid(3) + &
+          & a_xz / 3._rk)
+
+        ! compute the non-equilbrium moments of the pdf
+        mneq = 0._rk
+        sum_2x = fN00 + f100
+        sum_2y = f0N0 + f010 
+        sum_2z = f00N + f001
+        sum_6 =  sum_2x + sum_2y + sum_2z 
+        sum_4x = f0NN + f0N1 + f01N + f011
+        sum_4y = fN0N + f10N + fN01 + f101
+        sum_4z = fNN0 + fN10 + f1N0 + f110
+        sum_12 = sum_4x + sum_4y + sum_4z
+        mneq(2) = -30._rk * f000 - 11._rk * sum_6 + 8._rk * sum_12 - meq(2)
+        mneq(3) = 12._rk * f000 - 4._rk * sum_6 + sum_12 - meq(3)
+        t4_1 = f100 - fN00
+        t4_2 = f10N - fN0N + f101 - fN01 + &
+          & f110 - fN10 + f1N0 - fNN0
+        mneq(4) = t4_1 + t4_2 - meq(4)
+        mneq(5) = -4.0_rk * t4_1 + t4_2 - meq(5)
+        t6_1 = f010 - f0N0
+        t6_2 = f01N - f0NN + f011 - f0N1 + &
+          & f110 - f1N0 + fN10 - fNN0
+        mneq(6) = t6_1 + t6_2 - meq(6)
+        mneq(7) = -4.0_rk * t6_1 + t6_2 - meq(7)
+        t8_1 = f001 - f00N
+        t8_2 = f0N1 - f0NN + f011 - f01N + &
+          & f101 - f10N + fN01 - fN0N
+        mneq(8) = t8_1 + t8_2 - meq(8)
+        mneq(9) = -4.0_rk * t8_1 + t8_2 - meq(9)
+        t10_1 = 2.0_rk * sum_2x - sum_2y - sum_2z
+        t10_2 = sum_4y + sum_4z - 2.0_rk * sum_4x
+        mneq(10) = t10_1 + t10_2 - meq(10)
+        mneq(11) = -2.0_rk * t10_1 + t10_2 - meq(11)
+        t12_1 = sum_2y - sum_2z
+        t12_2 = sum_4z - sum_4y
+        mneq(12) = t12_1 + t12_2 - meq(12)
+        mneq(13) = -2.0_rk * t12_1 + t12_2 - meq(13)
+        mneq(14) = f110 + fNN0 - f1N0 - fN10 - meq(14)
+        mneq(15) = f011 + f0NN - f01N - f0N1 - meq(15)
+        mneq(16) = fN0N + f101 - f10N - fN01 - meq(16)
+        mneq(17) = f110 - fNN0 + f1N0 - fN10  + &
+          & fN0N - f101 - f10N + fN01 - meq(17)
+        mneq(18) = -f110 + fNN0 + f1N0 - fN10  + &
+          & f011 - f0NN + f01N - f0N1 - meq(18)
+        mneq(19) = -fN0N + f101 - f10N + fN01 - &
+          & f011 + f0NN + f01N - f0N1 - meq(19)
+
+        mneq = -mneq * s_mrt
+
+        outstate( ?SAVE?( q000,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f000 - 30.0_rk*mneq(2) + 12.0_rk*mneq(3)
+
+
+        t2_1 = 2.0_rk*mneq(10) - 4.0_rk*mneq(11) - &  
+          & 11.0_rk * mneq(2) - 4.0_rk * mneq(3)
+        t2_2 = mneq(4) - 4.0_rk*mneq(5)
+        outstate( ?SAVE?(  q100,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f100 + t2_1 + t2_2
+        outstate( ?SAVE?(  qN00,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & fN00 + t2_1 - t2_2
+
+
+        t4_1 = - 11.0_rk*mneq(2) - 4.0_rk*mneq(3) - &
+          & mneq(10) + 2.0_rk*mneq(11)
+        t4_2 = mneq(6) - 4.0_rk*mneq(7)
+        t4_3 = mneq(12) - 2.0_rk*mneq(13)
+        outstate( ?SAVE?(  q010,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f010 + t4_1 + t4_2 + t4_3
+        outstate( ?SAVE?(  q0N0,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f0N0 + t4_1 - t4_2 + t4_3
+        t6_2 = mneq(8) - 4.0_rk*mneq(9)
+        outstate( ?SAVE?(  q001,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f001 + t4_1 + t6_2 - t4_3 
+        outstate( ?SAVE?(  q00N,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f00N + t4_1 - t6_2 - t4_3 
         
+
+        t8_1 = 8.0_rk*mneq(2) + mneq(3)
+        t8_2 = mneq(4) + mneq(5)
+        t8_3 = mneq(6) + mneq(7)
+        t8_4 = mneq(10) + mneq(11)
+        t8_5 = mneq(12) + mneq(13)
+        t8_6 = mneq(8) + mneq(9)
+        outstate( ?SAVE?( q110,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f110 + t8_1 + t8_2 + t8_3 + t8_4 + t8_5 + mneq(14) + mneq(17) - mneq(18)
+        outstate( ?SAVE?( qN10,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & fN10 + t8_1 - t8_2 + t8_3 + t8_4 + t8_5 - mneq(14) - mneq(17) - mneq(18)
+        outstate( ?SAVE?( q1N0,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f1N0 + t8_1 + t8_2 - t8_3 + t8_4 + t8_5 - mneq(14) + mneq(17) + mneq(18)
+        outstate( ?SAVE?( qNN0,1,iElem,QQ,QQ,nElems,neigh )) = &
+          &fNN0 + t8_1 - t8_2 - t8_3 + t8_4 + t8_5 + mneq(14) - mneq(17) + mneq(18)
+        outstate( ?SAVE?( q101,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f101 + t8_1 + t8_2 + t8_6 + t8_4 - t8_5 + mneq(16) - mneq(17) + mneq(19)
+        outstate( ?SAVE?( qN01,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & fN01 + t8_1 - t8_2 + t8_6 + t8_4 - t8_5 - mneq(16) + mneq(17) + mneq(19)
+        outstate( ?SAVE?( q10N,1,iElem,QQ,QQ,nElems,neigh )) = & 
+          & f10N + t8_1 + t8_2 - t8_6 + t8_4 - t8_5 - mneq(16) - mneq(17) - mneq(19)
+        outstate( ?SAVE?( qN0N,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & fN0N + t8_1 - t8_2 - t8_6 + t8_4 - t8_5 + mneq(16) + mneq(17) - mneq(19)
+        outstate( ?SAVE?( q011,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f011 + t8_1 + t8_3 + t8_6 - 2.0_rk * t8_4 + mneq(15) + mneq(18) - mneq(19)
+        outstate( ?SAVE?(  q0N1,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f0N1 + t8_1 - t8_3 + t8_6 - 2.0_rk * t8_4 - mneq(15) - mneq(18) - mneq(19)
+        outstate( ?SAVE?(  q01N,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f01N + t8_1 + t8_3 - t8_6 - 2.0_rk * t8_4 - mneq(15) + mneq(18) + mneq(19)
+        outstate( ?SAVE?(  q0NN,1,iElem,QQ,QQ,nElems,neigh )) = &
+          & f0NN + t8_1 - t8_3 - t8_6 - 2.0_rk * t8_4 + mneq(15) - mneq(18) + mneq(19)
+  
       end do elemloop
   
-      end subroutine mus_advRel_kPS_rTRT_vLmodel_lD3Q19
-      ! ****************************************************************************** !
-      
-
-! **************************************************************************** !
-  !> Advection relaxation routine based on the E-Model for the D3Q19
-  !! Lattice Boltzmann model for the generic advection and anisotropic-dispersion
-  !! equation. The E-Model is corrected to account for the effect of numerical
-  !! diffusion with the nonlinear equilibrium correction
-  !! \[ f_i^{eq,cor} = f_i^{eq} + \frac{w_i}{2 c_s^4} (c_{i\alpha} c_{i\beta} 
-  !!      - c_s^2 \delta_{\alpha\beta}) u_\alpha u_\beta \]
-  !!
-  !!   Irina Ginzburg (2005), "Equilibrium-type and link-type lattice Boltzmann
-  !!   models for generic advection and anisotropic-dispersion equation",
-  !!   Advances in Water Resources, Volume 28, Issue 11
-  !!
-  !! The MRT model is based on:
-  !!
-  !!   Dominique d’Humières. “Multiple–relaxation–time lattice Boltzmann models
-  !!   in three dimensions”. In: Philosophical Transactions of the Royal Society 
-  !!   A: Mathematical, Physical and Engineering Sciences 360.1792 (2002),
-  !!   pp. 437–451. doi: 10.1098/rsta.2001.0955
-  !!
-  !! This subroutine interface must match the abstract interface definition
-  !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
-  !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rMRT_vEmodelCorr_lD3Q19( fieldProp, inState, outState, &
-      &                            auxField, neigh, nElems, nSolve, level, layout,   &
-      &                            params, varSys, derVarPos               )
-        ! -------------------------------------------------------------------- !
-        !> Array of field properties (fluid or species)
-        type(mus_field_prop_type), intent(in) :: fieldProp(:)
-        !> variable system definition
-        type(tem_varSys_type), intent(in) :: varSys
-        !> current layout
-        type(mus_scheme_layout_type), intent(in) :: layout
-        !> number of elements in state Array
-        integer, intent(in) :: nElems
-        !> input  pdf vector
-        real(kind=rk), intent(in)  ::  inState(nElems * varSys%nScalars)
-        !> output pdf vector
-        real(kind=rk), intent(out) :: outState(nElems * varSys%nScalars)
-        !> Auxiliary field computed from pre-collision state
-        !! Is updated with correct velocity field for multicomponent models
-        real(kind=rk), intent(inout) :: auxField(nElems * varSys%nAuxScalars)
-        !> connectivity vector
-        integer, intent(in) :: neigh(nElems * layout%fStencil%QQ)
-        !> number of elements solved in kernel
-        integer, intent(in) :: nSolve
-        !> current level
-        integer,intent(in) :: level
-        !> global parameters
-        type(mus_param_type),intent(in) :: params
-        !> position of derived quantities in varsys for all fields
-        type( mus_derVarPos_type ), intent(in) :: derVarPos(:)
-        ! -------------------------------------------------------------------- !
-        integer :: iElem, iDir
-        type(mus_varSys_data_type), pointer :: fPtr
-        type(mus_scheme_type), pointer :: scheme
-        real(kind=rk) :: rho
-        real(kind=rk) :: d_omega, nu_q, d_lambda, aux_omega
-        real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
-        real(kind=rk) :: usq
-        real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
-        integer :: vel_varPos ! position of transport velocity variable in varSys
-        real(kind=rk) :: inv_vel, u_fluid(3)
-        real(kind=rk) :: s_1, s_2, s_4, s_9, s_10, s_13, s_16 ! relaxation parameters
-        real(kind=rk) :: s_mrt( layout%fStencil%QQ ) ! relaxation parameters for MRT
-        real(kind=rk) :: meq( layout%fStencil%QQ ) ! equilibrium moments
-        real(kind=rk) :: mneq( layout%fStencil%QQ ) ! non-equilibrium moments of the pdf
-        real(kind=rk) :: sum_2x, sum_2y, sum_2z ! sums of the 2nd order moments
-        real(kind=rk) :: sum_4x, sum_4y, sum_4z ! sums of the 4th order moments
-        real(kind=rk) :: sum_6, sum_12
-        real(kind=rk) :: t2_1, t2_2, t4_1, t4_2, t4_3, t6_1, t6_2, t8_1, t8_2, &
-                         t8_3, t8_4, t8_5, t8_6, t10_1, t10_2, t12_1, t12_2
-        real(kind=rk) :: fN00, f0N0, f00N, f100, f010, f001, f0NN, f0N1, f01N, &
-          &              f011, fN0N, f10N, fN01, f101, fNN0, fN10, f1N0, f110, &
-          &              f000 ! local pdf values
-        ! logical :: switch_neg, switch_print
-        ! --------------------------------------------------------------------------
-        ! access scheme via 1st variable method data which is a state variable
-        call C_F_POINTER( varSys%method%val(derVarPos(1)%pdf)%method_Data, fPtr )
-        scheme => fPtr%solverData%scheme
-        ! switch_neg = .true.
-        ! passive scalar has only one transport Variable
-        vel_varPos = scheme%transVar%method(1)%data_varPos
-        ! Get velocity field
-        call varSys%method%val(vel_varPos)%get_valOfIndex( &
-          & varSys  = varSys,                              &
-          & time    = params%general%simControl%now,       &
-          & iLevel  = level,                               &
-          & idx     = scheme%transVar%method(1)            &
-          &           %pntIndex%indexLvl(level)            &
-          &           %val(1:nSolve),                      &
-          & nVals   = nSolve,                              &
-          & res     = transVel                             )
-    
-        ! convert physical velocity into LB velocity
-        inv_vel = 1.0_rk / params%physics%fac( level )%vel
-        transVel = transVel * inv_vel
-
-        d_omega = fieldProp(1)%species%omega
-          
-        ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
-        nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
-        a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  & 
-          &    + fieldProp(1)%species%diff_tensor(Dyy) &
-          &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
-        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)            &
-          &                         - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
-          &                                     + fieldProp(1)%species%diff_tensor(Dzz)) &
-          &                           )
-        a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy) &
-          &                     - fieldProp(1)%species%diff_tensor(Dzz) )
-    
-        ! attention: D_ab has a multiplier of 2 in ADE
-        a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
-        a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
-        a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
-        
-        d_lambda = 0.25_rk
-        aux_omega = 1.0_rk / (d_lambda / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
-        s_1 = 1.2_rk
-        s_2 = aux_omega
-        s_4 = d_omega
-        s_9 = aux_omega
-        s_10 = s_2
-        s_13 = s_9
-        s_16 = d_omega
-
-        s_mrt(1) = 0.0_rk
-        s_mrt(2) = s_1 / 2394._rk
-        s_mrt(3) = s_2 / 252._rk
-        s_mrt(4) = d_omega / 10._rk
-        s_mrt(5) = s_4 / 40._rk
-        s_mrt(6) = d_omega / 10._rk
-        s_mrt(7) = s_4 / 40._rk
-        s_mrt(8) = d_omega / 10._rk
-        s_mrt(9) = s_4 / 40._rk
-        s_mrt(10) = s_9 / 36._rk
-        s_mrt(11) = s_10 / 72._rk
-        s_mrt(12) = s_9 / 12._rk
-        s_mrt(13) = s_10 / 24._rk
-        s_mrt(14) = s_13 / 4._rk
-        s_mrt(15) = s_13 / 4._rk
-        s_mrt(16) = s_13 / 4._rk
-        s_mrt(17) = s_16 / 8._rk
-        s_mrt(18) = s_16 / 8._rk
-        s_mrt(19) = s_16 / 8._rk
-
-        elemloop: do iElem = 1, nSolve
-
-          !> First load all local values into temp array
-          fN00 = inState(?FETCH?( qN00, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f0N0 = inState(?FETCH?( q0N0, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f00N = inState(?FETCH?( q00N, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f100 = inState(?FETCH?( q100, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f010 = inState(?FETCH?( q010, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f001 = inState(?FETCH?( q001, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f0NN = inState(?FETCH?( q0NN, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f0N1 = inState(?FETCH?( q0N1, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f01N = inState(?FETCH?( q01N, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f011 = inState(?FETCH?( q011, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          fN0N = inState(?FETCH?( qN0N, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f10N = inState(?FETCH?( q10N, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          fN01 = inState(?FETCH?( qN01, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f101 = inState(?FETCH?( q101, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          fNN0 = inState(?FETCH?( qNN0, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          fN10 = inState(?FETCH?( qN10, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f1N0 = inState(?FETCH?( q1N0, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f110 = inState(?FETCH?( q110, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-          f000 = inState(?FETCH?( q000, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
-
-          ! x-, y- and z-velocity from transport field
-          u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
-          usq = u_fluid(1) * u_fluid(1) + u_fluid(2) * u_fluid(2) + u_fluid(3) * u_fluid(3)
-
-          rho = 0.0_rk
-          do iDir = 1, layout%fStencil%QQ
-            rho = rho + instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
-              &                 layout%fstencil%qq+ varsys%nscalars*0 )
-          end do
-
-          ! compute the equilibrium moments of the pdf
-          meq = 0._rk
-          meq(2) = rho * (19._rk * (usq + a_e) - 11._rk)
-          meq(3) = 3._rk * rho - 11._rk / 2._rk * rho * usq
-          meq(4) = rho * u_fluid(1)
-          meq(5) = -2._rk / 3._rk * meq(4)
-          meq(6) = rho * u_fluid(2)
-          meq(7) = -2._rk / 3._rk * meq(6)
-          meq(8) = rho * u_fluid(3)
-          meq(9) = -2._rk / 3._rk * meq(8)
-          meq(10) = rho * (2._rk * u_fluid(1)*u_fluid(1) - u_fluid(2)*u_fluid(2) - &
-            & u_fluid(3)*u_fluid(3) + a_xx)
-          meq(11) = -meq(10) / 2._rk
-          meq(12) = rho * (u_fluid(2)*u_fluid(2) - u_fluid(3)*u_fluid(3) + &
-            & a_ww * 2._rk / 3._rk)
-          meq(13) = -meq(12) / 2._rk
-          meq(14) = rho * (u_fluid(1)*u_fluid(2) + &
-            & a_xy / 3._rk)
-          meq(15) = rho * (u_fluid(2)*u_fluid(3) + &
-            & a_yz / 3._rk)
-          meq(16) = rho * (u_fluid(1)*u_fluid(3) + &
-            & a_xz / 3._rk)
-
-          ! compute the non-equilbrium moments of the pdf
-          mneq = 0._rk
-          sum_2x = fN00 + f100
-          sum_2y = f0N0 + f010 
-          sum_2z = f00N + f001
-          sum_6 =  sum_2x + sum_2y + sum_2z 
-          sum_4x = f0NN + f0N1 + f01N + f011
-          sum_4y = fN0N + f10N + fN01 + f101
-          sum_4z = fNN0 + fN10 + f1N0 + f110
-          sum_12 = sum_4x + sum_4y + sum_4z
-          mneq(2) = -30._rk * f000 - 11._rk * sum_6 + 8._rk * sum_12 - meq(2)
-          mneq(3) = 12._rk * f000 - 4._rk * sum_6 + sum_12 - meq(3)
-          t4_1 = f100 - fN00
-          t4_2 = f10N - fN0N + f101 - fN01 + &
-            & f110 - fN10 + f1N0 - fNN0
-          mneq(4) = t4_1 + t4_2 - meq(4)
-          mneq(5) = -4.0_rk * t4_1 + t4_2 - meq(5)
-          t6_1 = f010 - f0N0
-          t6_2 = f01N - f0NN + f011 - f0N1 + &
-            & f110 - f1N0 + fN10 - fNN0
-          mneq(6) = t6_1 + t6_2 - meq(6)
-          mneq(7) = -4.0_rk * t6_1 + t6_2 - meq(7)
-          t8_1 = f001 - f00N
-          t8_2 = f0N1 - f0NN + f011 - f01N + &
-            & f101 - f10N + fN01 - fN0N
-          mneq(8) = t8_1 + t8_2 - meq(8)
-          mneq(9) = -4.0_rk * t8_1 + t8_2 - meq(9)
-          t10_1 = 2.0_rk * sum_2x - sum_2y - sum_2z
-          t10_2 = sum_4y + sum_4z - 2.0_rk * sum_4x
-          mneq(10) = t10_1 + t10_2 - meq(10)
-          mneq(11) = -2.0_rk * t10_1 + t10_2 - meq(11)
-          t12_1 = sum_2y - sum_2z
-          t12_2 = sum_4z - sum_4y
-          mneq(12) = t12_1 + t12_2 - meq(12)
-          mneq(13) = -2.0_rk * t12_1 + t12_2 - meq(13)
-          mneq(14) = f110 + fNN0 - f1N0 - fN10 - meq(14)
-          mneq(15) = f011 + f0NN - f01N - f0N1 - meq(15)
-          mneq(16) = fN0N + f101 - f10N - fN01 - meq(16)
-          mneq(17) = f110 - fNN0 + f1N0 - fN10  + &
-            & fN0N - f101 - f10N + fN01 - meq(17)
-          mneq(18) = -f110 + fNN0 + f1N0 - fN10  + &
-            & f011 - f0NN + f01N - f0N1 - meq(18)
-          mneq(19) = -fN0N + f101 - f10N + fN01 - &
-            & f011 + f0NN + f01N - f0N1 - meq(19)
-
-          mneq = -mneq * s_mrt
-
-          outstate( ?SAVE?( q000,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f000 - 30.0_rk*mneq(2) + 12.0_rk*mneq(3)
-
-
-          t2_1 = 2.0_rk*mneq(10) - 4.0_rk*mneq(11) - &  
-            & 11.0_rk * mneq(2) - 4.0_rk * mneq(3)
-          t2_2 = mneq(4) - 4.0_rk*mneq(5)
-          outstate( ?SAVE?(  q100,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f100 + t2_1 + t2_2
-          outstate( ?SAVE?(  qN00,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & fN00 + t2_1 - t2_2
-
-
-          t4_1 = - 11.0_rk*mneq(2) - 4.0_rk*mneq(3) - &
-            & mneq(10) + 2.0_rk*mneq(11)
-          t4_2 = mneq(6) - 4.0_rk*mneq(7)
-          t4_3 = mneq(12) - 2.0_rk*mneq(13)
-          outstate( ?SAVE?(  q010,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f010 + t4_1 + t4_2 + t4_3
-          outstate( ?SAVE?(  q0N0,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f0N0 + t4_1 - t4_2 + t4_3
-          t6_2 = mneq(8) - 4.0_rk*mneq(9)
-          outstate( ?SAVE?(  q001,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f001 + t4_1 + t6_2 - t4_3 
-          outstate( ?SAVE?(  q00N,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f00N + t4_1 - t6_2 - t4_3 
-          
-
-          t8_1 = 8.0_rk*mneq(2) + mneq(3)
-          t8_2 = mneq(4) + mneq(5)
-          t8_3 = mneq(6) + mneq(7)
-          t8_4 = mneq(10) + mneq(11)
-          t8_5 = mneq(12) + mneq(13)
-          t8_6 = mneq(8) + mneq(9)
-          outstate( ?SAVE?( q110,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f110 + t8_1 + t8_2 + t8_3 + t8_4 + t8_5 + mneq(14) + mneq(17) - mneq(18)
-          outstate( ?SAVE?( qN10,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & fN10 + t8_1 - t8_2 + t8_3 + t8_4 + t8_5 - mneq(14) - mneq(17) - mneq(18)
-          outstate( ?SAVE?( q1N0,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f1N0 + t8_1 + t8_2 - t8_3 + t8_4 + t8_5 - mneq(14) + mneq(17) + mneq(18)
-          outstate( ?SAVE?( qNN0,1,iElem,QQ,QQ,nElems,neigh )) = &
-            &fNN0 + t8_1 - t8_2 - t8_3 + t8_4 + t8_5 + mneq(14) - mneq(17) + mneq(18)
-          outstate( ?SAVE?( q101,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f101 + t8_1 + t8_2 + t8_6 + t8_4 - t8_5 + mneq(16) - mneq(17) + mneq(19)
-          outstate( ?SAVE?( qN01,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & fN01 + t8_1 - t8_2 + t8_6 + t8_4 - t8_5 - mneq(16) + mneq(17) + mneq(19)
-          outstate( ?SAVE?( q10N,1,iElem,QQ,QQ,nElems,neigh )) = & 
-            & f10N + t8_1 + t8_2 - t8_6 + t8_4 - t8_5 - mneq(16) - mneq(17) - mneq(19)
-          outstate( ?SAVE?( qN0N,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & fN0N + t8_1 - t8_2 - t8_6 + t8_4 - t8_5 + mneq(16) + mneq(17) - mneq(19)
-          outstate( ?SAVE?( q011,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f011 + t8_1 + t8_3 + t8_6 - 2.0_rk * t8_4 + mneq(15) + mneq(18) - mneq(19)
-          outstate( ?SAVE?(  q0N1,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f0N1 + t8_1 - t8_3 + t8_6 - 2.0_rk * t8_4 - mneq(15) - mneq(18) - mneq(19)
-          outstate( ?SAVE?(  q01N,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f01N + t8_1 + t8_3 - t8_6 - 2.0_rk * t8_4 - mneq(15) + mneq(18) + mneq(19)
-          outstate( ?SAVE?(  q0NN,1,iElem,QQ,QQ,nElems,neigh )) = &
-            & f0NN + t8_1 - t8_3 - t8_6 - 2.0_rk * t8_4 + mneq(15) - mneq(18) + mneq(19)
-    
-        end do elemloop
-    
-        end subroutine mus_advRel_kPS_rMRT_vEmodelCorr_lD3Q19
-      ! ****************************************************************************** !
+      end subroutine mus_advRel_kPS_rMRT_vEmodelCorr_lD3Q19
+    ! ****************************************************************************** !
 
 
 end module mus_d3q19_module

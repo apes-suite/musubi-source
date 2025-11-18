@@ -343,12 +343,12 @@ contains
       if (any(me%diff_tensor /= 0.0_rk)) then
         write(logUnit(1),*) ' Species diffusion is anisotropic.'
         write(logUnit(1),*) '   Diffusion tensor components:'
-        write(logUnit(1),*) '    Dxx: ', real(me%diff_tensor(Dxx))
-        write(logUnit(1),*) '    Dyy: ', real(me%diff_tensor(Dyy))
-        write(logUnit(1),*) '    Dzz: ', real(me%diff_tensor(Dzz))
-        write(logUnit(1),*) '    Dxy: ', real(me%diff_tensor(Dxy))
-        write(logUnit(1),*) '    Dxz: ', real(me%diff_tensor(Dxz))
-        write(logUnit(1),*) '    Dyz: ', real(me%diff_tensor(Dyz))
+        write(logUnit(1),*) '    Dxx: ', me%diff_tensor(Dxx)
+        write(logUnit(1),*) '    Dyy: ', me%diff_tensor(Dyy)
+        write(logUnit(1),*) '    Dzz: ', me%diff_tensor(Dzz)
+        write(logUnit(1),*) '    Dxy: ', me%diff_tensor(Dxy)
+        write(logUnit(1),*) '    Dxz: ', me%diff_tensor(Dxz)
+        write(logUnit(1),*) '    Dyz: ', me%diff_tensor(Dyz)
 
         me%diff_tensor = me%diff_tensor/physics%fac(minLevel)%diffusivity
       else
