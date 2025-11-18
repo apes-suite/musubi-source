@@ -38,11 +38,12 @@ module mus_initLBMPS_module
     &                                         mus_advRel_kPS_rBGK_v2nd_l,      &
     &                                         mus_advRel_kPS_rTRT_vStdNoOpt_l
   use mus_d3q19_module,                 only: mus_advRel_kPS_rBGK_vEmodel_lD3Q19, &
-    &                                         mus_advRel_kPS_rTRT_vEmodel_lD3Q19, &
     &                                         mus_advRel_kPS_rBGK_vEmodelCorr_lD3Q19, &
+    &                                         mus_advRel_kPS_rMRT_vEmodelCorr_lD3Q19, &
+    &                                         mus_advRel_kPS_rTRT_vEmodel_lD3Q19, &
     &                                         mus_advRel_kPS_rTRT_vEmodelCorr_lD3Q19, &
-    &                                         mus_advRel_kPS_rTRT_vLmodel_lD3Q19, &
-    &                                         mus_advRel_kPS_rMRT_vEmodelCorr_lD3Q19
+    &                                         mus_advRel_kPS_rTRT_vLmodel_lD3Q19
+
   use mus_scheme_type_module,           only: kernel
 
   implicit none
