@@ -4437,8 +4437,10 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       a_e = ( fieldProp(1)%species%diff_tensor%Dxx  &
         &    + fieldProp(1)%species%diff_tensor%Dyy &
         &    + fieldProp(1)%species%diff_tensor%Dzz ) / 3.0_rk / nu - 1.0_rk
-      a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
-        & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
+      a_xx = 2._rk / 3._rk / nu * ( fieldProp(1)%species%diff_tensor%Dxx                &
+        &                          - 0.5_rk * ( fieldProp(1)%species%diff_tensor%Dyy    &
+        &                                      + fieldProp(1)%species%diff_tensor%Dzz ) &
+        &                         )
       a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
         & fieldProp(1)%species%diff_tensor%Dzz)
   
