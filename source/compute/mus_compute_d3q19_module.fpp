@@ -4367,9 +4367,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rBGK_vEmodel_lD3Q19( fieldProp, inState, outState,     &
-      &                            auxField, neigh, nElems, nSolve, level, layout,   &
-      &                            params, varSys, derVarPos               )
+    subroutine mus_advRel_kPS_rBGK_vEmodel_lD3Q19( fieldProp, inState, outState,   &
+      &                            auxField, neigh, nElems, nSolve, level, layout, &
+      &                            params, varSys, derVarPos                       )
       ! -------------------------------------------------------------------- !
       !> Array of field properties (fluid or species)
       type(mus_field_prop_type), intent(in) :: fieldProp(:)
