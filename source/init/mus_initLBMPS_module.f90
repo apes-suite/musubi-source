@@ -143,8 +143,8 @@ contains
         write(logUnit(1), *) 'Using mrt_advRel scheme with E-model correction.'
         compute => mus_advRel_kPS_rMRT_vEmodelCorr_lD3Q19
       case default
-        write(logUnit(1),*) 'The selected layout is not supported: '//         &
-          &                  trim(layout)
+        write(logUnit(1),*) 'The selected layout is not supported: ' &
+          &                  // trim(layout)
         call tem_abort()
       end select
     case default
