@@ -4462,9 +4462,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
         do iDir = 1, layout%fStencil%QQ
           ! compute c_i * u
-          uc = dble( layout%fStencil%cxDir(1, iDir)) * u_fluid(1) + &
-            &  dble( layout%fStencil%cxDir(2, iDir)) * u_fluid(2) + &
-            &  dble( layout%fStencil%cxDir(3, iDir)) * u_fluid(3)
+          uc = real(layout%fStencil%cxDir(1, iDir), kind=rk) * u_fluid(1)  &
+            & + real(layout%fStencil%cxDir(2, iDir), kind=rk) * u_fluid(2) &
+            & + real(layout%fStencil%cxDir(3, iDir), kind=rk) * u_fluid(3)
   
           cqx2 = dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(1, iDir))
           cqy2 = dble( layout%fStencil%cxDir(2, iDir)) * dble( layout%fStencil%cxDir(2, iDir)) 
