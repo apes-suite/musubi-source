@@ -350,7 +350,7 @@ contains
         write(logUnit(1),*) '    Dxz: ', me%diff_tensor(Dxz)
         write(logUnit(1),*) '    Dyz: ', me%diff_tensor(Dyz)
 
-        me%diff_tensor = me%diff_tensor/physics%fac(minLevel)%diffusivity
+        me%diff_tensor = me%diff_tensor / physics%fac(minLevel)%diffusivity
       else
         write(logUnit(1),*) ' Error: diffusion tensor is defined but all '//    &
           &                 'components are zero!'
