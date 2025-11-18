@@ -4456,40 +4456,41 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
   
         do iDir = 1, layout%fStencil%QQ
-          pdfTmp( iDir ) = &
-            & instate( neigh (( idir-1)* nelems+ ielem)+ &
+          pdfTmp( iDir ) =                                  &
+            & instate( neigh (( idir-1)* nelems+ ielem)+    &
             & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
         end do
         rho = sum( pdfTmp )
   
         do iDir = 1, layout%fStencil%QQ
           ! compute c_i * u
-          uc = real(layout%fStencil%cxDir(1, iDir), kind=rk) * u_fluid(1)  &
-            & + real(layout%fStencil%cxDir(2, iDir), kind=rk) * u_fluid(2) &
-            & + real(layout%fStencil%cxDir(3, iDir), kind=rk) * u_fluid(3)
+          uc = real(layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
+            & + real(layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
+            & + real(layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
   
-          cqx2 = dble( layout%fStencil%cxDir(1, iDir)) &
-            & * dble( layout%fStencil%cxDir(1, iDir))
-          cqy2 = dble( layout%fStencil%cxDir(2, iDir)) &
-            & * dble( layout%fStencil%cxDir(2, iDir)) 
-          cqz2 = dble( layout%fStencil%cxDir(3, iDir)) &
-            & * dble( layout%fStencil%cxDir(3, iDir))
+          cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
+            &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
+          cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
+            &   * real( layout%fStencil%cxDir(2, iDir), kind=rk ) 
+          cqz2 = real( layout%fStencil%cxDir(3, iDir), kind=rk ) &
+            &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )
           cq2 = cqx2 + cqy2 + cqz2   
   
           P_e = (19 * cq2 - 30) / 42
           P_xx = (3 * cqx2 - cq2) / 12
           P_ww = (cqy2 - cqz2) / 6
-          P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * &
-            & dble( layout%fStencil%cxDir(2, iDir))) / 4
-          P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * &
-            & dble( layout%fStencil%cxDir(3, iDir))) / 4
-          P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * &
-            & dble( layout%fStencil%cxDir(3, iDir))) / 4
+          P_xy = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+            &   * real( layout%fStencil%cxDir(2, iDir), kind=rk )) / 4
+          P_xz = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+            &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
+          P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
+            &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
   
-          feq = rho * ( layout%weight( iDir ) +                  &   ! e_0
-            & layout%weight( iDir ) * cs2inv * uc +              &   ! C_\alpha
-            & cs2 * (a_e * P_e + a_xy * P_xy + a_xz * P_xz + a_yz * P_yz + &
-            & a_xx * P_xx + a_ww * P_ww) )
+          feq = rho * ( layout%weight( iDir )               &   ! e_0
+            &         + layout%weight( iDir ) * cs2inv * uc &   ! C_\alpha
+            &         + cs2 * (a_e * P_e + a_xy * P_xy      &
+            &                 + a_xz * P_xz + a_yz * P_yz   &
+            &                 + a_xx * P_xx + a_ww * P_ww)  )
   
           outstate(                                                             &
             & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
@@ -4586,13 +4587,13 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         ! for isotropic diffusion factor, it turns out to be 1st order trt
         ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
         nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
-        a_e = ( fieldProp(1)%species%diff_tensor(Dxx) &
-          & + fieldProp(1)%species%diff_tensor(Dyy)  &
-          & + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
-        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)           &
-          &                           - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy) & 
-          &                           + fieldProp(1)%species%diff_tensor(Dzz))          &
-          &                           )
+        a_e = ( fieldProp(1)%species%diff_tensor(Dxx)   &
+          &    + fieldProp(1)%species%diff_tensor(Dyy)  &
+          &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)             &
+          &                          - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    & 
+          &                                      + fieldProp(1)%species%diff_tensor(Dzz)) &
+          &                            )
         a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy) &
           &                     - fieldProp(1)%species%diff_tensor(Dzz) )
     
@@ -4615,32 +4616,34 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     
           do iDir = 1, layout%fStencil%QQ
             ! compute c_i * u
-            uc = dble( layout%fStencil%cxDir(1, iDir)) * u_fluid(1) + &
-              &  dble( layout%fStencil%cxDir(2, iDir)) * u_fluid(2) + &
-              &  dble( layout%fStencil%cxDir(3, iDir)) * u_fluid(3)
+            uc = real( layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
+              & + real( layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
+              & + real( layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
   
-            cqx2 = dble( layout%fStencil%cxDir(1, iDir)) &
-              & * dble( layout%fStencil%cxDir(1, iDir))
-            cqy2 = dble( layout%fStencil%cxDir(2, iDir)) &
-              & * dble( layout%fStencil%cxDir(2, iDir)) 
-            cqz2 = dble( layout%fStencil%cxDir(3, iDir)) &
-              & * dble( layout%fStencil%cxDir(3, iDir))
+            cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
+              &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
+            cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
+              &   * real( layout%fStencil%cxDir(2, iDir), kind=rk ) 
+            cqz2 = real( layout%fStencil%cxDir(3, iDir), kind=rk ) &
+              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )
             cq2 = cqx2 + cqy2 + cqz2   
     
             P_e = (19 * cq2 - 30) / 42
             P_xx = (3 * cqx2 - cq2) / 12
             P_ww = (cqy2 - cqz2) / 6
-            P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * &
-              & dble( layout%fStencil%cxDir(2, iDir))) / 4
-            P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * &
-              & dble( layout%fStencil%cxDir(3, iDir))) / 4
-            P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * &
-              & dble( layout%fStencil%cxDir(3, iDir))) / 4
+            P_xy = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+              &   * real( layout%fStencil%cxDir(2, iDir), kind=rk )) / 4
+            P_xz = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
+            P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
+              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
     
             ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
-            feqPlus = rho * (layout%weight( iDir ) +                  &   ! e_0
-            & cs2 * (a_e * P_e + a_xy * P_xy + a_xz * P_xz + a_yz * P_yz + &
-            & a_xx * P_xx + a_ww * P_ww) )
+            feqPlus = rho * ( layout%weight( iDir )                & ! e_0
+              &              + cs2 * (a_e * P_e + a_xy * P_xy      &
+              &                       + a_xz * P_xz + a_yz * P_yz  &
+              &                       + a_xx * P_xx + a_ww * P_ww) &
+              &              )
     
             feqMinus = rho * layout%weight( iDir ) * 3._rk * uc
     
@@ -4744,13 +4747,13 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       d_omega = fieldProp(1)%species%omega
       ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
       nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
-      a_e = ( fieldProp(1)%species%diff_tensor(Dxx) &
-        & + fieldProp(1)%species%diff_tensor(Dyy)   &
-        & + fieldProp(1)%species%diff_tensor(Dzz)) * nu_q / 3.0_rk - 1.0_rk
-      a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)              &
-        &                           - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
-        &                                       + fieldProp(1)%species%diff_tensor(Dzz)) &
-        &                           )
+      a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  &
+        &    + fieldProp(1)%species%diff_tensor(Dyy) &
+        &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+      a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)            &
+        &                         - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
+        &                                     + fieldProp(1)%species%diff_tensor(Dzz)) &
+        &                            )
       a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy)  &
         &                     - fieldProp(1)%species%diff_tensor(Dzz) )
   
@@ -4772,31 +4775,37 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
         do iDir = 1, layout%fStencil%QQ
           ! compute c_i * u
-          uc = dble( layout%fStencil%cxDir(1, iDir)) * u_fluid(1) + &
-            &  dble( layout%fStencil%cxDir(2, iDir)) * u_fluid(2) + &
-            &  dble( layout%fStencil%cxDir(3, iDir)) * u_fluid(3)
+          uc = real( layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
+            & + real( layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
+            & + real( layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
 
           usq = u_fluid(1)*u_fluid(1) + u_fluid(2)*u_fluid(2) + u_fluid(3)*u_fluid(3)
   
-          cqx2 = dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(1, iDir))
-          cqy2 = dble( layout%fStencil%cxDir(2, iDir)) * dble( layout%fStencil%cxDir(2, iDir)) 
-          cqz2 = dble( layout%fStencil%cxDir(3, iDir)) * dble( layout%fStencil%cxDir(3, iDir))
+          cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
+            &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
+          cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
+            &   * real( layout%fStencil%cxDir(2, iDir), kind=rk ) 
+          cqz2 = real( layout%fStencil%cxDir(3, iDir), kind=rk ) &
+            &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )
           cq2 = cqx2 + cqy2 + cqz2   
   
           P_e = (19 * cq2 - 30) / 42
           P_xx = (3 * cqx2 - cq2) / 12
           P_ww = (cqy2 - cqz2) / 6
-          P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * &
-            & dble( layout%fStencil%cxDir(2, iDir))) / 4
-          P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * &
-            & dble( layout%fStencil%cxDir(3, iDir))) / 4
-          P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * &
-            & dble( layout%fStencil%cxDir(3, iDir))) / 4
+          P_xy = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+            &   * real( layout%fStencil%cxDir(2, iDir), kind=rk )) / 4
+          P_xz = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+            &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
+          P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
+            &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
   
-          feq = rho * layout%weight( iDir ) * ( 1 + cs2inv * uc +    & ! e_0 + C_\alpha
-            & cs4inv * uc * uc * 0.5_rk -  usq * 0.5_rk * cs2inv ) + & ! Correction of numerical diffusion
-            & rho * cs2 * (a_e * P_e + a_xy * P_xy + a_xz * P_xz + a_yz * P_yz + &
-            & a_xx * P_xx + a_ww * P_ww)
+          feq = rho * layout%weight( iDir )               &
+            &   * ( 1 + cs2inv * uc                       & ! e_0 + C_\alpha
+            &     + cs4inv * uc * uc * 0.5_rk             &
+            &     - usq * 0.5_rk * cs2inv )               & ! Correction of numerical diffusion
+            &   + rho * cs2 * ( a_e * P_e + a_xy * P_xy   &
+            &                 + a_xz * P_xz + a_yz * P_yz &
+            &                 + a_xx * P_xx + a_ww * P_ww )
   
           outstate(                                                             &
             & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
@@ -4896,15 +4905,15 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         ! for isotropic diffusion factor, it turns out to be 1st order trt
         ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
         nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
-        a_e = ( fieldProp(1)%species%diff_tensor(Dxx) &
-          &   + fieldProp(1)%species%diff_tensor(Dyy) &
-          &   + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
-        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)              &
-          &                           - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
-          &                                       + fieldProp(1)%species%diff_tensor(Dzz)) &
-          &                           )
-        a_ww = 0.5_rk * nu_q * (fieldProp(1)%species%diff_tensor(Dyy) - &
-          & fieldProp(1)%species%diff_tensor(Dzz))
+        a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  &
+          &    + fieldProp(1)%species%diff_tensor(Dyy) &
+          &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)            &
+          &                         - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
+          &                                     + fieldProp(1)%species%diff_tensor(Dzz)) &
+          &                            )
+        a_ww = 0.5_rk * nu_q * (fieldProp(1)%species%diff_tensor(Dyy)  &
+          &                     - fieldProp(1)%species%diff_tensor(Dzz))
     
         ! attention: D_ab has a multiplier of 2 in ADE
         a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
@@ -4925,35 +4934,37 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
     
           do iDir = 1, layout%fStencil%QQ
             ! compute c_i * u
-            uc = dble( layout%fStencil%cxDir(1, iDir)) * u_fluid(1) + &
-              &  dble( layout%fStencil%cxDir(2, iDir)) * u_fluid(2) + &
-              &  dble( layout%fStencil%cxDir(3, iDir)) * u_fluid(3)
+            uc = real( layout%fStencil%cxDir(1, iDir), kind=rk ) * u_fluid(1)  &
+              & + real( layout%fStencil%cxDir(2, iDir), kind=rk ) * u_fluid(2) &
+              & + real( layout%fStencil%cxDir(3, iDir), kind=rk ) * u_fluid(3)
 
             usq = u_fluid(1)*u_fluid(1) + u_fluid(2)*u_fluid(2) + u_fluid(3)*u_fluid(3)
   
-            cqx2 = dble( layout%fStencil%cxDir(1, iDir)) &
-              & * dble( layout%fStencil%cxDir(1, iDir))
-            cqy2 = dble( layout%fStencil%cxDir(2, iDir)) &
-              & * dble( layout%fStencil%cxDir(2, iDir)) 
-            cqz2 = dble( layout%fStencil%cxDir(3, iDir)) &
-              & * dble( layout%fStencil%cxDir(3, iDir))
+            cqx2 = real( layout%fStencil%cxDir(1, iDir), kind=rk ) &
+              &   * real( layout%fStencil%cxDir(1, iDir), kind=rk )
+            cqy2 = real( layout%fStencil%cxDir(2, iDir), kind=rk ) &
+              &   * real( layout%fStencil%cxDir(2, iDir), kind=rk ) 
+            cqz2 = real( layout%fStencil%cxDir(3, iDir), kind=rk ) &
+              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )
             cq2 = cqx2 + cqy2 + cqz2   
     
             P_e = (19 * cq2 - 30) / 42
             P_xx = (3 * cqx2 - cq2) / 12
             P_ww = (cqy2 - cqz2) / 6
-            P_xy = (dble( layout%fStencil%cxDir(1, iDir)) * &
-              & dble( layout%fStencil%cxDir(2, iDir))) / 4
-            P_xz = (dble( layout%fStencil%cxDir(1, iDir)) * &
-              & dble( layout%fStencil%cxDir(3, iDir))) / 4
-            P_yz = (dble( layout%fStencil%cxDir(2, iDir)) * &
-              & dble( layout%fStencil%cxDir(3, iDir))) / 4
+            P_xy = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+              &   * real( layout%fStencil%cxDir(2, iDir), kind=rk )) / 4
+            P_xz = (real( layout%fStencil%cxDir(1, iDir), kind=rk )    &
+              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
+            P_yz = (real( layout%fStencil%cxDir(2, iDir), kind=rk )    &
+              &   * real( layout%fStencil%cxDir(3, iDir), kind=rk )) / 4
     
             ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
-            feqPlus = rho * layout%weight( iDir ) * ( 1 +                  &   ! e_0
-            & cs4inv * uc * uc * 0.5_rk -  usq * 0.5_rk * cs2inv ) +       &   ! Correction
-            & rho * cs2 * (a_e * P_e + a_xy * P_xy + a_xz * P_xz + a_yz * P_yz + &
-            & a_xx * P_xx + a_ww * P_ww) 
+            feqPlus = rho * layout%weight( iDir ) * ( 1                        & ! e_0
+              &                                    + cs4inv * uc * uc * 0.5_rk &
+              &                                    - usq * 0.5_rk * cs2inv )   & ! Correction
+              &       + rho * cs2 * ( a_e * P_e + a_xy * P_xy                  &
+              &                      + a_xz * P_xz + a_yz * P_yz               &
+              &                      + a_xx * P_xx + a_ww * P_ww               ) 
     
             feqMinus = rho * layout%weight( iDir ) * 3._rk * uc
     
@@ -5048,29 +5059,20 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       transVel = transVel * inv_vel
       
       ! define the 3 free parameters
-      sxy = ( &
-        abs(fieldProp(1)%species%diff_tensor(Dxy)) &
-        & + min( &
-          & fieldProp(1)%species%diff_tensor(Dxx), &
-          & fieldProp(1)%species%diff_tensor(Dyy) &
-        & ) &
-      & ) / 2 ! free parameter for xy direction
+      sxy = ( abs(fieldProp(1)%species%diff_tensor(Dxy))      &
+        &      + min( fieldProp(1)%species%diff_tensor(Dxx),  &
+        &             fieldProp(1)%species%diff_tensor(Dyy) ) &
+        &    ) / 2 ! free parameter for xy direction
 
-      sxz = ( &
-        abs(fieldProp(1)%species%diff_tensor(Dxz)) &
-        & + min( &
-          & fieldProp(1)%species%diff_tensor(Dxx), &
-          & fieldProp(1)%species%diff_tensor(Dzz) &
-        & ) &
-      & ) / 2 ! free parameter for xz direction
+      sxz = ( abs(fieldProp(1)%species%diff_tensor(Dxz))      &
+        &      + min( fieldProp(1)%species%diff_tensor(Dxx),  &
+        &             fieldProp(1)%species%diff_tensor(Dzz) ) &
+        &    ) / 2 ! free parameter for xz direction
 
-      syz = ( &
-        abs(fieldProp(1)%species%diff_tensor(Dyz)) &
-        & + min( &
-          & fieldProp(1)%species%diff_tensor(Dyy), &
-          & fieldProp(1)%species%diff_tensor(Dzz) &
-        & ) &
-      & ) / 2 ! free parameter for xz direction
+      syz = ( abs(fieldProp(1)%species%diff_tensor(Dyz))      &
+        &      + min( fieldProp(1)%species%diff_tensor(Dyy),  &
+        &             fieldProp(1)%species%diff_tensor(Dzz) ) &
+        &    ) / 2 ! free parameter for xz direction
       
       ! \Lambda_xx, yy, zz with t_1 = 1/6
       omega(1) = (fieldProp(1)%species%diff_tensor(Dxx) - sxy - sxz) * 9.0_rk 
@@ -5285,12 +5287,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           
         ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
         nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
-        a_e = ( fieldProp(1)%species%diff_tensor(Dxx) & 
-          &   + fieldProp(1)%species%diff_tensor(Dyy) &
-          &   + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
-        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)              &
-          &                           - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
-          &                                       + fieldProp(1)%species%diff_tensor(Dzz)) &
+        a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  & 
+          &    + fieldProp(1)%species%diff_tensor(Dyy) &
+          &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)            &
+          &                         - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
+          &                                     + fieldProp(1)%species%diff_tensor(Dzz)) &
           &                           )
         a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy) &
           &                     - fieldProp(1)%species%diff_tensor(Dzz) )
@@ -5355,13 +5357,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
           ! x-, y- and z-velocity from transport field
           u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
-          usq = u_fluid(1)*u_fluid(1) + u_fluid(2)*u_fluid(2) + u_fluid(3)*u_fluid(3)
+          usq = u_fluid(1) * u_fluid(1) + u_fluid(2) * u_fluid(2) + u_fluid(3) * u_fluid(3)
 
           rho = 0.0_rk
           do iDir = 1, layout%fStencil%QQ
-            rho = rho + &
-              & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
-              & layout%fstencil%qq+ varsys%nscalars*0 )
+            rho = rho + instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
+              &                 layout%fstencil%qq+ varsys%nscalars*0 )
           end do
 
           ! compute the equilibrium moments of the pdf
