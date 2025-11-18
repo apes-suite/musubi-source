@@ -4441,8 +4441,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         &                          - 0.5_rk * ( fieldProp(1)%species%diff_tensor%Dyy    &
         &                                      + fieldProp(1)%species%diff_tensor%Dzz ) &
         &                         )
-      a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
-        & fieldProp(1)%species%diff_tensor%Dzz)
+      a_ww = 0.5_rk / nu * ( fieldProp(1)%species%diff_tensor%Dyy  &
+        &                   - fieldProp(1)%species%diff_tensor%Dzz )
   
       ! attention: D_ab has a multiplier of 2 in ADE
       a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
