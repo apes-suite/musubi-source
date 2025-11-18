@@ -58,6 +58,7 @@ module mus_species_module
   public :: mus_species_type
   public :: mus_load_species, compute_molWeightRatio, compute_bulkViscOmega
   public :: mus_species_out
+  public :: Dxx, Dyy, Dzz, Dxy, Dxz, Dyz
 
   !> MRT species type
   type mrt_species_type
@@ -73,14 +74,13 @@ module mus_species_module
     real(kind=rk), allocatable :: omegaMomForce(:,:)
   end type mrt_species_type
 
-  type mus_diff_tensor_type
-    real(kind=rk) :: Dxx
-    real(kind=rk) :: Dyy
-    real(kind=rk) :: Dzz
-    real(kind=rk) :: Dxy
-    real(kind=rk) :: Dxz
-    real(kind=rk) :: Dyz
-  end type mus_diff_tensor_type
+  !> diffusion tensor index
+  integer, parameter :: Dxx = 1
+  integer, parameter :: Dyy = 2
+  integer, parameter :: Dzz = 3
+  integer, parameter :: Dxy = 4
+  integer, parameter :: Dxz = 5
+  integer, parameter :: Dyz = 6
 
   !> this type contains species parameters
   !! @todo KM: extent level dependent parameter for multilevel
@@ -98,7 +98,7 @@ module mus_species_module
     !! reciprocal of diffusivity of the species
     real(kind=rk), allocatable :: resi_coeff(:)
     !> full diffusion tensor of the species
-    type(mus_diff_tensor_type) :: diff_tensor
+    real(kind=rk) :: diff_tensor(6)
     !! KM:@todo set diffusivity and resistivity for multilevel
     !> molar fraction of this species in the mixture
 !    real(kind=rk) :: molarFrac
@@ -301,69 +301,62 @@ contains
       call aot_get_val( L = conf,                                              &
         &               thandle = sub_handle,                                  &
         &               key = 'Dxx',                                           &
-        &               val = me%diff_tensor%Dxx,                              &
+        &               val = me%diff_tensor(Dxx),                              &
         &               ErrCode = iError,                                      &
         &               default = 0.0_rk )
 
       call aot_get_val( L = conf,                                              &
         &               thandle = sub_handle,                                  &
         &               key = 'Dyy',                                           &
-        &               val = me%diff_tensor%Dyy,                              &
+        &               val = me%diff_tensor(Dyy),                              &
         &               ErrCode = iError, &
         &               default = 0.0_rk )
       
       call aot_get_val( L = conf,                                              &
         &               thandle = sub_handle,                                  &
         &               key = 'Dzz',                                           &
-        &               val = me%diff_tensor%Dzz,                              &
+        &               val = me%diff_tensor(Dzz),                              &
         &               ErrCode = iError,                                      &
         &               default = 0.0_rk )
 
       call aot_get_val( L = conf,                                              &
         &               thandle = sub_handle,                                  &
         &               key = 'Dxy',                                           &
-        &               val = me%diff_tensor%Dxy,                              &
+        &               val = me%diff_tensor(Dxy),                              &
         &               ErrCode = iError,                                      &
         &               default = 0.0_rk )
 
       call aot_get_val( L = conf,                                              &
         &               thandle = sub_handle,                                  &
         &               key = 'Dxz',                                           &
-        &               val = me%diff_tensor%Dxz,                              &
+        &               val = me%diff_tensor(Dxz),                              &
         &               ErrCode = iError,                                      &
         &               default = 0.0_rk )
 
       call aot_get_val( L = conf,                                              &
         &               thandle = sub_handle,                                  &
         &               key = 'Dyz',                                           &
-        &               val = me%diff_tensor%Dyz,                              &
+        &               val = me%diff_tensor(Dyz),                              &
         &               ErrCode = iError,                                      &
         &               default = 0.0_rk )
 
-      if (me%diff_tensor%Dxx == 0.0_rk .and. me%diff_tensor%Dyy == 0.0_rk .and.     &
-        &    me%diff_tensor%Dzz == 0.0_rk .and. me%diff_tensor%Dxy == 0.0_rk .and.  &
-        &    me%diff_tensor%Dxz == 0.0_rk .and. me%diff_tensor%Dyz == 0.0_rk ) then
+      if (any(me%diff_tensor /= 0.0_rk)) then
+        write(logUnit(1),*) ' Species diffusion is anisotropic.'
+        write(logUnit(1),*) '   Diffusion tensor components:'
+        write(logUnit(1),*) '    Dxx: ', real(me%diff_tensor(Dxx))
+        write(logUnit(1),*) '    Dyy: ', real(me%diff_tensor(Dyy))
+        write(logUnit(1),*) '    Dzz: ', real(me%diff_tensor(Dzz))
+        write(logUnit(1),*) '    Dxy: ', real(me%diff_tensor(Dxy))
+        write(logUnit(1),*) '    Dxz: ', real(me%diff_tensor(Dxz))
+        write(logUnit(1),*) '    Dyz: ', real(me%diff_tensor(Dyz))
+
+        me%diff_tensor = me%diff_tensor/physics%fac(minLevel)%diffusivity
+      else
         write(logUnit(1),*) ' Error: diffusion tensor is defined but all '//    &
           &                 'components are zero!'
         call tem_abort()       
-      else
-        write(logUnit(1),*) ' Species diffusion is anisotropic.'
-        write(logUnit(1),*) '   Diffusion tensor components:'
-        write(logUnit(1),*) '    Dxx: ', real(me%diff_tensor%Dxx)
-        write(logUnit(1),*) '    Dyy: ', real(me%diff_tensor%Dyy)
-        write(logUnit(1),*) '    Dzz: ', real(me%diff_tensor%Dzz)
-        write(logUnit(1),*) '    Dxy: ', real(me%diff_tensor%Dxy)
-        write(logUnit(1),*) '    Dxz: ', real(me%diff_tensor%Dxz)
-        write(logUnit(1),*) '    Dyz: ', real(me%diff_tensor%Dyz)
-
-        me%diff_tensor%Dxx = me%diff_tensor%Dxx/physics%fac(minLevel)%diffusivity
-        me%diff_tensor%Dyy = me%diff_tensor%Dyy/physics%fac(minLevel)%diffusivity
-        me%diff_tensor%Dzz = me%diff_tensor%Dzz/physics%fac(minLevel)%diffusivity
-        me%diff_tensor%Dxy = me%diff_tensor%Dxy/physics%fac(minLevel)%diffusivity
-        me%diff_tensor%Dxz = me%diff_tensor%Dxz/physics%fac(minLevel)%diffusivity
-        me%diff_tensor%Dyz = me%diff_tensor%Dyz/physics%fac(minLevel)%diffusivity
       end if
-    endif
+    end if
 
     call aot_table_close( L = conf, thandle = sub_handle )
 

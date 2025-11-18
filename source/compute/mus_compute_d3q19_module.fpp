@@ -67,6 +67,7 @@ module mus_d3q19_module
   use mus_hrrInit_module,            only: HRR_Correction_d3q19,        &
     &                                      getHermitepolynomials,       &
     &                                      getHermitepolynomials_D3Q19
+  use mus_species_module, only: Dxx, Dyy, Dzz, Dxy, Dxz, Dyz
 
   implicit none
 
@@ -4402,7 +4403,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       type(mus_scheme_type), pointer :: scheme
       real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
       real(kind=rk) :: rho, feq
-      real(kind=rk) :: d_omega, nu
+      real(kind=rk) :: d_omega, nu_q
       real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
       real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2
       real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
@@ -4433,23 +4434,24 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
       ! for isotropic diffusion factor, it turns out to be 1st order bgk
       d_omega = fieldProp(1)%species%omega
-      nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-      a_e = ( fieldProp(1)%species%diff_tensor%Dxx  &
-        &    + fieldProp(1)%species%diff_tensor%Dyy &
-        &    + fieldProp(1)%species%diff_tensor%Dzz ) / 3.0_rk / nu - 1.0_rk
-      a_xx = 2._rk / 3._rk / nu * ( fieldProp(1)%species%diff_tensor%Dxx                &
-        &                          - 0.5_rk * ( fieldProp(1)%species%diff_tensor%Dyy    &
-        &                                      + fieldProp(1)%species%diff_tensor%Dzz ) &
-        &                         )
-      a_ww = 0.5_rk / nu * ( fieldProp(1)%species%diff_tensor%Dyy  &
-        &                   - fieldProp(1)%species%diff_tensor%Dzz )
+      ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
+      nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
+      a_e = ( fieldProp(1)%species%diff_tensor(Dxx)  &
+        &    + fieldProp(1)%species%diff_tensor(Dyy) &
+        &    + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+      a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)              &
+        &                          - 0.5_rk * ( fieldProp(1)%species%diff_tensor(Dyy)    &
+        &                                      + fieldProp(1)%species%diff_tensor(Dzz) ) &
+        &                          )
+      a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy)  &
+        &                     - fieldProp(1)%species%diff_tensor(Dzz) )
   
       ! attention: D_ab has a multiplier of 2 in ADE
-      a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
-      a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
-      a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
+      a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
+      a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
+      a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
   
-      nodeloop: do iElem = 1, nSolve
+      elemloop: do iElem = 1, nSolve
         ! x-, y- and z-velocity from transport field
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
   
@@ -4466,9 +4468,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
             & + real(layout%fStencil%cxDir(2, iDir), kind=rk) * u_fluid(2) &
             & + real(layout%fStencil%cxDir(3, iDir), kind=rk) * u_fluid(3)
   
-          cqx2 = dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(1, iDir))
-          cqy2 = dble( layout%fStencil%cxDir(2, iDir)) * dble( layout%fStencil%cxDir(2, iDir)) 
-          cqz2 = dble( layout%fStencil%cxDir(3, iDir)) * dble( layout%fStencil%cxDir(3, iDir))
+          cqx2 = dble( layout%fStencil%cxDir(1, iDir)) &
+            & * dble( layout%fStencil%cxDir(1, iDir))
+          cqy2 = dble( layout%fStencil%cxDir(2, iDir)) &
+            & * dble( layout%fStencil%cxDir(2, iDir)) 
+          cqz2 = dble( layout%fStencil%cxDir(3, iDir)) &
+            & * dble( layout%fStencil%cxDir(3, iDir))
           cq2 = cqx2 + cqy2 + cqz2   
   
           P_e = (19 * cq2 - 30) / 42
@@ -4492,7 +4497,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
         end do
   
-      end do nodeloop
+      end do elemloop
   
       end subroutine mus_advRel_kPS_rBGK_vEmodel_lD3Q19
     ! ****************************************************************************** !
@@ -4510,8 +4515,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rTRT_vEmodel_lD3Q19( fieldProp, inState, outState,     &
-      &                            auxField, neigh, nElems, nSolve, level, layout,   &
+    subroutine mus_advRel_kPS_rTRT_vEmodel_lD3Q19( fieldProp, inState, outState,   &
+      &                            auxField, neigh, nElems, nSolve, level, layout, &
       &                            params, varSys, derVarPos               )
         ! -------------------------------------------------------------------- !
         !> Array of field properties (fluid or species)
@@ -4544,8 +4549,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         type(mus_varSys_data_type), pointer :: fPtr
         type(mus_scheme_type), pointer :: scheme
         real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
-        real(kind=rk) :: rho, feqPlus, feqMinus, fPlus, fMinus, magicParam
-        real(kind=rk) :: d_omega, aux_omega, nu
+        real(kind=rk) :: rho, feqPlus, feqMinus, fPlus, fMinus
+        real(kind=rk) :: d_omega, aux_omega, nu_q, d_lambda
         real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
         real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2
         real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
@@ -4575,25 +4580,29 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         transVel = transVel * inv_vel
 
         d_omega = fieldProp(1)%species%omega
-        magicParam = fieldProp(1)%species%lambda
-        aux_omega = 1.0_rk / (magicParam / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
+        d_lambda = fieldProp(1)%species%lambda
+        aux_omega = 1.0_rk / (d_lambda / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
           
         ! for isotropic diffusion factor, it turns out to be 1st order trt
-        nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-        a_e = (fieldProp(1)%species%diff_tensor%Dxx + fieldProp(1)%species%diff_tensor%Dyy + &
-          & fieldProp(1)%species%diff_tensor%Dzz) / 3.0_rk / nu - 1.0_rk
-        a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
-          & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
-        a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
-          & fieldProp(1)%species%diff_tensor%Dzz)
+        ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
+        nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
+        a_e = ( fieldProp(1)%species%diff_tensor(Dxx) &
+          & + fieldProp(1)%species%diff_tensor(Dyy)  &
+          & + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)           &
+          &                           - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy) & 
+          &                           + fieldProp(1)%species%diff_tensor(Dzz))          &
+          &                           )
+        a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy) &
+          &                     - fieldProp(1)%species%diff_tensor(Dzz) )
     
         ! attention: D_ab has a multiplier of 2 in ADE
-        a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
-        a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
-        a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
+        a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
+        a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
+        a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
     
     
-        nodeloop: do iElem = 1, nSolve
+        elemloop: do iElem = 1, nSolve
           ! x-, y- and z-velocity from transport field
           u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
     
@@ -4610,9 +4619,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
               &  dble( layout%fStencil%cxDir(2, iDir)) * u_fluid(2) + &
               &  dble( layout%fStencil%cxDir(3, iDir)) * u_fluid(3)
   
-            cqx2 = dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(1, iDir))
-            cqy2 = dble( layout%fStencil%cxDir(2, iDir)) * dble( layout%fStencil%cxDir(2, iDir)) 
-            cqz2 = dble( layout%fStencil%cxDir(3, iDir)) * dble( layout%fStencil%cxDir(3, iDir))
+            cqx2 = dble( layout%fStencil%cxDir(1, iDir)) &
+              & * dble( layout%fStencil%cxDir(1, iDir))
+            cqy2 = dble( layout%fStencil%cxDir(2, iDir)) &
+              & * dble( layout%fStencil%cxDir(2, iDir)) 
+            cqz2 = dble( layout%fStencil%cxDir(3, iDir)) &
+              & * dble( layout%fStencil%cxDir(3, iDir))
             cq2 = cqx2 + cqy2 + cqz2   
     
             P_e = (19 * cq2 - 30) / 42
@@ -4642,7 +4654,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
               &                + aux_omega * (feqPlus - fPlus)
           end do
     
-        end do nodeloop
+        end do elemloop
     
         end subroutine mus_advRel_kPS_rTRT_vEmodel_lD3Q19
       ! ****************************************************************************** !
@@ -4699,7 +4711,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       type(mus_scheme_type), pointer :: scheme
       real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
       real(kind=rk) :: rho, feq
-      real(kind=rk) :: d_omega, nu
+      real(kind=rk) :: d_omega, nu_q
       real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
       real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2, usq
       real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
@@ -4730,20 +4742,24 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
       ! for isotropic diffusion factor, it turns out to be 1st order bgk
       d_omega = fieldProp(1)%species%omega
-      nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-      a_e = (fieldProp(1)%species%diff_tensor%Dxx + fieldProp(1)%species%diff_tensor%Dyy + &
-        & fieldProp(1)%species%diff_tensor%Dzz) / 3.0_rk / nu - 1.0_rk
-      a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
-        & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
-      a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
-        & fieldProp(1)%species%diff_tensor%Dzz)
+      ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
+      nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
+      a_e = ( fieldProp(1)%species%diff_tensor(Dxx) &
+        & + fieldProp(1)%species%diff_tensor(Dyy)   &
+        & + fieldProp(1)%species%diff_tensor(Dzz)) * nu_q / 3.0_rk - 1.0_rk
+      a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)              &
+        &                           - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
+        &                                       + fieldProp(1)%species%diff_tensor(Dzz)) &
+        &                           )
+      a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy)  &
+        &                     - fieldProp(1)%species%diff_tensor(Dzz) )
   
       ! attention: D_ab has a multiplier of 2 in ADE
-      a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
-      a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
-      a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
+      a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
+      a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
+      a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
   
-      nodeloop: do iElem = 1, nSolve
+      elemloop: do iElem = 1, nSolve
         ! x-, y- and z-velocity from transport field
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
   
@@ -4788,7 +4804,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   
         end do
   
-      end do nodeloop
+      end do elemloop
   
       end subroutine mus_advRel_kPS_rBGK_vEmodelCorr_lD3Q19
     ! ****************************************************************************** !
@@ -4843,8 +4859,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         type(mus_varSys_data_type), pointer :: fPtr
         type(mus_scheme_type), pointer :: scheme
         real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
-        real(kind=rk) :: rho, feqPlus, feqMinus, fPlus, fMinus, magicParam
-        real(kind=rk) :: d_omega, aux_omega, nu
+        real(kind=rk) :: rho, feqPlus, feqMinus, fPlus, fMinus
+        real(kind=rk) :: d_omega, aux_omega, nu_q, d_lambda
         real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
         real(kind=rk) :: uc, cqx2, cqy2, cqz2, cq2, usq
         real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
@@ -4874,25 +4890,29 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         transVel = transVel * inv_vel
 
         d_omega = fieldProp(1)%species%omega
-        magicParam = fieldProp(1)%species%lambda
-        aux_omega = 1.0_rk / (magicParam / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
+        d_lambda = fieldProp(1)%species%lambda
+        aux_omega = 1.0_rk / (d_lambda / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
           
         ! for isotropic diffusion factor, it turns out to be 1st order trt
-        nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-        a_e = (fieldProp(1)%species%diff_tensor%Dxx + fieldProp(1)%species%diff_tensor%Dyy + &
-          & fieldProp(1)%species%diff_tensor%Dzz) / 3.0_rk / nu - 1.0_rk
-        a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
-          & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
-        a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
-          & fieldProp(1)%species%diff_tensor%Dzz)
+        ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
+        nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
+        a_e = ( fieldProp(1)%species%diff_tensor(Dxx) &
+          &   + fieldProp(1)%species%diff_tensor(Dyy) &
+          &   + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)              &
+          &                           - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
+          &                                       + fieldProp(1)%species%diff_tensor(Dzz)) &
+          &                           )
+        a_ww = 0.5_rk * nu_q * (fieldProp(1)%species%diff_tensor(Dyy) - &
+          & fieldProp(1)%species%diff_tensor(Dzz))
     
         ! attention: D_ab has a multiplier of 2 in ADE
-        a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
-        a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
-        a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
+        a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
+        a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
+        a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
     
     
-        nodeloop: do iElem = 1, nSolve
+        elemloop: do iElem = 1, nSolve
           ! x-, y- and z-velocity from transport field
           u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
     
@@ -4911,9 +4931,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
             usq = u_fluid(1)*u_fluid(1) + u_fluid(2)*u_fluid(2) + u_fluid(3)*u_fluid(3)
   
-            cqx2 = dble( layout%fStencil%cxDir(1, iDir)) * dble( layout%fStencil%cxDir(1, iDir))
-            cqy2 = dble( layout%fStencil%cxDir(2, iDir)) * dble( layout%fStencil%cxDir(2, iDir)) 
-            cqz2 = dble( layout%fStencil%cxDir(3, iDir)) * dble( layout%fStencil%cxDir(3, iDir))
+            cqx2 = dble( layout%fStencil%cxDir(1, iDir)) &
+              & * dble( layout%fStencil%cxDir(1, iDir))
+            cqy2 = dble( layout%fStencil%cxDir(2, iDir)) &
+              & * dble( layout%fStencil%cxDir(2, iDir)) 
+            cqz2 = dble( layout%fStencil%cxDir(3, iDir)) &
+              & * dble( layout%fStencil%cxDir(3, iDir))
             cq2 = cqx2 + cqy2 + cqz2   
     
             P_e = (19 * cq2 - 30) / 42
@@ -4945,7 +4968,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
           end do
     
-        end do nodeloop
+        end do elemloop
     
         end subroutine mus_advRel_kPS_rTRT_vEmodelCorr_lD3Q19
       ! ****************************************************************************** !
@@ -4963,8 +4986,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-    subroutine mus_advRel_kPS_rTRT_vLmodel_lD3Q19( fieldProp, inState, outState,     &
-      &                            auxField, neigh, nElems, nSolve, level, layout,   &
+    subroutine mus_advRel_kPS_rTRT_vLmodel_lD3Q19( fieldProp, inState, outState,   &
+      &                            auxField, neigh, nElems, nSolve, level, layout, &
       &                            params, varSys, derVarPos               )
       ! -------------------------------------------------------------------- !
       !> Array of field properties (fluid or species)
@@ -5026,45 +5049,45 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       
       ! define the 3 free parameters
       sxy = ( &
-        abs(fieldProp(1)%species%diff_tensor%Dxy) &
+        abs(fieldProp(1)%species%diff_tensor(Dxy)) &
         & + min( &
-          & fieldProp(1)%species%diff_tensor%Dxx, &
-          & fieldProp(1)%species%diff_tensor%Dyy &
+          & fieldProp(1)%species%diff_tensor(Dxx), &
+          & fieldProp(1)%species%diff_tensor(Dyy) &
         & ) &
       & ) / 2 ! free parameter for xy direction
 
       sxz = ( &
-        abs(fieldProp(1)%species%diff_tensor%Dxz) &
+        abs(fieldProp(1)%species%diff_tensor(Dxz)) &
         & + min( &
-          & fieldProp(1)%species%diff_tensor%Dxx, &
-          & fieldProp(1)%species%diff_tensor%Dzz &
+          & fieldProp(1)%species%diff_tensor(Dxx), &
+          & fieldProp(1)%species%diff_tensor(Dzz) &
         & ) &
       & ) / 2 ! free parameter for xz direction
 
       syz = ( &
-        abs(fieldProp(1)%species%diff_tensor%Dyz) &
+        abs(fieldProp(1)%species%diff_tensor(Dyz)) &
         & + min( &
-          & fieldProp(1)%species%diff_tensor%Dyy, &
-          & fieldProp(1)%species%diff_tensor%Dzz &
+          & fieldProp(1)%species%diff_tensor(Dyy), &
+          & fieldProp(1)%species%diff_tensor(Dzz) &
         & ) &
       & ) / 2 ! free parameter for xz direction
       
       ! \Lambda_xx, yy, zz with t_1 = 1/6
-      omega(1) = (fieldProp(1)%species%diff_tensor%Dxx - sxy - sxz) * 9.0_rk 
-      omega(2) = (fieldProp(1)%species%diff_tensor%Dyy - sxy - syz) * 9.0_rk 
-      omega(3) = (fieldProp(1)%species%diff_tensor%Dzz - sxz - syz) * 9.0_rk 
+      omega(1) = (fieldProp(1)%species%diff_tensor(Dxx) - sxy - sxz) * 9.0_rk 
+      omega(2) = (fieldProp(1)%species%diff_tensor(Dyy) - sxy - syz) * 9.0_rk 
+      omega(3) = (fieldProp(1)%species%diff_tensor(Dzz) - sxz - syz) * 9.0_rk 
       ! \Lambda_\pn xy, \pn xz, \pn yz with t_2 = 1/12
-      omega(4) = 9.0_rk * (sxy + fieldProp(1)%species%diff_tensor%Dxy)
-      omega(5) = 9.0_rk * (sxy - fieldProp(1)%species%diff_tensor%Dxy)
-      omega(6) = 9.0_rk * (sxz + fieldProp(1)%species%diff_tensor%Dxz)
-      omega(7) = 9.0_rk * (sxz - fieldProp(1)%species%diff_tensor%Dxz)
-      omega(8) = 9.0_rk * (syz + fieldProp(1)%species%diff_tensor%Dyz)
-      omega(9) = 9.0_rk * (syz - fieldProp(1)%species%diff_tensor%Dyz)
+      omega(4) = 9.0_rk * (sxy + fieldProp(1)%species%diff_tensor(Dxy))
+      omega(5) = 9.0_rk * (sxy - fieldProp(1)%species%diff_tensor(Dxy))
+      omega(6) = 9.0_rk * (sxz + fieldProp(1)%species%diff_tensor(Dxz))
+      omega(7) = 9.0_rk * (sxz - fieldProp(1)%species%diff_tensor(Dxz))
+      omega(8) = 9.0_rk * (syz + fieldProp(1)%species%diff_tensor(Dyz))
+      omega(9) = 9.0_rk * (syz - fieldProp(1)%species%diff_tensor(Dyz))
       ! get omega from \Lambda
       omega = 1.0_rk / (omega + 0.5_rk)
       aux_omega = 1.0_rk ! free parameter
   
-      nodeloop: do iElem = 1, nSolve
+      elemloop: do iElem = 1, nSolve
         ! x-, y- and z-velocity from transport field
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
   
@@ -5155,7 +5178,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         outstate(( ielem-1)* varsys%nscalars+19) = pdfTmp(19) + aux_omega * &
           & (rho * layout%weight(19) - pdfTmp(19))
         
-      end do nodeloop
+      end do elemloop
   
       end subroutine mus_advRel_kPS_rTRT_vLmodel_lD3Q19
       ! ****************************************************************************** !
@@ -5217,7 +5240,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         type(mus_varSys_data_type), pointer :: fPtr
         type(mus_scheme_type), pointer :: scheme
         real(kind=rk) :: rho
-        real(kind=rk) :: d_omega, nu, magicParam, aux_omega
+        real(kind=rk) :: d_omega, nu_q, d_lambda, aux_omega
         real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
         real(kind=rk) :: usq
         real(kind=rk) :: a_e, a_xx, a_ww, a_xy, a_xz, a_yz
@@ -5260,22 +5283,25 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
         d_omega = fieldProp(1)%species%omega
           
-        ! for isotropic diffusion factor, it turns out to be 1st order trt
-        nu = (1.0_rk / d_omega - 0.5_rk) * cs2 
-        a_e = (fieldProp(1)%species%diff_tensor%Dxx + fieldProp(1)%species%diff_tensor%Dyy + &
-          & fieldProp(1)%species%diff_tensor%Dzz) / 3.0_rk / nu - 1.0_rk
-        a_xx = 2._rk / 3._rk / nu * (fieldProp(1)%species%diff_tensor%Dxx - 0.5_rk * &
-          & (fieldProp(1)%species%diff_tensor%Dyy + fieldProp(1)%species%diff_tensor%Dzz))
-        a_ww = 0.5_rk / nu * (fieldProp(1)%species%diff_tensor%Dyy - &
-          & fieldProp(1)%species%diff_tensor%Dzz)
+        ! reciprocal of the free parameter nu, i.e. nu_q = 1/nu
+        nu_q = cs2inv / (1.0_rk / d_omega - 0.5_rk)
+        a_e = ( fieldProp(1)%species%diff_tensor(Dxx) & 
+          &   + fieldProp(1)%species%diff_tensor(Dyy) &
+          &   + fieldProp(1)%species%diff_tensor(Dzz) ) * nu_q / 3.0_rk - 1.0_rk
+        a_xx = 2._rk / 3._rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dxx)              &
+          &                           - 0.5_rk * (fieldProp(1)%species%diff_tensor(Dyy)    &
+          &                                       + fieldProp(1)%species%diff_tensor(Dzz)) &
+          &                           )
+        a_ww = 0.5_rk * nu_q * ( fieldProp(1)%species%diff_tensor(Dyy) &
+          &                     - fieldProp(1)%species%diff_tensor(Dzz) )
     
         ! attention: D_ab has a multiplier of 2 in ADE
-        a_xy = fieldProp(1)%species%diff_tensor%Dxy / nu
-        a_xz = fieldProp(1)%species%diff_tensor%Dxz / nu
-        a_yz = fieldProp(1)%species%diff_tensor%Dyz / nu
+        a_xy = fieldProp(1)%species%diff_tensor(Dxy) * nu_q
+        a_xz = fieldProp(1)%species%diff_tensor(Dxz) * nu_q
+        a_yz = fieldProp(1)%species%diff_tensor(Dyz) * nu_q
         
-        magicParam = 0.25_rk
-        aux_omega = 1.0_rk / (magicParam / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
+        d_lambda = 0.25_rk
+        aux_omega = 1.0_rk / (d_lambda / (1.0_rk / d_omega - 0.5_rk) + 0.5_rk)
         s_1 = 1.2_rk
         s_2 = aux_omega
         s_4 = d_omega
@@ -5304,7 +5330,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         s_mrt(18) = s_16 / 8._rk
         s_mrt(19) = s_16 / 8._rk
 
-        nodeloop: do iElem = 1, nSolve
+        elemloop: do iElem = 1, nSolve
 
           !> First load all local values into temp array
           fN00 = inState(?FETCH?( qN00, 1, iElem, QQ, varSys%nScalars, nElems,neigh ))
@@ -5467,7 +5493,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           outstate( ?SAVE?(  q0NN,1,iElem,QQ,QQ,nElems,neigh )) = &
             & f0NN + t8_1 - t8_3 - t8_6 - 2.0_rk * t8_4 + mneq(15) - mneq(18) + mneq(19)
     
-        end do nodeloop
+        end do elemloop
     
         end subroutine mus_advRel_kPS_rMRT_vEmodelCorr_lD3Q19
       ! ****************************************************************************** !
