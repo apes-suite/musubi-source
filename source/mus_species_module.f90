@@ -333,12 +333,12 @@ contains
         &               ErrCode = iError,          &
         &               default = 0.0_rk           )
 
-      call aot_get_val( L = conf,                                              &
-        &               thandle = sub_handle,                                  &
-        &               key = 'Dyz',                                           &
-        &               val = me%diff_tensor(Dyz),                              &
-        &               ErrCode = iError,                                      &
-        &               default = 0.0_rk )
+      call aot_get_val( L = conf,                  &
+        &               thandle = sub_handle,      &
+        &               key = 'Dyz',               &
+        &               val = me%diff_tensor(Dyz), &
+        &               ErrCode = iError,          &
+        &               default = 0.0_rk           )
 
       if (any(me%diff_tensor /= 0.0_rk)) then
         write(logUnit(1),*) ' Species diffusion is anisotropic.'
