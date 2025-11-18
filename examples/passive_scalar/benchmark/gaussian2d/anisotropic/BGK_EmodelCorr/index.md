@@ -1,7 +1,7 @@
-title: Advection-anisotropic-diffusion of a Gaussian Hill
+title: Advection-anisotropic-diffusion of a Gaussian Hill with BGK-EmodelCorr
 @warning WORK IN PROGRESS @endwarning
 
-# Advection-anisotropic-diffusion of a Gaussian Hill # {#eg_GPP}
+# Advection-anisotropic-diffusion of a Gaussian Hill with BGK-EmodelCorr # {#eg_GPP}
 
 In this example, the time evolution of a Gaussian hill has anisotropic diffusivity 
   in an infinite space with periodic boundaries.
@@ -32,27 +32,6 @@ with an anisotropy ratio defined as
 The values of D is set with the angle of principal axis in **args.lua**. Readers are encouraged to modify the angle
 $theta$ and the anisotropy ratio $n$ to see how the anisotropic diffusion behaves under different orientations and ratios.
 
-The showcases with the parameters
-
-$$
-n = 4
-tau = 0.8
-u_mag = 0.1
-nelem = 500
-sigma0 = 40
-t_total = 2000
-$$
-
-are presented in **media/**. The evolutions of the Gaussian hill at the angles of 0, 30, 45 are shown below.
-
-![The evolution of Gaussian hill with anisotropic diffusion at angle 0](media/contour_0.png)
-![The evolution of Gaussian hill with anisotropic diffusion at angle 30](media/contour_30.png)
-![The evolution of Gaussian hill with anisotropic diffusion at angle 45](media/contour_45.png)
-
-A GIF animation of the evolution at angle 30 is also provided.
-
-![The evolution of Gaussian hill with anisotropic diffusion at angle 30](media/output_30.gif)
-
-The script to generate the above contour plots is provided in **plot_contour.py**.
+The script to generate the contour plots is provided in **plot_contour.py**.
 To run it, make sure you have **matplotlib**, **numpy**, **scipy**, and **pandas**
 installed in your Python environment.
