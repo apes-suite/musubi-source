@@ -28,7 +28,7 @@ class PySysTest(ApesHelper, pysys.basetest.BaseTest):
 
     def validate(self):
         self.apes.checkMusLog()
-        trackfile = 'concentricCylinder_line_p00000_t500.000E-03.res'
+        trackfile = 'concentricCylinder_line_p00000_t100.021E-03.res'
         self.assertPathExists('tracking/' + trackfile, abortOnError = True)
         self.apes.assertIsClose(trackfile, dir = 'tracking')
 
