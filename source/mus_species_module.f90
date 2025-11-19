@@ -352,8 +352,8 @@ contains
 
         me%diff_tensor = me%diff_tensor / physics%fac(minLevel)%diffusivity
       else
-        write(logUnit(1),*) ' Error: diffusion tensor is defined but all '//    &
-          &                 'components are zero!'
+        write(logUnit(1),*) ' Error: diffusion tensor is defined but all ' &
+          &                 // 'components are zero!'
         call tem_abort()       
       end if
     end if
