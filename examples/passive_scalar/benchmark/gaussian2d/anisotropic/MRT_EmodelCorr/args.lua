@@ -2,7 +2,6 @@ theta = math.pi / 8.
 n = 20
 
 
--- simulation_name
 tau = 0.8
 u_mag = 0.1
 nelem = 100

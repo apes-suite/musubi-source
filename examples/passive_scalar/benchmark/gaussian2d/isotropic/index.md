@@ -1,5 +1,4 @@
 title: Advection-diffusion of a Gaussian Hill
-@warning WORK IN PROGRESS @endwarning
 
 # Advection-diffusion of a Gaussian Hill # {#eg_GPP}
 

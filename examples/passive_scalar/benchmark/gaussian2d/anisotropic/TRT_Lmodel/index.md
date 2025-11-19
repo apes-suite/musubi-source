@@ -1,5 +1,4 @@
 title: Advection-anisotropic-diffusion of a Gaussian Hill with TRT-Lmodel
-@warning WORK IN PROGRESS @endwarning
 
 # Advection-anisotropic-diffusion of a Gaussian Hill with TRT-Lmodel # {#eg_GPP}
 

@@ -4456,9 +4456,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, layout%fStencil%QQ
-        pdfTmp( iDir ) =                                  &
-          & instate( neigh (( idir-1)* nelems+ ielem)+    &
-          & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+        pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
       end do
       rho = sum( pdfTmp )
 
@@ -4492,9 +4490,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           &                 + a_xz * P_xz + a_yz * P_yz   &
           &                 + a_xx * P_xx + a_ww * P_ww)  )
 
-        outstate(                                                             &
-          & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
-          &                pdfTmp( iDir ) + d_omega * (feq - pdfTmp( iDir ))
+        outstate( (ielem - 1) * varsys%nscalars + idir ) = &
+          &                pdfTmp(iDir) + d_omega * ( feq - pdfTmp(iDir) )
 
       end do
 
@@ -4608,9 +4605,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
   
         do iDir = 1, layout%fStencil%QQ
-          pdfTmp( iDir ) = &
-            & instate( neigh (( idir-1)* nelems+ ielem)+ &
-            & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+          pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
         end do
         rho = sum( pdfTmp )
   
@@ -4650,11 +4645,10 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           invDir = layout%fStencil%cxDirInv(iDir)
           fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
           fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
-  
-          outstate(                                                            &
-            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) = &
-            &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)   &
-            &                + aux_omega * (feqPlus - fPlus)
+                                                       
+          outstate( (ielem - 1) * varsys%nscalars + idir ) =              &
+            &                pdfTmp(iDir) + d_omega * (feqMinus - fMinus) &
+            &                 + aux_omega * (feqPlus - fPlus)
         end do
   
       end do elemloop
@@ -4767,9 +4761,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, layout%fStencil%QQ
-        pdfTmp( iDir ) = &
-          & instate( neigh (( idir-1)* nelems+ ielem)+ &
-          & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+        pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
       end do
       rho = sum( pdfTmp )
 
@@ -4807,9 +4799,8 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           &                 + a_xz * P_xz + a_yz * P_yz &
           &                 + a_xx * P_xx + a_ww * P_ww )
 
-        outstate(                                                             &
-          & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) =  &
-          &                pdfTmp( iDir ) + d_omega * (feq - pdfTmp( iDir ))
+        outstate( (ielem - 1) * varsys%nscalars + idir ) = &
+          &                pdfTmp(iDir) + d_omega * ( feq - pdfTmp(iDir) )
 
       end do
 
@@ -4926,9 +4917,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
   
         do iDir = 1, layout%fStencil%QQ
-          pdfTmp( iDir ) = &
-            & instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
-            & layout%fstencil%qq+ varsys%nscalars*0 )
+          pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
         end do
         rho = sum( pdfTmp )
   
@@ -4972,10 +4961,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
           fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
   
-          outstate(                                                            &
-            & ( ielem-1)* varsys%nscalars+ idir+( 1-1)* layout%fstencil%qq ) = &
-            &                pdfTmp( iDir ) + d_omega * ( feqMinus - fMinus)   &
-            &                + aux_omega * (feqPlus - fPlus)
+          outstate( (ielem - 1) * varsys%nscalars + idir ) =              &
+            &                pdfTmp(iDir) + d_omega * (feqMinus - fMinus) &
+            &                 + aux_omega * (feqPlus - fPlus)
 
         end do
   
@@ -5098,9 +5086,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, layout%fStencil%QQ
-        pdfTmp( iDir ) = &
-          & instate( neigh (( idir-1)* nelems+ ielem)+ &
-          & ( 1-1)* layout%fstencil%qq+ varsys%nscalars*0 )
+        pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
       end do
       rho = sum( pdfTmp )
       
@@ -5383,8 +5369,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
         rho = 0.0_rk
         do iDir = 1, layout%fStencil%QQ
-          rho = rho + instate( neigh (( idir-1)* nelems+ ielem)+( 1-1)* &
-            &                 layout%fstencil%qq+ varsys%nscalars*0 )
+          rho = rho + instate( neigh( (idir - 1) * nelems + ielem ) )
         end do
 
         ! compute the equilibrium moments of the pdf

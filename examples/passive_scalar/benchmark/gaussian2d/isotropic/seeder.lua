@@ -6,7 +6,6 @@ folder    = 'mesh/'
 comment   = "gaussian_pulse"
 
 minlevel  = level_usr
-print("level of treelm: ", minlevel)
 
 bc_origin = {-nelem-2.5, -nelem-2.5, -0.5 - 4}
 length_bnd = length_usr
@@ -14,7 +13,6 @@ length_bnd = length_usr
 bounding_cube = { origin = bc_origin,
                   length = length_bnd }
 
-NOdebug = {debugMode = true, debugFiles = false, debugMesh='debug/' }
 spatial_object = {
   {
     attribute   = {

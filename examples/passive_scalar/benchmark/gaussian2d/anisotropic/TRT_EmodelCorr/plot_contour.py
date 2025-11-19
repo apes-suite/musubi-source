@@ -9,18 +9,10 @@ def draw_contour(filename):
     # Hyper parameters for the contour comparison
     threshold = 0.105
 
-    # # The size of window
-    # xmin = 0
-    # xmax = 500
-    # ymin = 0
-    # ymax = 500
 
     # Load the data from the .res file assuming space-separated values
     data = pd.read_csv(filename, delim_whitespace=True, skiprows=2, header=None, names=['x', 'y', 'z', 'calculated', 'real'])
 
-    # # Strip any leading or trailing spaces in the column names
-    # data.columns = data.columns.str.strip()
-    # print(data.columns)
 
     # Extract x, y, and value columns
     x = data['x'].values
@@ -30,7 +22,6 @@ def draw_contour(filename):
 
     # Create a grid for interpolation
     grid_x, grid_y = np.mgrid[min(x):max(x):100j, min(y):max(y):100j]
-    # grid_x, grid_y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
 
     # Interpolate the values over the grid
     grid_values = griddata((x, y), values, (grid_x, grid_y), method='cubic')

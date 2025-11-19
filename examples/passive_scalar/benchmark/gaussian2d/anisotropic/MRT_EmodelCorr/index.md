@@ -1,5 +1,4 @@
 title: Advection-anisotropic-diffusion of a Gaussian Hill with MRT-EmodelCorr
-@warning WORK IN PROGRESS @endwarning
 
 # Advection-anisotropic-diffusion of a Gaussian Hill with MRT-EmodelCorr # {#eg_GPP}
 

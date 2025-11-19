@@ -1,5 +1,4 @@
 title: Advection-anisotropic-diffusion of a Gaussian Hill with BGK-Emodel
-@warning WORK IN PROGRESS @endwarning
 
 # Advection-anisotropic-diffusion of a Gaussian Hill with BGK-Emodel # {#eg_GPP}
 

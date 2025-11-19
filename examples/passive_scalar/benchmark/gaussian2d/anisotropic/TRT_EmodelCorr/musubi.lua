@@ -79,7 +79,7 @@ field = {
   species = {
     -- diff_coeff controls the free parameter of diffusion, 
     -- which is set to the average of the tensor components
-    -- if test failes e.g. with bgk model, try setting diff_coeff with the given tau
+    -- if test fails e.g. with bgk model, try setting diff_coeff with the given tau
     -- i.e. diff_coeff = (tau - 0.5) / 3
     diff_coeff = (Dxx+Dyy)/3,
     -- diff_tensor sets the anisotropic diffusion tensor
