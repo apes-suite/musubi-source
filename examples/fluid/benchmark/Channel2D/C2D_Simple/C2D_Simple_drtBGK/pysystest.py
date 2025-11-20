@@ -23,9 +23,7 @@ class PySysTest(ApesHelper, pysys.basetest.BaseTest):
 
     def validate(self):
         self.apes.checkMusLog()
-        # NOTE: this reference file was generated with a debug executable,
-        #       which resulted in an actual filename with 13.334 instead!
-        trackfile = 'channel_pressAlongLength_p00000_t13.335E+00.res'
+        trackfile = 'channel_pressAlongLength_p00000_t13.334E+00.res'
         self.assertPathExists('tracking/'+trackfile,
                               abortOnError = True)
         self.apes.assertIsClose(trackfile, dir = 'tracking')
