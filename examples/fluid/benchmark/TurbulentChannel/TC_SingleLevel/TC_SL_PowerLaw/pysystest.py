@@ -3,7 +3,7 @@ __pysys_title__   = r""" Turbulent channel PowerLaw WM """
 __pysys_purpose__ = r""" Testing the Power-Law turbulent wall model """ 
     
 __pysys_created__ = "2025-05-05"
-#__pysys_skipped_reason__   = "Skipped until Bug-1234 is fixed"
+__pysys_skipped_reason__   = "Skipped until musubi issue #49 is clarified"
 
 #__pysys_traceability_ids__ = "Bug-1234, UserStory-456" 
 #__pysys_groups__           = "myGroup, disableCoverage, performance"
