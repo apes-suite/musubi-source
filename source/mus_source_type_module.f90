@@ -381,6 +381,12 @@ contains
       call append(me          = poss_srcVar,      &
         &         varName     = 'hrr_correction', &
         &         nComponents = QQ                )
+      ! In the Brinkman term \( -\nu / K \mathbf{u} \),
+      ! this is its coefficient \nu / K
+      call append(me          = poss_srcVar, &
+        &         varName     = 'brinkman',  &
+        &         nComponents = 1            )
+
     case ('fluid_GNS', 'fluid_incompressible_GNS')
       ! body force
       call append(me          = poss_srcVar, &

@@ -2,6 +2,7 @@
 ! Copyright (c) 2019-2020 Peter Vitt <peter.vitt2@uni-siegen.de>
 ! Copyright (c) 2021 Harald Klimach <harald.klimach@uni-siegen.de>
 ! Copyright (c) 2021-2023 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2025 Mengyu Wang <m.wang-2@utwente.nl>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -90,6 +91,7 @@ module mus_auxFieldVar_module
   public :: mus_addTurbChanForceToAuxField_fluid
   public :: mus_addHRRCorrToAuxField_fluid_2D
   public :: mus_addHRRCorrToAuxField_fluid_3D
+  public :: mus_addBrinkmanToAuxField_fluidIncomp
 
 contains
 
@@ -2178,6 +2180,74 @@ contains
     end do
 
   end subroutine mus_addTurbChanForceToAuxField_fluid
+  ! ************************************************************************** !
+
+  ! ************************************************************************** !
+  !> This routine adds Brinkman (porous-media) damping to the velocity stored
+  !! in the auxField for the incompressible fluid model.
+  !! Reference:
+  !! 1) Zhaoli Guo and T. S. Zhao. “Lattice Boltzmann Model for Incompressible
+  !!    Flows through Porous Media”. In: Physical Review E 66.3 (2002), p. 036304.
+  !!    doi: 10.1103/PhysRevE.66.036304.
+  !! 2) Irina Ginzburg. “Consistent lattice Boltzmann schemes for the Brinkman
+  !!    model of porous flow and infinite Chapman-Enskog expansion”. In: Phys.
+  !!    Rev. E 77 (6 June 2008), p. 066704. doi: 10.1103/PhysRevE.77.066704.
+  subroutine mus_addBrinkmanToAuxField_fluidIncomp(fun, auxField, iLevel,     &
+    &                                               time, varSys, phyConvFac, &
+    &                                               derVarPos)
+    ! ------------------------------------------------------------------------ !
+    !> Description of method to update source
+    class(mus_source_op_type), intent(inout) :: fun
+    !> output auxField array
+    real(kind=rk), intent(inout)         :: auxField(:)
+    !> current level
+    integer, intent(in)                :: iLevel
+    !> current timing information
+    type(tem_time_type), intent(in)    :: time
+    !> variable system definition
+    type(tem_varSys_type), intent(in) :: varSys
+    !> Physics conversion factor for current level
+    type(mus_convertFac_type), intent(in) :: phyConvFac
+    !> position of derived quantities in varsys
+    type(mus_derVarPos_type), intent(in) :: derVarPos(:)
+    ! ------------------------------------------------------------------------ !
+    integer :: vel_pos(3), elemOff
+    integer :: iElem, nElems, posInTotal
+    real(kind=rk) :: bCoeffField(fun%elemLvl(iLevel)%nElems)
+    ! ------------------------------------------------------------------------ !
+    ! position of velocity field in auxField
+    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
+    ! Number of elements to apply source terms
+    nElems = fun%elemLvl(iLevel)%nElems
+    ! Get force which is refered in config file either its
+    ! spacetime variable or operation variable
+    call varSys%method%val(fun%data_varPos)%get_valOfIndex( &
+      & varSys  = varSys,                                   &
+      & time    = time,                                     &
+      & iLevel  = iLevel,                                   &
+      & idx     = fun%elemLvl(iLevel)%idx(1:nElems),        &
+      & nVals   = nElems,                                   &
+      & res     = bCoeffField                               )
+
+    ! convert physical to lattice
+    bCoeffField = bCoeffField / phyConvFac%sourceCoeff
+
+!$omp parallel do schedule(static), private( posInTotal, elemOff )
+    !NEC$ ivdep
+    do iElem = 1, nElems
+      posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
+      ! element offset
+      elemoff = (posInTotal - 1) * varSys%nAuxScalars
+      ! add force to velocity
+      auxField( elemOff + vel_pos(1) ) = auxField( elemOff + vel_pos(1) ) &
+        &                               / ( 1.0_rk + bCoeffField(iElem) / 2.0_rk )
+      auxField( elemOff + vel_pos(2) ) = auxField( elemOff + vel_pos(2) ) &
+        &                               / ( 1.0_rk + bCoeffField(iElem) / 2.0_rk )
+      auxField( elemOff + vel_pos(3) ) = auxField( elemOff + vel_pos(3) ) &
+        &                               / ( 1.0_rk + bCoeffField(iElem) / 2.0_rk )
+    end do
+
+  end subroutine mus_addBrinkmanToAuxField_fluidIncomp
   ! ************************************************************************** !
 
 
