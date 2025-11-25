@@ -142,12 +142,14 @@ module mus_variable_module
   use mus_derQuanPS_module,       only: mus_append_derVar_lbmPS, &
     &                                   deriveEquilPS_FromMacro, &
     &                                   deriveEquilPS2ndOrder_FromMacro,   &
-    &                                   derive_equalInjectionPS, &
-    &                                   deriveAuxPS_fromState,   &
-    &                                   deriveEquilPS_fromAux,   &
-    &                                   derive_injectionPS,      &
-    &                                   applySrc_injectionPS,    &
-    &                                   applySrc_equalInjectionPS
+    &                                   derive_equalInjectionPS,   &
+    &                                   deriveAuxPS_fromState,     &
+    &                                   deriveEquilPS_fromAux,     &
+    &                                   derive_injectionPS,        &
+    &                                   derive_psSourceCoeff,      &
+    &                                   applySrc_injectionPS,      &
+    &                                   applySrc_equalInjectionPS, &
+    &                                   applySrc_psSourceCoeff
   use mus_derQuanMSGas_module,    only: mus_append_derVar_MSGas,         &
     &                                   deriveAuxMSGas_fromState,        &
     &                                   deriveEquilMSGas_fromAux,        &
@@ -1311,6 +1313,9 @@ contains
         case ('equal_injection')
           get_element => derive_equalInjectionPS
           me%method(iSrc)%applySrc => applySrc_equalInjectionPS
+        case ('ps_sourceCoeff')
+          get_element => derive_psSourceCoeff
+          me%method(iSrc)%applySrc => applySrc_psSourceCoeff
         case default
           call tem_abort('Unknown source variable for ' &
             &            //trim(schemeHeader%kind)      )

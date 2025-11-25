@@ -402,6 +402,12 @@ contains
         &         varName     = 'injection', &
         &         nComponents = 1            )
 
+      ! source term \( \alpha C \) for passive scalar C
+      ! where \( \alpha \) is ps_sourceCoeff
+      call append(me          = poss_srcVar,      &
+        &         varName     = 'ps_sourceCoeff', &
+        &         nComponents = 1                 )
+
     case ('nernst_planck')
       call append(me          = poss_srcVar,      &
         &         varName     = 'electric_field', &
