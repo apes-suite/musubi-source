@@ -1,8 +1,8 @@
 title: Flow around the cylinder 2D single level
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Test Case Channel 2D](../index.html)
-| [Test Case Channel 2D Cylinder Multi-Level &rarr;](../C2D_Cylinder_MultiLevel/index.html)
+Navigate: [&larr; Test Case Channel 2D](../index.md)
+| [Test Case Channel 2D Cylinder Multi-Level &rarr;](../C2D_Cylinder_MultiLevel/index.md)
 
 # Flow around the cylinder in a channel 2D # {#eg_C2D_Cyl_SL}
 

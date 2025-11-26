@@ -1,9 +1,9 @@
 title: Tracking
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Toolchain](tut_02_mus_toolchain.html)
-| [Overview](index.html)
-| [Boundary Conditions &rarr;](tut_04_boundaries.html)
+Navigate: [&larr; Toolchain](tut_02_mus_toolchain.md)
+| [Overview](index.md)
+| [Boundary Conditions &rarr;](tut_04_boundaries.md)
 
 # Tracking
 Tracking quantities during the simulation run.
@@ -11,7 +11,7 @@ Tracking quantities during the simulation run.
 In this tutorial we deal with tracking, that is tracking flow quantities
 during the simulation run and visualizing them.
 > An extensive documentation of the tracking features can be found in
-> [[tem_tracking_module]] and in its [documentation page](|temurl|/page/features/tracking.html)
+> [[tem_tracking_module]] and in its [documentation page](|temurl|/page/features/tracking.md)
 > Two additional examples dealing with shapes are given in [[tem_shape_module:tem_load_shapes]].
 
 In the `musubi.lua` file, there has to be a section called `tracking`.
@@ -100,9 +100,9 @@ tracking = {
 }
 ```
 
-You have to define your variable values first before you can track them. Have a look [here](|temurl|/page/features/variables/index.html) on how to do this.
+You have to define your variable values first before you can track them. Have a look [here](|temurl|/page/features/variables/index.md) on how to do this.
 
 Here ends the tutorial for tracking quantities during the simulation. You can go on for
 more information about boundary conditions in the next tutorial.
 
-Next chapter: [Boundary Conditions &rarr;](tut_04_boundaries.html)
+Next chapter: [Boundary Conditions &rarr;](tut_04_boundaries.md)

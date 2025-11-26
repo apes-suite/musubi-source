@@ -44,15 +44,15 @@ provided in [Nozzle Flow inside](fluid/application/Nozzle/NOZ_FlowInside).
 The example setups are structured according to the physics supported by Musubi:
 
 - Fluid flows
-    - [Weakly compressible flows](fluid/index.html)
-    - [Incompressible flows](fluid_incompressible/index.html)
-    - [Isothermal acoustics flows](isothermal_acoustics/index.html)
+    - [Weakly compressible flows](fluid/index.md)
+    - [Incompressible flows](fluid_incompressible/index.md)
+    - [Isothermal acoustics flows](isothermal_acoustics/index.md)
 - Multicomponent flows
-    - [Gas mixtures](multispecies_gas/index.html)
-    - [Liquid mixtures](multispecies_liquid/index.html)
+    - [Gas mixtures](multispecies_gas/index.md)
+    - [Liquid mixtures](multispecies_liquid/index.md)
 - Advection-Diffusion equations (Scalar transport equations)
-    - [Nernst-Planck equation for ionic species transport](nernst_planck/index.html)
-- [Poisson equation](poisson/index.html)
+    - [Nernst-Planck equation for ionic species transport](nernst_planck/index.md)
+- [Poisson equation](poisson/index.md)
 - Fluid Particle coupling 
-    - [fully resolved model](particles/index.html)
-    - [unresolved model](particles/index.html)
+    - [fully resolved model](particles/index.md)
+    - [unresolved model](particles/index.md)

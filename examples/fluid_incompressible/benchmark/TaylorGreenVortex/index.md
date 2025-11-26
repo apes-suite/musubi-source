@@ -31,8 +31,8 @@ The objective of the TGV examples are to introduce the following features in
 
 Here is the list of test cases to learn these features in Musubi:
 
-* [Simple TGV](TGV_Simple/index.html)
-* [TGV with different LES models](TGV_LES/index.html)
+* [Simple TGV](TGV_Simple/index.md)
+* [TGV with different LES models](TGV_LES/index.md)
 
 In these test cases, in addition to the aforementioned features, you will also
 learn how to:

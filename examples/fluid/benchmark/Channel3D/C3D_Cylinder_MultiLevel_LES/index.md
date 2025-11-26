@@ -1,7 +1,7 @@
 title: Turbulent flow around the cylinder in a channel 3D at Re=3900
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Test case channel 3D](../index.html)
+Navigate: [&larr; Test case channel 3D](../index.md)
 
 # Turbulent flow around the sphere in a channel 3D # {#eg_C3D_Cylinder_MultiLevel_LES}
 

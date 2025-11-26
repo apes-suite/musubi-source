@@ -1,8 +1,8 @@
 title: Concentric Cylinders
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Benchmark Test Cases](../index.html)
-| [Test case concentric cylinder Couette flow &rarr;](COC_CoeutteFlow/index.html)
+Navigate: [&larr; Benchmark Test Cases](../index.md)
+| [Test case concentric cylinder Couette flow &rarr;](COC_CoeutteFlow/index.md)
 
 # Concentric Cylinders-Couette Flow #
 
@@ -19,8 +19,8 @@ where \(u_0=\omega r_1\) and \(\beta=r_1/r_2\).
 
 Here are the list of test cases:
 
-* [Single-level](COC_CoeutteFlow/index.html)
-* [Multi-level](COC_CoeutteFlow_MultiLevel/index.html)
+* [Single-level](COC_CoeutteFlow/index.md)
+* [Multi-level](COC_CoeutteFlow_MultiLevel/index.md)
 
 The geometry of the this cylindrical channel is created with the help of the
 STL in `cylinder_Dia1m.stl`.

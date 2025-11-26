@@ -1,8 +1,8 @@
 title: Lid driven cavity
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Test case lid driven cavity](../index.html)
-| [Test case lid driven cavity multilevel &rarr;](../LDC_multilevel/index.html)
+Navigate: [&larr; Test case lid driven cavity](../index.md)
+| [Test case lid driven cavity multilevel &rarr;](../LDC_multilevel/index.md)
 
 # Lid driven cavity in 2D #
 

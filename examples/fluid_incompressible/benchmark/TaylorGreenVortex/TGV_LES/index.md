@@ -1,8 +1,8 @@
 title: Taylor-Green Vortex with LES Turbulence Models at Re = 1600
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Taylor Green Vortex](../index.html)
-| [Taylor Green Vortex without Turbulence Models &rarr;](../TGV_Simple/index.html)
+Navigate: [&larr; Taylor Green Vortex](../index.md)
+| [Taylor Green Vortex without Turbulence Models &rarr;](../TGV_Simple/index.md)
 
 # Taylor-Green Vortex with LES Turbulence Models at Re = 1600# {#eg_TGV_LES}
 
@@ -12,15 +12,15 @@ models. For this case, the Reynolds number (*Re*) is set to 1600.
 
 A detailed description of the general test case can be found in the parent
 directory
-[Description of test case TGV](../index.html).
+[Description of test case TGV](../index.md).
 
 The objective of the TGV-LES examples are to introduce the following turbulence
 models in *Musubi*:
 
-* [TGV-LES Smagorinksy from PDF](./TGV_SmagPDF/index.html)
-* [TGV-LES Smagorinksy from Velocity Gradient](./TGV_SmagGradU/index.html)
-* [TGV-LES Vreman](./TGV_Vreman/index.html)
-* [TGV-LES WALE](./TGV_WALE/index.html)
+* [TGV-LES Smagorinksy from PDF](./TGV_SmagPDF/index.md)
+* [TGV-LES Smagorinksy from Velocity Gradient](./TGV_SmagGradU/index.md)
+* [TGV-LES Vreman](./TGV_Vreman/index.md)
+* [TGV-LES WALE](./TGV_WALE/index.md)
 
 In these test cases, in addition to the aforementioned features, you will also
 learn how to:

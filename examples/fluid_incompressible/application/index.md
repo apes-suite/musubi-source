@@ -3,8 +3,8 @@ title: Applications
 
 ## Application test cases for incompressible flows ## {#ex_fluidincomp_application}
 
-* [Spacer](Spacer/index.html)
-* [Aneurysm](Aneurysm/index.html)
-* [Electro-Osmotic Flow](ElectroOsmoticFlow/index.html)
-* [Pulsatile Flow](PulsatileFlow/index.html)
-* [Spacer Stent](SpacerStent/index.html)
+* [Spacer](Spacer/index.md)
+* [Aneurysm](Aneurysm/index.md)
+* [Electro-Osmotic Flow](ElectroOsmoticFlow/index.md)
+* [Pulsatile Flow](PulsatileFlow/index.md)
+* [Spacer Stent](SpacerStent/index.md)

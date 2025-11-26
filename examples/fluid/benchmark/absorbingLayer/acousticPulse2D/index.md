@@ -12,9 +12,9 @@ features in Musubi:
 
 Here are the list of test cases to learn these features in Musubi:
 
-* [Absorbing layer plane](absLayerPlane/index.html)
-* [Absorbing layer box](absLayerBox/index.html)
-* [Absorbing layer radial](absLayerRadial/index.html)
+* [Absorbing layer plane](absLayerPlane/index.md)
+* [Absorbing layer box](absLayerBox/index.md)
+* [Absorbing layer radial](absLayerRadial/index.md)
 
 In these test cases, in addition to the aforementioned features, you will also
 learn how to:

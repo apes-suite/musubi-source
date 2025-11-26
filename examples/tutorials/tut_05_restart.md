@@ -1,9 +1,9 @@
 title: Restart
 @warning WORK IN PROGRESS @endwarning
 
-navigate: [&larr; Boundary Conditions](tut_04_boundaries.html)
-| [Overview](index.html)
-| [Initional Conditions &rarr;](tut_06_initial.html)
+navigate: [&larr; Boundary Conditions](tut_04_boundaries.md)
+| [Overview](index.md)
+| [Initional Conditions &rarr;](tut_06_initial.md)
 
 # Restart
 
@@ -115,4 +115,4 @@ to. This is very useful while you make use of expensive ressources like
 supercomputers or while it takes a long time to simulate to time x and
 you wish to go on from time x to time y.
 
-Next chapter: [Initial Conditions &rarr;](tut_06_initial.html)
+Next chapter: [Initial Conditions &rarr;](tut_06_initial.md)

@@ -1,9 +1,9 @@
 title: Configuration
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Prerequisites](tut_00_prerequisites.html)
-| [Overview](index.html)
-| [Toolchain &rarr;](tut_02_mus_toolchain.html)
+Navigate: [&larr; Prerequisites](tut_00_prerequisites.md)
+| [Overview](index.md)
+| [Toolchain &rarr;](tut_02_mus_toolchain.md)
 
 # Configuration
 Set up your first simulation with *Musubi*.
@@ -42,7 +42,7 @@ created the subdirectories `restart` and `tracking` in the same path where
 ### Lua concepts for the configuration
 
 Lua provides a convenient data structure called
-[tables](http://www.lua.org/pil/2.5.html), that we use extensively in the
+[tables](http://www.lua.org/pil/2.5.md), that we use extensively in the
 configuration to structure it.
 Tables allow us to gather relevant settings together.
 They are indicated by curly brackets `{}`.
@@ -430,13 +430,13 @@ identify = {
 
 The geometry is usually a more complicated thing to define. For anything
 but the simplest case, we need *Seeder*, a tool that will be dealt with
-in the [next tutorial chapter](tut_02_mus_toolchain.html).
+in the [next tutorial chapter](tut_02_mus_toolchain.md).
 For now, we will use a pre-defined geometry, which is just a simple cube
 with periodic boundaries and no obstacles. We can specify the `length`
 and position (`origin`) of that cube. The position of the cube is only
 relevant if you specify positions of other objects, too, such as
 initial conditions or *trackers* (we will explain what that is in
-[chapter_03](tut_03_tracking.html)).
+[chapter_03](tut_03_tracking.md)).
 
 Last but not least, the `refinementLevel` tells *Musubi* how fine the
 initial `cube` (with a length of 10 here) needs to be discretized. A refinement
@@ -496,7 +496,7 @@ It defines *where* inside
 the simulation domain (which is a cube in our example) you want to observe the
 variables. You can take samples at a point, along a line, everywhere on a plane,
 or even everywhere inside a given box. These options will be discussed in more
-depth in [chapter_03](tut_03_tracking.html).
+depth in [chapter_03](tut_03_tracking.md).
 For now, we are happy with a point at position `(1,1,1)`:
 
 ```lua
@@ -552,7 +552,7 @@ restart = {
 first.
 So far, these are only basic information about `restart`.
 Further information about the restart are explained in
-[Tutorial 5: Restart](tut_05_restart.html).
+[Tutorial 5: Restart](tut_05_restart.md).
 
 ## Initial Conditions ##
 Initial conditions can be specified in the `initial_condition` table.
@@ -648,4 +648,4 @@ the pulse decreases due to dissipation.
 In the next chapter, we will learn to define more complex geometries, and
 to create more sophisticated outputs.
 
-Next chapter: [Toolchain &rarr;](tut_02_mus_toolchain.html)
+Next chapter: [Toolchain &rarr;](tut_02_mus_toolchain.md)

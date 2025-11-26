@@ -1,6 +1,6 @@
 title: Poisueille flow in a channel 2D
 
-Navigate: [&larr; Test case channel 2D](../../index.html)
+Navigate: [&larr; Test case channel 2D](../../index.md)
 
 # Poisueille flow in a channel 2D using drtBGK collision scheme # {#eg_C2D_Simple_drtBGK}
 
@@ -27,7 +27,7 @@ value of 0.70 does not produce a stable run.
 
 
 A detailed description of test case can be found in the parent directory
-[Description of test case channel 2D](../index.html).
+[Description of test case channel 2D](../index.md).
 
 ## Generating mesh ##
 ### Define geometry information ###

@@ -8,10 +8,10 @@ simple pre-defined cube with periodic boundaries. For this case, the Reynolds
 number (*Re*) is set to 1600.
 
 A detailed description of test case can be found in the parent directory
-[Description of test case TGV](../../index.html).
+[Description of test case TGV](../../index.md).
 
 A description about the LES cases can be found here:
-[Description of test case TGV_LES](../index.html).
+[Description of test case TGV_LES](../index.md).
 
 The objectives of this example is to introduce how to:
 * Use a pre-defined geometry instead of creating a mesh with Seeder.
@@ -30,7 +30,7 @@ For the Smagorinksy turbulence model, the strain rate can be computed from
 velocity gradient as in this example here or from the particle distribution
 function (PDF). For the setup of latter one see:
 
-* [TGV-LES Smagorinksy from PDF](../TGV_SmagPDF/index.html)
+* [TGV-LES Smagorinksy from PDF](../TGV_SmagPDF/index.md)
 
 ### Define flow parametes ###
 

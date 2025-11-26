@@ -1,9 +1,9 @@
 title: Boundary Conditions
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Tracking](tut_03_tracking.html)
-| [Overview](index.html)
-| [Restart &rarr;](tut_05_restart.html)
+Navigate: [&larr; Tracking](tut_03_tracking.md)
+| [Overview](index.md)
+| [Restart &rarr;](tut_05_restart.md)
 
 # Boundary Conditions
 
@@ -409,7 +409,7 @@ described shortly in the following.
 
 Before they are used in the `boundary_condition` table they are defined in the
 `variable` table.
-@note See this [documentation](|temurl|/page/features/variables/index.html)
+@note See this [documentation](|temurl|/page/features/variables/index.md)
 for more information.
 
 > Inside the `variable = {..}` table space time functions can be defined as a
@@ -511,6 +511,6 @@ variable = {
 ```
 
 > You can find more examples in the subroutine [[tem_load_bc_state]] and on
-> [variable system page](|temurl|/page/features/variables/index.html).
+> [variable system page](|temurl|/page/features/variables/index.md).
 
-Next chapter: [Restart &rarr;](tut_05_restart.html)
+Next chapter: [Restart &rarr;](tut_05_restart.md)

@@ -1,8 +1,8 @@
 title: Pipe LES
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Test case pipe 3D](../index.html)
-| [Test case pipe split &rarr;](../PIP_Split/index.html)
+Navigate: [&larr; Test case pipe 3D](../index.md)
+| [Test case pipe split &rarr;](../PIP_Split/index.md)
 
 # Pipe LES #
 
