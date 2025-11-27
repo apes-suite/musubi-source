@@ -25,25 +25,25 @@ The analytical solution of this boundary-value problem is
   $$u(y) = k_1 e^{\sqrt{F_0} y} + k_2 e^{-\sqrt{F_0} y}, \label{nsb_solution}$$
 
 with $k_1 = \tfrac{u_m}{e^{\sqrt{F_0} h} - e^{-\sqrt{F_0} h}}$ and $k_2 = -k_1$. 
-The analytical solution is written in **func.lua**.
+The analytical solution is written in `func.lua`.
 
-The values of $F_0$ is set in **args.lua**. Readers are encouraged to modify it
+The values of $F_0$ is set in `args.lua`. Readers are encouraged to modify it
 to see how the Brinkman flow profile changes with different $F_0$ values.
 
-Readers can run the workflow by executing the script **multi_f0.sh** to simulate 
+Readers can run the workflow by executing the script `multi_f0.sh` to simulate 
 multiple $F_0$ values in one go. 
-The post-process of results **plot_contour.py** is to generate contour plots of 
+The post-process of results `plot_contour.py` is to generate contour plots of 
 the velocity profiles for different $F_0$ values.
-To run the python script, make sure you have **matplotlib** and **numpy**
+To run the python script, make sure you have `matplotlib` and `numpy`
 installed in your Python environment.
 
-The example uses the following settings in **params.lua**:
+The example uses the following settings in `params.lua`:
 
 $$
   resolution = 2 ^ 3
-  tmax       = 2000 * resolution^2
-  interval   = 200 * resolution^2
+  tmax       = 20000 * resolution^2
+  interval   = 2000 * resolution^2
 $$
 
 The reference profiles for different $F_0$ values are provided in
-**media/**.
+`media/`.

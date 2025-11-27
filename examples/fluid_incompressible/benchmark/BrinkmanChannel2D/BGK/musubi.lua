@@ -33,15 +33,15 @@ boundary_condition = {
   { 
     label = 'top', 
     kind      = 'velocity_bounceback',
-    velocity  = utop_corr,
+    velocity  = utop,
   },
   { label     = 'inlet',
     kind      = 'velocity_bounceback',
-    velocity  = uanasol_corr,
+    velocity  = uanasol,
   },
   { label     = 'outlet',
     kind      = 'velocity_bounceback',
-    velocity  = uanasol_corr,
+    velocity  = uanasol,
   },
 }
 glob_source = {

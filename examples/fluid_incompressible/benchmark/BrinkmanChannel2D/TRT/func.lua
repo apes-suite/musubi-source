@@ -17,11 +17,3 @@ end
 function coth(x)
   return (math.exp(x) + math.exp(-x)) / (math.exp(x) - math.exp(-x))
 end
-
-function uanasol_corr(x, y, z, t)
-  return {uxanaval(x, y, z, t) * (1 + Fc / 2), 0, 0}
-end
-
-function utop_corr(x, y, z, t)
-  return {umax * (1 + Fc / 2), 0, 0}
-end
