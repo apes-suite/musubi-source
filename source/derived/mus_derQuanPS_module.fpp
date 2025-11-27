@@ -1019,7 +1019,8 @@ contains
     type(mus_scheme_type), pointer :: scheme
     real(kind=rk) :: psSourceCoeff(fun%elemLvl(iLevel)%nElems)
     integer :: nElems, iElem, iDir, QQ, nScalars
-    integer :: posInTotal
+    integer :: posInTotal, den_pos, elemoff
+    real(kind=rk) :: density
     ! ---------------------------------------------------------------------- !
     ! convert c pointer to solver type fortran pointer
     call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
@@ -1043,6 +1044,9 @@ contains
     psSourceCoeff = psSourceCoeff &
       &              / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
 
+    ! Position of density variable in auxField
+    den_pos = varSys%method%val( derVarPos(1)%density )%auxField_varPos(1)
+
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
     nScalars = varSys%nScalars
@@ -1051,11 +1055,16 @@ contains
       ! to access level wise state array
       posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
 
+      ! element offset
+      elemoff = (posInTotal - 1) * varSys%nAuxScalars
+      ! obtain velocity from auxField
+      density = scheme%auxField(iLevel)%val(elemOff + den_pos)
+
       do iDir = 1, QQ
 
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
-          &    + scheme%layout%weight( iDir ) * psSourceCoeff(iElem)
+          &    + scheme%layout%weight( iDir ) * psSourceCoeff(iElem) * density
 
       end do
 
