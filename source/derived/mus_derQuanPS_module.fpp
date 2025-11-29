@@ -631,6 +631,7 @@ contains
 
 ! ************************************************************************** !
    !> Derive external source variable defined as a source term.
+   !!
    !! The source in advection diffusion equation for passive scalar is
    !! \( S = \alpha C \)
    !! It evaluates spacetime function defined in lua file for the source 
@@ -968,6 +969,7 @@ contains
 
 ! ************************************************************************** !
    !> Update state with source variable "ps_sourceCoeff".
+   !!
    !! The source in advection diffusion equation for passive scalar is
    !! \( S = \alpha C \)
    !! It evaluates spacetime function defined in lua file for the source 
