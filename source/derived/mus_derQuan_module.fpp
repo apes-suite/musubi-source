@@ -4842,7 +4842,7 @@ contains
   !!    model of porous flow and infinite Chapman-Enskog expansion”. In: Phys.
   !!    Rev. E 77 (6 June 2008), p. 066704. doi: 10.1103/PhysRevE.77.066704.
   !!
-  !! Simuilar to derive routine but it updates the state whereas derive
+  !! Similar to derive routine but it updates the state whereas derive
   !! is used for tracking.
   !!
   !! This subroutine's interface must match the abstract interface definition
