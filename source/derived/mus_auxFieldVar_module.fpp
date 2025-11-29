@@ -2219,8 +2219,7 @@ contains
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
     ! Number of elements to apply source terms
     nElems = fun%elemLvl(iLevel)%nElems
-    ! Get force which is refered in config file either its
-    ! spacetime variable or operation variable
+    ! Get the force variable from the configuration for each element
     call varSys%method%val(fun%data_varPos)%get_valOfIndex( &
       & varSys  = varSys,                                   &
       & time    = time,                                     &
