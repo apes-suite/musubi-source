@@ -2260,11 +2260,13 @@ contains
 ! ****************************************************************************** !
 
 ! ****************************************************************************** !
-   !> Derive Brinkman force variable defined as a source term.
-   !! It evaluates spacetime function defined in lua file for Brinkman coefficient
-   !! variable and multiplies it with negative velocity to obtain the force term.
-   !! This force term is then converted to state value which is to be added to the
+   !> Derive the Brinkman force variable defined as a source term.
+   !!
+   !! It multiplies the Brinkman coefficient variable as defined by the user
+   !! with the negative velocity field to obtain the force term.
+   !! This force term is then converted to a state value that is to be added to the
    !! state.
+   !!
    !! Reference:
    !! 1) Zhaoli Guo and T. S. Zhao. “Lattice Boltzmann Model for Incompressible
    !!    Flows through Porous Media”. In: Physical Review E 66.3 (2002), p. 036304.
