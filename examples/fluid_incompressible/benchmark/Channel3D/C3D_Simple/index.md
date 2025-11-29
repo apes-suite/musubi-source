@@ -1,7 +1,7 @@
 title: Simple Flow in a 3D Channel
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Test Case Channel 3D](../index.md)
+Navigate: [&larr; Test Case Channel 3D](../index.html)
 
 # Simple Flow in a Channel 3D # {#eg_C3D_Simple}
 

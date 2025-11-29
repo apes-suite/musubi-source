@@ -1,7 +1,7 @@
 title: Poisueille flow in a channel 2D
 
-Navigate: [&larr; Test case channel 2D](../index.md)
-| [Test case channel 2D boundary condition &rarr;](../C2D_BoundaryConditions/index.md)
+Navigate: [&larr; Test case channel 2D](../index.html)
+| [Test case channel 2D boundary condition &rarr;](../C2D_BoundaryConditions/index.html)
 
 # Poisueille flow in a channel 2D using different bgk collision schemes# {#eg_C2D_Simple}
 
@@ -22,21 +22,21 @@ Here is the list of test cases to learn these features in Musbi and some hints
 on when to use what:
 ToDo: Update points/characteristics below.
 
-* [Bhatnagar-Gross-Krook (BGK)](C2D_simple_BGK/index.md)
+* [Bhatnagar-Gross-Krook (BGK)](C2D_simple_BGK/index.html)
   * Simplest BGK scheme
-* [Regularized BGK (rBGK)](C2D_simple_rBGK/index.md)
+* [Regularized BGK (rBGK)](C2D_simple_rBGK/index.html)
   * Non-dissipative scheme.
   * In general more unstable than the classical BGK scheme.
   * Said to exhibit increased stability for problems with large gradients and
     turbulent flows.
-* [Recursive regularized BGK (rrBGK)](C2D_simple_rrBGK/index.md)
+* [Recursive regularized BGK (rrBGK)](C2D_simple_rrBGK/index.html)
   * Enhanced stability and accuracy compared to the classical BGK scheme.
   * Said to be cheaper then the classical one.
-* [Projected recursive regularized BGK (prrBGK)](C2D_simple_prrBGK/index.md)
+* [Projected recursive regularized BGK (prrBGK)](C2D_simple_prrBGK/index.html)
   * ToDo: Add information here.
-* [Hybrid recursive regularized BGK (prrBGK)](C2D_simple_hrrBGK/index.md)
+* [Hybrid recursive regularized BGK (prrBGK)](C2D_simple_hrrBGK/index.html)
   * ToDo: Add information here.
-* [Dual relaxation time BGK (drtBGK)](C2D_simple_drtBGK/index.md)
+* [Dual relaxation time BGK (drtBGK)](C2D_simple_drtBGK/index.html)
   * ToDo: Add information here.
 
 ## Problem description ##
@@ -47,10 +47,10 @@ In general, the flow can be induced by any of the following way:
 
 * Defining pressure at inlet and outlet of the channel.
 * Defining velocity at inlet and pressure at outlet of the channel.
-  [Here](../C2D_BoundaryConditions/BC_VeNonEqExpol_PressNonEqExpol/index.md)
+  [Here](../C2D_BoundaryConditions/BC_VeNonEqExpol_PressNonEqExpol/index.html)
   is the example.
 * Using pressure gradient i.e. pressure drop/length as a external force.
-  [Here](../C2D_Force/index.md) is the example.
+  [Here](../C2D_Force/index.html) is the example.
 
 Here, the flow is induced by pressure boundary condition at inlet (west)
 and outlet (east) boundaries as shown in figure below.

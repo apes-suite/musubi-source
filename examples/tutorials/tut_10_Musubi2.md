@@ -1,7 +1,7 @@
 title: Prerequisites
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [Overview](index.md)
+Navigate: [Overview](index.html)
 
 # Changes in Musubi 2.0
 

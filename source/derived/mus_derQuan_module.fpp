@@ -2349,16 +2349,11 @@ contains
       ! element offset
       elemoff = (posInTotal - 1) * varSys%nAuxScalars
       ! obtain velocity from auxField
-      velocity(1) = scheme%auxField(iLevel)%val( elemOff + vel_pos(1) )
-      velocity(2) = scheme%auxField(iLevel)%val( elemOff + vel_pos(2) )
-      velocity(3) = scheme%auxField(iLevel)%val( elemOff + vel_pos(3) )
+      velocity = scheme%auxField(iLevel)%val(elemOff + vel_pos)
 
       ! get the correct omega value
       omegaKine = scheme%field(1)%fieldProp%fluid%viscKine          &
         &                              %omLvl(iLevel)%val(posInTotal)
-
-      bCoeffTerm = bCoeffField(iElem) &
-        &         / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
      
       ! Brinkman force term:
       ! B_i = w_i \vec{e}_i/cs2 \cdot \vec{B}
@@ -2366,9 +2361,10 @@ contains
         ucx = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), &
           &                velocity )
 
-        res((iElem-1)*fun%nComponents + iDir) = (omegaKine / 2.0_rk - 1.0_rk) &
-          &                                     * scheme%layout%weight(iDir)  &
-          &                                     * cs2inv * bCoeffTerm * ucx * rho0
+        res( (iElem-1) * fun%nComponents + iDir ) = (omegaKine / 2.0_rk - 1.0_rk)     &
+          &                                        * scheme%layout%weight(iDir)       &
+          &                                        * cs2inv * bCoeffTerm * ucx * rho0 &
+          &                                        / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
          
       end do
 
@@ -2465,18 +2461,13 @@ contains
       ! element offset
       elemoff = (posInTotal-1)*varSys%nAuxScalars
       ! obtain velocity from auxField
-      velocity(1) = scheme%auxField(iLevel)%val( elemOff + vel_pos(1) )
-      velocity(2) = scheme%auxField(iLevel)%val( elemOff + vel_pos(2) )
-      velocity(3) = scheme%auxField(iLevel)%val( elemOff + vel_pos(3) )
+      velocity = scheme%auxField(iLevel)%val(elemOff + vel_pos)
 
       ! get the correct omega value
       omegaKine = scheme%field(1)%fieldProp%fluid%viscKine          &
         &                              %omLvl(iLevel)%val(posInTotal)
       omegaMinus = 1.0_rk / ( scheme%field(1)%fieldProp%fluid%lambda  & 
         &                    / (1.0_rk / omegaKine - 0.5_rk) + 0.5_rk )
-
-      bCoeffTerm = bCoeffField(iElem) &
-        &         / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
      
       ! force term:
       ! B_i = w_i \vec{e}_i/cs2 \cdot \vec{B}
@@ -2484,9 +2475,10 @@ contains
         ucx = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), &
           &                velocity )
 
-        res( (iElem - 1)*fun%nComponents + iDir ) = (omegaMinus / 2.0_rk - 1.0_rk) &
-          &                                         * scheme%layout%weight(iDir)   &
-          &                                         * cs2inv * bCoeffTerm * ucx * rho0
+        res( (iElem - 1) * fun%nComponents + iDir ) = (omegaMinus / 2.0_rk - 1.0_rk)    &
+          &                                          * scheme%layout%weight(iDir)       &
+          &                                          * cs2inv * bCoeffTerm * ucx * rho0 &
+          &                                          / fPtr%solverData%physics%fac(iLevel)%sourceCoeff   
          
       end do
 
@@ -4914,9 +4906,6 @@ contains
       & nVals   = nElems,                                   &
       & res     = bCoeffField                               )
 
-    ! convert physical to lattice
-    bCoeffField = bCoeffField / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
-
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
     nScalars = varSys%nScalars
@@ -4929,9 +4918,7 @@ contains
       ! element offset
       elemoff = (posInTotal - 1) * varSys%nAuxScalars
       ! obtain velocity from auxField
-      velocity(1) = auxField( elemOff + vel_pos(1) )
-      velocity(2) = auxField( elemOff + vel_pos(2) )
-      velocity(3) = auxField( elemOff + vel_pos(3) )
+      velocity = auxField(elemOff + vel_pos)
 
       ! get the correct omega value
       omega = scheme%field(1)%fieldProp%fluid%viscKine              &
@@ -4945,9 +4932,10 @@ contains
         ! position in state array
         statePos = ?SAVE?(iDir, 1, posInTotal, QQ, nScalars, nPdfSize, neigh)
         ! update outstate
-        outState(statePos) = outState(statePos)                              &
-          &                 - omega_fac * scheme%layout%weight( iDir ) * ucx &
-          &                 * cs2inv * bCoeffField(iElem) * rho0
+        outState(statePos) = outState(statePos)                                &
+          &                   - omega_fac * scheme%layout%weight( iDir ) * ucx &
+          &                   * cs2inv * bCoeffField(iElem) * rho0             &
+          &                   / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
 
       end do
 
@@ -5035,10 +5023,7 @@ contains
       & iLevel  = iLevel,                                   &
       & idx     = fun%elemLvl(iLevel)%idx(1:nElems),        &
       & nVals   = nElems,                                   &
-      & res     = bCoeffField                                )
-
-    ! convert physical to lattice
-    bCoeffField = bCoeffField / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
+      & res     = bCoeffField                               )
 
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
@@ -5052,9 +5037,7 @@ contains
       ! element offset
       elemoff = (posInTotal - 1) * varSys%nAuxScalars
       ! obtain velocity from auxField
-      velocity(1) = auxField( elemOff + vel_pos(1) )
-      velocity(2) = auxField( elemOff + vel_pos(2) )
-      velocity(3) = auxField( elemOff + vel_pos(3) )
+      velocity = auxField(elemOff + vel_pos)
 
       ! get the correct omega value
       omega = scheme%field(1)%fieldProp%fluid%viscKine              &
@@ -5070,9 +5053,10 @@ contains
         ! position in state array
         statePos = ( posintotal-1)* nscalars+idir+( 1-1)* qq
         ! update outstate
-        outState(statePos) = outState(statePos)                         &
-          & - omega_fac * scheme%layout%weight( iDir ) * ucx * cs2inv   &
-          & * bCoeffField(iElem) * rho0
+        outState(statePos) = outState(statePos)                          &
+          &                   - omega_fac * scheme%layout%weight(iDir)   &
+          &                   * ucx * cs2inv * bCoeffField(iElem) * rho0 &
+          &                   / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
 
       end do
 

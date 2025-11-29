@@ -1,9 +1,9 @@
 title: Initial Conditions
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Restart](tut_05_restart.md)
-| [Overview](index.md)
-| [Abort Criteria &rarr;](tut_07_convergence.md)
+Navigate: [&larr; Restart](tut_05_restart.html)
+| [Overview](index.html)
+| [Abort Criteria &rarr;](tut_07_convergence.html)
 
 # Initial Conditions
 Definition of Initial Conditions
@@ -179,6 +179,6 @@ initial_condition = { pressure  = ic_pressure,
                       }
 --! [Initial conditions]
 ```
-@note The whole code of musubi.lua is shown in the [chapter_02](tut_02_mus_toolchain.md).
+@note The whole code of musubi.lua is shown in the [chapter_02](tut_02_mus_toolchain.html).
 
-Next chapter: [Abort Criteria &rarr;](tut_07_convergence.md)
+Next chapter: [Abort Criteria &rarr;](tut_07_convergence.html)

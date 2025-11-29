@@ -1,7 +1,7 @@
 title: Turbulent flow around the sphere in a channel 3D
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Test case channel 3D](../index.md)
+Navigate: [&larr; Test case channel 3D](../index.html)
 
 # Turbulent flow around the sphere in a channel 3D # {#eg_C3D_Sphere_MultiLevel_LES}
 

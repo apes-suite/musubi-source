@@ -8,6 +8,6 @@ title: Weakly compressible flows
 * Momentum conservation equations
 * Equation of state
 
-### [Benchmarks](benchmark/index.md)
+### [Benchmarks](benchmark/index.html)
 
-### [Applications](application/index.md)
+### [Applications](application/index.html)

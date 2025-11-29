@@ -29,7 +29,7 @@ $$
 
 corresponding to a constant concentration injection at the inlet. 
 
-The analytical solution for this problem is given in \cite{Bear1972a} as
+The analytical solution for this problem is given as
 
 $$
 \begin{split}

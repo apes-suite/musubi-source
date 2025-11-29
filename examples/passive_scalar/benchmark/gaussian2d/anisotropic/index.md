@@ -6,9 +6,9 @@ This example simulates the diffusion of a passive scalar with an initial Gaussia
 
 The example includes implementations of various collision models to study their effects on the diffusion process:
 
-* [BGK_Emodel](BGK_Emodel/index.md)
-* [BGK_EmodelCorr](BGK_EmodelCorr/index.md)
-* [TRT_Emodel](TRT_Emodel/index.md)
-* [TRT_EmodelCorr](TRT_EmodelCorr/index.md)
-* [TRT_Lmodel](TRT_Lmodel/index.md)
-* [MRT_EmodelCorr](MRT_EmodelCorr/index.md)
+* [BGK_Emodel](BGK_Emodel/index.html)
+* [BGK_EmodelCorr](BGK_EmodelCorr/index.html)
+* [TRT_Emodel](TRT_Emodel/index.html)
+* [TRT_EmodelCorr](TRT_EmodelCorr/index.html)
+* [TRT_Lmodel](TRT_Lmodel/index.html)
+* [MRT_EmodelCorr](MRT_EmodelCorr/index.html)

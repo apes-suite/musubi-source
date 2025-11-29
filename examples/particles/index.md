@@ -1,6 +1,6 @@
 title: Particulate Flows
 
-### [Fully Resolved Model](MEM/index.md)
+### [Fully Resolved Model](MEM/index.html)
 
-### [Unresolved Model](DPS/index.md)
+### [Unresolved Model](DPS/index.html)
 

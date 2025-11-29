@@ -39,11 +39,9 @@ installed in your Python environment.
 
 The example uses the following settings in `params.lua`:
 
-$$
+```
   resolution = 2 ^ 3
-  tmax       = 20000 * resolution^2
-  interval   = 2000 * resolution^2
-$$
+```
 
 The reference profiles for different $F_0$ values are provided in
 `media/`.

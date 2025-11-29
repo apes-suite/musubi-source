@@ -4,4 +4,4 @@ title: Passive Scalar Transport Examples
 
 ### Advection-Diffusion-Reaction equations
 
-### [Benchmarks](benchmark/index.md)
+### [Benchmarks](benchmark/index.html)

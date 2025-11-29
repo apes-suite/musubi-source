@@ -2213,7 +2213,7 @@ contains
     ! ------------------------------------------------------------------------ !
     integer :: vel_pos(3), elemOff
     integer :: iElem, nElems, posInTotal
-    real(kind=rk) :: bCoeffField(fun%elemLvl(iLevel)%nElems)
+    real(kind=rk) :: bCoeffField(fun%elemLvl(iLevel)%nElems), velFac
     ! ------------------------------------------------------------------------ !
     ! position of velocity field in auxField
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
@@ -2228,22 +2228,16 @@ contains
       & nVals   = nElems,                                   &
       & res     = bCoeffField                               )
 
-    ! convert physical to lattice
-    bCoeffField = bCoeffField / phyConvFac%sourceCoeff
-
 !$omp parallel do schedule(static), private( posInTotal, elemOff )
     !NEC$ ivdep
     do iElem = 1, nElems
       posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
       ! element offset
       elemoff = (posInTotal - 1) * varSys%nAuxScalars
+      velFac = 1.0_rk / ( 1.0_rk + bCoeffField(ielem) / (2 * phyConvFac%sourceCoeff) )
+
       ! add force to velocity
-      auxField( elemOff + vel_pos(1) ) = auxField( elemOff + vel_pos(1) ) &
-        &                               / ( 1.0_rk + bCoeffField(iElem) / 2.0_rk )
-      auxField( elemOff + vel_pos(2) ) = auxField( elemOff + vel_pos(2) ) &
-        &                               / ( 1.0_rk + bCoeffField(iElem) / 2.0_rk )
-      auxField( elemOff + vel_pos(3) ) = auxField( elemOff + vel_pos(3) ) &
-        &                               / ( 1.0_rk + bCoeffField(iElem) / 2.0_rk )
+      auxfield(elemoff + vel_pos) = auxfield(elemoff + vel_pos) * velFac
     end do
 
   end subroutine mus_addBrinkmanToAuxField_fluidIncomp

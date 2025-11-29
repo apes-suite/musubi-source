@@ -7,7 +7,7 @@ Action #2206: Test case - Benchmark: Gaussian pulse
 In this example, we will simulate a Gaussian pulse in pressure in a simple
 pre-defined cube with periodic boundaries and user-defined initial condition.
 The gaussian pulse can be also used via a lua function, c. f.
-* [lua-function of gaussian pulse](../../../fluid/benchmark/gaussianPulse/index.md)
+* [lua-function of gaussian pulse](../../../fluid/benchmark/gaussianPulse/index.html)
 For this simple geometry, we even do not need *Seeder*.
 
 The objectives of this example is to introduce how to:
