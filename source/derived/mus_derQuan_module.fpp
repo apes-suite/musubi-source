@@ -2323,8 +2323,8 @@ contains
       &               fPtr )
     scheme => fPtr%solverData%scheme
 
-    ! Get Brinkman coefficient which is refered in config file either
-    ! its spacetime variable or operation variable
+    ! Obtain the Brinkman coefficient from the respective variable
+    ! defined in the configuration for all requested elements.
     call varSys%method%val(fun%input_varPos(2))%get_element( &
       & varSys  = varSys,                                    &
       & elemPos = elemPos,                                   &
