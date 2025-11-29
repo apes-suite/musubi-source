@@ -13,13 +13,13 @@ features in Musubi:
 
 Here are the list of test cases to learn these features in Musbi:
 
-* [Simple](C2D_Simple/index.html)
-* [Boundary conditions](C2D_BoundaryConditions/index.html)
+* [Simple](C2D_Simple/index.md)
+* [Boundary conditions](C2D_BoundaryConditions/index.md)
 * Flow around the cylinder
-    * [Single-level](C2D_Cylinder_SingleLevel/index.html)
-    * [Multi-level](C2D_Cylinder_MultiLevel/index.html)
-* [Non-Newtonian](C2D_NonNewtonian/index.html)
-* [External force](C2D_Force/index.html)    
+    * [Single-level](C2D_Cylinder_SingleLevel/index.md)
+    * [Multi-level](C2D_Cylinder_MultiLevel/index.md)
+* [Non-Newtonian](C2D_NonNewtonian/index.md)
+* [External force](C2D_Force/index.md)    
 
 In these test cases, in addition to the aforementioned features, 
 you will also learn how to:

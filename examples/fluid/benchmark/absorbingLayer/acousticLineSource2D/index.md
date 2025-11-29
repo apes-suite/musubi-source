@@ -2,10 +2,10 @@ title: Acoustic Line Source 2D
 
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Test case absorbing layer](../index.html)
-| [Test case acoustic pulse 2D &rarr;](../acousticPulse2D/index.html)
-| [Test case acoustic pulse 3D &rarr;](../acousticPulse3D/index.html)
-| [Test case acoustic cylinder 2D &rarr;](../acousticCylinder2D/index.html)
+Navigate: [&larr; Test case absorbing layer](../index.md)
+| [Test case acoustic pulse 2D &rarr;](../acousticPulse2D/index.md)
+| [Test case acoustic pulse 3D &rarr;](../acousticPulse3D/index.md)
+| [Test case acoustic cylinder 2D &rarr;](../acousticCylinder2D/index.md)
 
 ## Acoustic 2D line source for plane absorbing layer ## {ex_fluid_abslayer_lineSrc}
 

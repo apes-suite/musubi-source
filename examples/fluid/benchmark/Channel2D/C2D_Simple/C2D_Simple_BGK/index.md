@@ -1,6 +1,6 @@
 title: Poisueille flow in a channel 2D
 
-Navigate: [&larr; Test case channel 2D](../../index.html)
+Navigate: [&larr; Test case channel 2D](../../index.md)
 
 # Poisueille flow in a channel 2D using BGK collision scheme # {#eg_C2D_Simple_BGK}
 
@@ -8,7 +8,7 @@ In this example, we will investigate the Poiseuille flow in a plain 2D channel
 using the bgk collision scheme.
 
 A detailed description of test case can be found in the parent directory
-[Description of test case channel 2D](../index.html).
+[Description of test case channel 2D](../index.md).
 
 ## Generating mesh ##
 ### Define geometry information ###

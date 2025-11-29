@@ -1,8 +1,8 @@
 title: Pipe Force
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Test case pipe 3D](../index.html)
-| [Test case pipe les &rarr;](../PIP_LES/index.html)
+Navigate: [&larr; Test case pipe 3D](../index.md)
+| [Test case pipe les &rarr;](../PIP_LES/index.md)
 
 # Pipe Force #
 

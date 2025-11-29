@@ -1,8 +1,8 @@
 title: Pipe Split
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Test case pipe 3D](../index.html)
-| [Test case concentric cylinders &rarr;](../../ConcentricCylinders/index.html)
+Navigate: [&larr; Test case pipe 3D](../index.md)
+| [Test case concentric cylinders &rarr;](../../ConcentricCylinders/index.md)
 
 # Pipe Split #
 

@@ -1,6 +1,6 @@
 title: Turbulent channel wall model Musker
 
-Navigate: [&larr; Test case turbulent channel](../index.html)
+Navigate: [&larr; Test case turbulent channel](../index.md)
 
 ## Turbulent channel flow test cases for weakly compressible flows ## {ex_fluid_turbCh_SL_MusFP}
 

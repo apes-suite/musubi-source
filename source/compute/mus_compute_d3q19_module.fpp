@@ -4456,7 +4456,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, layout%fStencil%QQ
-        pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
+        pdfTmp(iDir) = instate(                                                         &
+          & ?FETCH?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &
+          &                   )
       end do
       rho = sum( pdfTmp )
 
@@ -4490,8 +4492,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           &                 + a_xz * P_xz + a_yz * P_yz   &
           &                 + a_xx * P_xx + a_ww * P_ww)  )
 
-        outstate( (ielem - 1) * varsys%nscalars + idir ) = &
-          &                pdfTmp(iDir) + d_omega * ( feq - pdfTmp(iDir) )
+        outstate(                                                                      &
+          & ?SAVE?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &  
+          &     ) = pdfTmp(iDir) + d_omega * ( feq - pdfTmp(iDir) )
 
       end do
 
@@ -4605,7 +4608,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
   
         do iDir = 1, layout%fStencil%QQ
-          pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
+          pdfTmp(iDir) = instate(                                                         &
+            & ?FETCH?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &
+            &                   )
         end do
         rho = sum( pdfTmp )
   
@@ -4646,9 +4651,10 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
           fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
                                                        
-          outstate( (ielem - 1) * varsys%nscalars + idir ) =              &
-            &                pdfTmp(iDir) + d_omega * (feqMinus - fMinus) &
-            &                 + aux_omega * (feqPlus - fPlus)
+          outstate(                                                                      &
+            & ?SAVE?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &  
+            &     ) = pdfTmp(iDir) + d_omega * (feqMinus - fMinus)                       &
+            &          + aux_omega * (feqPlus - fPlus)
         end do
   
       end do elemloop
@@ -4761,7 +4767,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, layout%fStencil%QQ
-        pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
+        pdfTmp(iDir) = instate(                                                         &
+          & ?FETCH?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &
+          &                   )
       end do
       rho = sum( pdfTmp )
 
@@ -4799,8 +4807,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           &                 + a_xz * P_xz + a_yz * P_yz &
           &                 + a_xx * P_xx + a_ww * P_ww )
 
-        outstate( (ielem - 1) * varsys%nscalars + idir ) = &
-          &                pdfTmp(iDir) + d_omega * ( feq - pdfTmp(iDir) )
+        outstate(                                                                      &
+          & ?SAVE?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &  
+          &     ) = pdfTmp(iDir) + d_omega * ( feq - pdfTmp(iDir) )
 
       end do
 
@@ -4917,7 +4926,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
   
         do iDir = 1, layout%fStencil%QQ
-          pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
+          pdfTmp(iDir) = instate(                                                         &
+            & ?FETCH?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &
+            &                   )
         end do
         rho = sum( pdfTmp )
   
@@ -4961,9 +4972,10 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
           fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
   
-          outstate( (ielem - 1) * varsys%nscalars + idir ) =              &
-            &                pdfTmp(iDir) + d_omega * (feqMinus - fMinus) &
-            &                 + aux_omega * (feqPlus - fPlus)
+          outstate(                                                                      &
+            & ?SAVE?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &  
+            &     ) = pdfTmp(iDir) + d_omega * (feqMinus - fMinus)                       &
+            &          + aux_omega * (feqPlus - fPlus)
 
         end do
   
@@ -5086,7 +5098,9 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, layout%fStencil%QQ
-        pdfTmp( iDir ) = instate( neigh( (idir - 1) * nelems + ielem ) )
+        pdfTmp(iDir) = instate(                                                         &
+          & ?FETCH?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &
+          &                   )
       end do
       rho = sum( pdfTmp )
       
@@ -5249,6 +5263,7 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
       integer :: iElem, iDir
       type(mus_varSys_data_type), pointer :: fPtr
       type(mus_scheme_type), pointer :: scheme
+      real(kind=rk) :: pdfTmp( layout%fStencil%QQ ) ! temporary local pdf values
       real(kind=rk) :: rho
       real(kind=rk) :: d_omega, nu_q, d_lambda, aux_omega
       real(kind=rk) :: transVel( nSolve*3 ) ! velocity from the transport field
@@ -5367,10 +5382,12 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         u_fluid = transVel( (iElem-1)*3+1 : iElem*3 )
         usq = u_fluid(1) * u_fluid(1) + u_fluid(2) * u_fluid(2) + u_fluid(3) * u_fluid(3)
 
-        rho = 0.0_rk
         do iDir = 1, layout%fStencil%QQ
-          rho = rho + instate( neigh( (idir - 1) * nelems + ielem ) )
+          pdfTmp(iDir) = instate(                                                         &
+            & ?FETCH?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &
+            &                   )
         end do
+        rho = sum( pdfTmp )
 
         ! compute the equilibrium moments of the pdf
         meq = 0._rk
@@ -5442,16 +5459,16 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
 
         mneq = -mneq * s_mrt
 
-        outstate( ?SAVE?( q000,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q000,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f000 - 30.0_rk*mneq(2) + 12.0_rk*mneq(3)
 
 
         t2_1 = 2.0_rk*mneq(10) - 4.0_rk*mneq(11) - &  
           & 11.0_rk * mneq(2) - 4.0_rk * mneq(3)
         t2_2 = mneq(4) - 4.0_rk*mneq(5)
-        outstate( ?SAVE?(  q100,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q100,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f100 + t2_1 + t2_2
-        outstate( ?SAVE?(  qN00,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(qN00,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & fN00 + t2_1 - t2_2
 
 
@@ -5459,14 +5476,14 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           & mneq(10) + 2.0_rk*mneq(11)
         t4_2 = mneq(6) - 4.0_rk*mneq(7)
         t4_3 = mneq(12) - 2.0_rk*mneq(13)
-        outstate( ?SAVE?(  q010,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q010,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f010 + t4_1 + t4_2 + t4_3
-        outstate( ?SAVE?(  q0N0,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q0N0,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f0N0 + t4_1 - t4_2 + t4_3
         t6_2 = mneq(8) - 4.0_rk*mneq(9)
-        outstate( ?SAVE?(  q001,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q001,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f001 + t4_1 + t6_2 - t4_3 
-        outstate( ?SAVE?(  q00N,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q00N,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f00N + t4_1 - t6_2 - t4_3 
         
 
@@ -5476,29 +5493,29 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
         t8_4 = mneq(10) + mneq(11)
         t8_5 = mneq(12) + mneq(13)
         t8_6 = mneq(8) + mneq(9)
-        outstate( ?SAVE?( q110,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q110,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f110 + t8_1 + t8_2 + t8_3 + t8_4 + t8_5 + mneq(14) + mneq(17) - mneq(18)
-        outstate( ?SAVE?( qN10,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(qN10,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & fN10 + t8_1 - t8_2 + t8_3 + t8_4 + t8_5 - mneq(14) - mneq(17) - mneq(18)
-        outstate( ?SAVE?( q1N0,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q1N0,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f1N0 + t8_1 + t8_2 - t8_3 + t8_4 + t8_5 - mneq(14) + mneq(17) + mneq(18)
-        outstate( ?SAVE?( qNN0,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(qNN0,1,iElem,QQ,QQ,nElems,neigh) ) = &
           &fNN0 + t8_1 - t8_2 - t8_3 + t8_4 + t8_5 + mneq(14) - mneq(17) + mneq(18)
-        outstate( ?SAVE?( q101,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q101,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f101 + t8_1 + t8_2 + t8_6 + t8_4 - t8_5 + mneq(16) - mneq(17) + mneq(19)
-        outstate( ?SAVE?( qN01,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(qN01,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & fN01 + t8_1 - t8_2 + t8_6 + t8_4 - t8_5 - mneq(16) + mneq(17) + mneq(19)
-        outstate( ?SAVE?( q10N,1,iElem,QQ,QQ,nElems,neigh )) = & 
+        outstate( ?SAVE?(q10N,1,iElem,QQ,QQ,nElems,neigh) ) = & 
           & f10N + t8_1 + t8_2 - t8_6 + t8_4 - t8_5 - mneq(16) - mneq(17) - mneq(19)
-        outstate( ?SAVE?( qN0N,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(qN0N,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & fN0N + t8_1 - t8_2 - t8_6 + t8_4 - t8_5 + mneq(16) + mneq(17) - mneq(19)
-        outstate( ?SAVE?( q011,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q011,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f011 + t8_1 + t8_3 + t8_6 - 2.0_rk * t8_4 + mneq(15) + mneq(18) - mneq(19)
-        outstate( ?SAVE?(  q0N1,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q0N1,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f0N1 + t8_1 - t8_3 + t8_6 - 2.0_rk * t8_4 - mneq(15) - mneq(18) - mneq(19)
-        outstate( ?SAVE?(  q01N,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q01N,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f01N + t8_1 + t8_3 - t8_6 - 2.0_rk * t8_4 - mneq(15) + mneq(18) + mneq(19)
-        outstate( ?SAVE?(  q0NN,1,iElem,QQ,QQ,nElems,neigh )) = &
+        outstate( ?SAVE?(q0NN,1,iElem,QQ,QQ,nElems,neigh) ) = &
           & f0NN + t8_1 - t8_3 - t8_6 - 2.0_rk * t8_4 + mneq(15) - mneq(18) + mneq(19)
   
       end do elemloop

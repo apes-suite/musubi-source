@@ -19,11 +19,11 @@ features in Musubi:
 
 Here is the list of test cases to learn these features in Musubi:
 
-* [Simple](C3D_Simple/index.html)
+* [Simple](C3D_Simple/index.md)
 * Flow around the cylinder
-    * [Single-level](C3D_Cylinder_SingleLevel/index.html)
-    * [Multi-level](C3D_Cylinder_MultiLevel/index.html)
-    * [Sponge](C3D_Cylinder_Sponge/index.html)
+    * [Single-level](C3D_Cylinder_SingleLevel/index.md)
+    * [Multi-level](C3D_Cylinder_MultiLevel/index.md)
+    * [Sponge](C3D_Cylinder_Sponge/index.md)
 
 In these test cases, in addition to the aforementioned features, you will also
 learn how to:

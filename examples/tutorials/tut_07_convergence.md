@@ -1,9 +1,9 @@
 title: Abort Criteria
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Initial Conditions](tut_06_initial.html)
-| [Overview](index.html)
-| [Source Terms &rarr;](tut_08_source.html)
+Navigate: [&larr; Initial Conditions](tut_06_initial.md)
+| [Overview](index.md)
+| [Source Terms &rarr;](tut_08_source.md)
 
 # Abort Criteria
 
@@ -142,4 +142,4 @@ directory during runtime. It must be named `stop` and does not have to have any
 content. Upon next check interval, *Musubi* checks for the existence of the
 file. If encountered, *Musubi* terminates cleanly.
 
-Next chapter: [Source Terms &rarr;](tut_08_source.html)
+Next chapter: [Source Terms &rarr;](tut_08_source.md)

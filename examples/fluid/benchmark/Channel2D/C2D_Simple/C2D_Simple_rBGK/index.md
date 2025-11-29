@@ -1,6 +1,6 @@
 title: Poisueille flow in a channel 2D
 
-Navigate: [&larr; Test case channel 2D](../../index.html)
+Navigate: [&larr; Test case channel 2D](../../index.md)
 
 # Poisueille flow in a channel 2D using rBGK collision scheme # {#eg_C2D_Simple_rBGK}
 
@@ -15,7 +15,7 @@ This is a non-dissipative scheme. In general it is more unstable than the
 classic BGK scheme.
 
 A detailed description of test case can be found in the parent directory
-[Description of test case channel 2D](../index.html).
+[Description of test case channel 2D](../index.md).
 
 ## Generating mesh ##
 ### Define geometry information ###

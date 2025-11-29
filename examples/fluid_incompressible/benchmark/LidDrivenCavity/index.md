@@ -1,8 +1,8 @@
 title: Lid driven cavity
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Benchmark Test cases](../index.html)
-| [Test case lid driven cavity simple &rarr;](LDC_Simple/index.html)
+Navigate: [&larr; Benchmark Test cases](../index.md)
+| [Test case lid driven cavity simple &rarr;](LDC_Simple/index.md)
 
 # Lid driven cavity in 2D #
 
@@ -14,8 +14,8 @@ side.
 
 Here are the list of test cases to learn these features in Musubi:
 
-* [Simple](LDC_Simple/index.html)
-* [Multi-level](LDC_MultiLevel/index.html)
+* [Simple](LDC_Simple/index.md)
+* [Multi-level](LDC_MultiLevel/index.md)
 
 In these test cases, in addition to the aforementioned features, 
 you will also learn how to:

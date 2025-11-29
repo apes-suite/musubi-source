@@ -8,7 +8,7 @@ simple pre-defined cube with periodic boundaries. For this case, the Reynolds
 number (*Re*) is set to 800.
 
 A detailed description of test case can be found in the parent directory
-[Description of test case TGV_Simple](../index.html).
+[Description of test case TGV_Simple](../index.md).
 
 ## Running simulation ##
 ### Define flow parametes ###

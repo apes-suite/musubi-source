@@ -1,9 +1,9 @@
 title: Source Terms
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [&larr; Abort Criteria](tut_07_convergence.html)
-| [Overview](index.html)
-| [Multi-Level Simulations &rarr;](tut_09_mus_multilevel.html)
+Navigate: [&larr; Abort Criteria](tut_07_convergence.md)
+| [Overview](index.md)
+| [Multi-Level Simulations &rarr;](tut_09_mus_multilevel.md)
 
 # Source Terms
 
@@ -37,4 +37,4 @@ variable = {
 @note: `st_fun = press_grad` refers to a lua-function defined somewhere else in
 the lua file.
 
-Next chapter: [Multi-Level Simulations &rarr;](tut_09_mus_multilevel.html)
+Next chapter: [Multi-Level Simulations &rarr;](tut_09_mus_multilevel.md)

@@ -1,8 +1,8 @@
 title: Prerequisites
 @warning WORK IN PROGRESS @endwarning
 
-Navigate: [Overview](index.html)
-| [Configuration &rarr;](tut_01_mus_config.html)
+Navigate: [Overview](index.md)
+| [Configuration &rarr;](tut_01_mus_config.md)
 
 # Prerequisites
 Download, build and run *Musubi*.
@@ -139,4 +139,4 @@ files that cause errors.
 
 
 Next chapter:
-[Configuration &rarr;](tut_01_mus_config.html)
+[Configuration &rarr;](tut_01_mus_config.md)

@@ -5,4 +5,4 @@ title: Channel 3D test cases
 
 
 Here is the list of test cases:
-* [Channel 3D Sphere with multilevel and LES](C3D_Sphere_MultiLevel_LES/index.html)
+* [Channel 3D Sphere with multilevel and LES](C3D_Sphere_MultiLevel_LES/index.md)

@@ -8,7 +8,7 @@ with least pressure at nozzle neck.
 
 Here are the list of test cases used in SimTec-II:
 
-* [Nozzle flow inside](NOZ_FlowInside/index.html): Used to introduced nozzle 
+* [Nozzle flow inside](NOZ_FlowInside/index.md): Used to introduced nozzle 
 testcase.
-* [Nozzle flow in and around](NOZ_FlowInAndAround/index.html): Used in final
+* [Nozzle flow in and around](NOZ_FlowInAndAround/index.md): Used in final
 optimization project.
