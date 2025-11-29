@@ -10,7 +10,9 @@ Supporting libraries like [treelm](https://github.com/apes-suite/tem-source)
 and the [build infrastructure](https://github.com/apes-suite/apes-bin) are
 gathered in the [Musubi repository](https://github.com/apes-suite/musubi).
 
-Please refer to that container repository for instruction on how to build Musubi.
+Please refer to that container repository and the
+[documentation](https://apes-suite.org/musubi/page/)
+for instructions on how to build Musubi.
 
 
 Organization in Git Submodules
