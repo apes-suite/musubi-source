@@ -4956,6 +4956,7 @@ contains
 ! ****************************************************************************** !
   !> Update state with source variable Brinkman force obtained from Brinkman
   !! coefficient. The force update is for TRT collision model.
+  !!
   !! Reference:
   !! 1) Zhaoli Guo and T. S. Zhao. “Lattice Boltzmann Model for Incompressible
   !!    Flows through Porous Media”. In: Physical Review E 66.3 (2002), p. 036304.
