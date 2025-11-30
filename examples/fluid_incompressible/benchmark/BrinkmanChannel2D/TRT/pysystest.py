@@ -16,7 +16,6 @@ from pysys.constants import *
 from apes.apeshelper import ApesHelper
 class PySysTest(ApesHelper, pysys.basetest.BaseTest):
     def setup(self):
-        self.copy(self.input + '/args.lua', self.output)
         self.copy(self.input + '/params.lua', self.output)
         self.copy(self.input + '/func.lua', self.output)
         self.apes.setupMusubi()

@@ -2237,7 +2237,10 @@ contains
       velFac = 1.0_rk / ( 1.0_rk + bCoeffField(ielem) / (2 * phyConvFac%sourceCoeff) )
 
       ! add force to velocity
-      auxfield(elemoff + vel_pos) = auxfield(elemoff + vel_pos) * velFac
+      auxfield( elemoff + vel_pos(1) ) = auxfield( elemoff + vel_pos(1) ) * velFac
+      auxfield( elemoff + vel_pos(2) ) = auxfield( elemoff + vel_pos(2) ) * velFac
+      auxfield( elemoff + vel_pos(3) ) = auxfield( elemoff + vel_pos(3) ) * velFac
+
     end do
 
   end subroutine mus_addBrinkmanToAuxField_fluidIncomp

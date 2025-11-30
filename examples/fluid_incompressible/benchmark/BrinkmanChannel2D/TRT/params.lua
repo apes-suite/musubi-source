@@ -1,4 +1,4 @@
-require "args"
+F0 = os.getenv('F0') or 10
 
 resolution = 2 ^ 1
 umax = 0.7 / 4
