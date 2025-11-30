@@ -2354,6 +2354,9 @@ contains
       ! get the correct omega value
       omegaKine = scheme%field(1)%fieldProp%fluid%viscKine          &
         &                              %omLvl(iLevel)%val(posInTotal)
+
+      bCoeffTerm = bCoeffField(iElem) &
+        &           / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
      
       ! Brinkman force term:
       ! B_i = w_i \vec{e}_i/cs2 \cdot \vec{B}
@@ -2363,8 +2366,7 @@ contains
 
         res( (iElem-1) * fun%nComponents + iDir ) = (omegaKine / 2.0_rk - 1.0_rk)     &
           &                                        * scheme%layout%weight(iDir)       &
-          &                                        * cs2inv * bCoeffTerm * ucx * rho0 &
-          &                                        / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
+          &                                        * cs2inv * bCoeffField(iElem) * ucx * rho0
          
       end do
 
@@ -2468,6 +2470,9 @@ contains
         &                              %omLvl(iLevel)%val(posInTotal)
       omegaMinus = 1.0_rk / ( scheme%field(1)%fieldProp%fluid%lambda  & 
         &                    / (1.0_rk / omegaKine - 0.5_rk) + 0.5_rk )
+
+      bCoeffTerm = bCoeffField(iElem) &
+        &           / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
      
       ! force term:
       ! B_i = w_i \vec{e}_i/cs2 \cdot \vec{B}
@@ -2477,8 +2482,7 @@ contains
 
         res( (iElem - 1) * fun%nComponents + iDir ) = (omegaMinus / 2.0_rk - 1.0_rk)    &
           &                                          * scheme%layout%weight(iDir)       &
-          &                                          * cs2inv * bCoeffTerm * ucx * rho0 &
-          &                                          / fPtr%solverData%physics%fac(iLevel)%sourceCoeff   
+          &                                          * cs2inv * bCoeffField(iElem) * ucx * rho0
          
       end do
 
@@ -4906,6 +4910,8 @@ contains
       & nVals   = nElems,                                   &
       & res     = bCoeffField                               )
 
+    bCoeffField = bCoeffField / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
+
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
     nScalars = varSys%nScalars
@@ -4934,8 +4940,7 @@ contains
         ! update outstate
         outState(statePos) = outState(statePos)                                &
           &                   - omega_fac * scheme%layout%weight( iDir ) * ucx &
-          &                   * cs2inv * bCoeffField(iElem) * rho0             &
-          &                   / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
+          &                   * cs2inv * bCoeffField(iElem) * rho0             
 
       end do
 
@@ -5025,6 +5030,8 @@ contains
       & nVals   = nElems,                                   &
       & res     = bCoeffField                               )
 
+    bCoeffField = bCoeffField / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
+
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
     nScalars = varSys%nScalars
@@ -5055,8 +5062,7 @@ contains
         ! update outstate
         outState(statePos) = outState(statePos)                          &
           &                   - omega_fac * scheme%layout%weight(iDir)   &
-          &                   * ucx * cs2inv * bCoeffField(iElem) * rho0 &
-          &                   / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
+          &                   * ucx * cs2inv * bCoeffField(iElem) * rho0 
 
       end do
 

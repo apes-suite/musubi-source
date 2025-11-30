@@ -724,8 +724,8 @@ contains
       ! source term:
       ! S_i = w_i * S
       do iDir = 1, QQ
-        res((iElem-1)*fun%nComponents + iDir) = scheme%layout%weight(iDir) &
-          &                                      * coeff_L * density
+        res( (iElem - 1) * fun%nComponents + iDir ) = scheme%layout%weight(iDir) &
+          &                                            * coeff_L * density
       end do
 
     end do !iElem
