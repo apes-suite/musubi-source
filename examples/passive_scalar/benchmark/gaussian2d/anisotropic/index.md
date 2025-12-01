@@ -1,4 +1,4 @@
-title: ansiotropic Gaussian 2D
+title: anisotropic Gaussian 2D
 
 ## Anisotropic Gaussian 2D ## {#ex_gaussian2d_anisotropic}
 
