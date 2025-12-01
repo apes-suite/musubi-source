@@ -1,13 +1,14 @@
 title: Build and run Musubi
 
-Subsequently is a short explanation on how to use Musubi:
+A short explanation on how to install and use Musubi:
 
 - Checkout: 
     - <tt>git clone --recurse-submodules git@github.com:apes-suite/musubi.git</tt>
 
-  then you have the repository with sub-repos aotus and treelm in the folder
+  then you have the repository with submodules Aotus and Treelm in the directory
   <tt>musubi</tt>.
-- Note: You need MPI in order to compile the code.
+
+- Note: In addition to a Fortran compiler, you need MPI to compile the code.
 
 - Set environment variables
     - <tt>export CC=mpicc</tt>
@@ -21,10 +22,20 @@ Subsequently is a short explanation on how to use Musubi:
     - <tt>build/musubi</tt>
 
 You will get .vtk files, if you have activated the output in
-<tt>musubi.lua</tt>.  The current test case is a Gaussian Pulse with a wall in
+<tt>musubi.lua</tt>.
+
+The current test case is a Gaussian Pulse with a wall in
 order to test the correct behavior of the bounce back boundaries.
 
-# Configuration options
+## Python Environment
+
+To use all the tools of the apes-suite conveniently together you may
+want to use the [apes-pyenv](https://github.com/apes-suite/apes-pyenv).
+See there for instructions on how to build a Python virtual environment
+collecting the various tools and their dependencies and installing
+Musubi into that environment.
+
+## Configuration options
 
 There are several configuration options available to influence the build.
 You can obtain a list of those with <tt>./waf --help</tt>.
@@ -32,20 +43,20 @@ You can obtain a list of those with <tt>./waf --help</tt>.
 It is possible to choose between the "PULL" (default) and "PUSH" streaming
 approach via the <tt>--stream=PULL</tt> or <tt>--stream=PUSH</tt> option.
 
-# Build variants
+## Build variants
 
 Aside from the default <tt>build</tt>, there is also a <tt>debug</tt> target
 which creates an executable with debugging information.
 Other variants, for example for performance profiling can be found in the output
 of <tt>bin/waf --help</tt>
 
-# Coco preprocessing
+## Coco preprocessing
 
 Musubi utilizes the CoCo preprocessor to modify code at compile time.
 Its behavior can be modified by changing the <tt>default.coco</tt> file, and
 by setting the <tt>COCOFLAGS</tt> environment variable.
 
-# Limiting what is build
+## Limiting what is build
 
 It is possible to restrict to build to individual targets with the
 <tt>--targets</tt> option.
@@ -95,10 +106,11 @@ Please make sure to check out musubi and start a few runs.
 Please also report any bugs here in the tickets.
 
 @note After updating a new version of Musubi you better do
-<tt>./waf configure build</tt>.
+<tt>bin/waf configure build</tt>.
 Sometimes you need to clean the coco macro files.
-Then you do <tt>./waf clean build</tt>.
+Then you do <tt>bin/waf clean build</tt>.
 To remove the source and the configuration files you type
-<tt>./waf distclean configure build</tt>.
-And if you want to remove the coco executables itself you will type
-<tt>./waf cleanall configure build</tt>.
+<tt>bin/waf distclean configure build</tt>.
+
+And if you want to remove the coco executable itself you can use
+<tt>bin/waf cleanall configure build</tt>.
