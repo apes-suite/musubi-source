@@ -6,7 +6,7 @@ title: Gaussian Pulse in Pressure in a Cube
 In this example, we will simulate a Gaussian pulse in pressure in a simple
 pre-defined cube with periodic boundaries and user-defined initial condition.
 The gaussian pulse can be also used via a pre-defined function, c. f.
-* [pre-defined gaussian pulse](../../../fluid_incompressible/benchmark/gaussianPulse/index.md)
+* [pre-defined gaussian pulse](../../../fluid_incompressible/benchmark/gaussianPulse/index.html)
 For this simple geometry, we even do not need *Seeder*.
 
 The objectives of this example is to introduce how to:
