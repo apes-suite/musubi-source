@@ -455,7 +455,7 @@ contains
   !> This routine measures performance imbalance, MLUPS and dumps timings
   !! to disk
   subroutine mus_perf_measure( totalDens, DomSize, minLevel,          &
-    &                          maxLevel, nElems, scaleFactor, general )
+    &                          maxLevel, nElems, scaleFactor, general, totalElem )
     ! -------------------------------------------------------------------- !
     !> Total density from check_density
     real(kind=rk), intent(in) :: totalDens
@@ -469,10 +469,11 @@ contains
     integer, intent(in) :: scaleFactor
     !> Contains proc, simControl, solveHead
     type(tem_general_type), intent(in) :: general
+    integer(kind=long_k), intent(out) :: totalElem
     ! -------------------------------------------------------------------- !
     real(kind=rk) :: tMainLoop, tCompute, mlups, mlups_kernel
     real(kind=rk) :: cpuCost, imbalance
-    integer       :: iter, iTimer, nTimers, counter, iErr, nLevels
+    integer       :: iter, iTimer, nTimers, counter, iErr, nLevels, iLevel
     real(kind=rk), allocatable :: timerVal(:)
     integer(kind=long_k) :: nTotals(minLevel:maxLevel)
     ! -------------------------------------------------------------------- !
@@ -505,6 +506,13 @@ contains
       iter = ( general%simControl%now%iter               &
         &    - general%simControl%timeControl%min%iter ) &
         &    / ( scaleFactor ** ( maxLevel - minLevel )  )
+
+      
+      totalElem = 0_long_k
+      do iLevel = minLevel, maxLevel
+        totalElem = totalElem + nTotals(iLevel)                       &
+          &         / int( scaleFactor**(maxLevel - iLevel), kind=long_k )
+      end do
 
       ! calculate MLUPS and MLUPS kernel
       tMainLoop = get_mainLoopTime()

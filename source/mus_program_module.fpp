@@ -257,6 +257,7 @@ contains
     type(tem_adapt_type), intent(inout) :: adapt
     ! ------------------------------------------------------------------------!
     integer :: minLevel, maxLevel
+    integer(kind=long_k) :: totalElem
     ! ------------------------------------------------------------------------!
 
     call tem_startTimer( timerHandle =  mus_timerHandles%mainLoop )
@@ -337,7 +338,8 @@ contains
             &       maxLevel    = maxLevel,             &
             &       nElems      = scheme%pdf(minLevel:maxLevel)%nElems_fluid, &
             &       scaleFactor = params%scaleFactor,   &
-            &       general     = params%general )
+            &       general     = params%general, &
+            &       totalElem   = totalElem                      )
 
 
           ! Only dump level timing for two levels mesh
@@ -390,7 +392,7 @@ contains
   !! finalize treelm, dump timing and finialize mpi with fin_env
   !!
   subroutine mus_finalize(scheme, params, particleGroup, tree, levelPointer, &
-    &                     nBCs, globIBM)
+    &                     nBCs, globIBM, totalElem )
     ! ------------------------------------------------------------------------!
     !> scheme type
     type(mus_scheme_type), intent(inout) :: scheme
@@ -406,6 +408,7 @@ contains
     integer, intent(in) :: nBCs
     !> global IBM datatype incl. array of IBM datatypes
     type(mus_IBM_globType), intent(inout) :: globIBM
+    integer(kind=long_k), intent(out) :: totalElem
     ! ------------------------------------------------------------------------!
     integer       :: minLevel, maxLevel, ii, iLevel
     real(kind=rk) :: total_density
@@ -416,6 +419,7 @@ contains
 
     minLevel = tree%global%minLevel
     maxLevel = tree%global%maxLevel
+    totalElem = 0_long_k
 
     ! dump status information on how simulation was terminated
     if ( tem_status_run_terminate(params%general%simControl%status) ) then
@@ -497,7 +501,8 @@ contains
         &                    nElems      = scheme%pdf(minLevel:maxLevel)  &
         &                                        %nElems_fluid,           &
         &                    scaleFactor = params%scaleFactor,            &
-        &                    general     = params%general                 )
+        &                    general     = params%general,                &
+        &                    totalElem   = totalElem                      )
 
       ! -------------------------------------------------------------------
       ! Only dump level timing for two levels mesh
