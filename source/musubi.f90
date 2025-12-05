@@ -42,6 +42,7 @@
 program musubi
   ! include treelm modules
   use mpi
+  use env_module,                   only: long_k
   use tem_general_module,           only: tem_start, tem_finalize
   use tem_adaptation_config_module, only: tem_adapt_type
 
@@ -76,6 +77,7 @@ program musubi
   type(tem_adapt_type)                     :: adapt
   type(mus_control_type)                   :: control
   integer :: ierr
+  integer(kind=long_k) :: totalElement
   ! -------------------------------------------------------------------------- !
 
   control = mus_control_type( scheme        = scheme,       &
@@ -134,7 +136,8 @@ program musubi
     &                tree          = geometry%tree,              &
     &                nBCs          = geometry%boundary%nBCtypes, &
     &                levelPointer  = geometry%levelPointer,      &
-    &                globIBM       = geometry%globIBM            )
+    &                globIBM       = geometry%globIBM,           &
+    &                totalElem     = totalElement                )
 
   ! finalize treelm function like print run time info and mpi
   call tem_finalize(params%general)
