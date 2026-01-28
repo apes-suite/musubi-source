@@ -267,6 +267,7 @@ contains
     ! Start main loop
     mainloop: do
 
+      call tem_startTimer( timerHandle =  mus_timerHandles%check_flow_status )
       ! check if some action has to be taken based on timeControl:
       ! tracking, global reduction operations, restart.
       ! check flow status including perform checks
@@ -285,10 +286,13 @@ contains
 
       ! clear status bit
       call tem_simControl_clearStat( me = params%general%simControl )
+      call tem_stopTimer( timerHandle =  mus_timerHandles%check_flow_status )
 
       ! Iterate through the elements in a level-wise fashion
       ! and advance the time steps
+      call tem_startTimer( timerHandle =  mus_timerHandles%do_computation )
       call control%do_computation( iLevel = minLevel  )
+      call tem_stopTimer( timerHandle =  mus_timerHandles%do_computation )
 
       call do_balance()
 

@@ -152,6 +152,12 @@ module mus_timer_module
     !> handle for source terms
     integer :: source
 
+    !> handle for flow status check
+    integer :: check_flow_status
+
+    !> handle for do computation routine
+    integer :: do_computation
+
     ! GGS: erase the following
     !integer :: kappa_abg, inv_kappa_abg, inner_loop
 
@@ -238,6 +244,12 @@ contains
 
     call tem_addTimer( timerHandle = mus_timerHandles%source, &
       &                timerName   = 'Source' )
+
+    call tem_addTimer( timerHandle = mus_timerHandles%check_flow_status, &
+      &                timerName   = 'Check' )
+
+    call tem_addTimer( timerHandle = mus_timerHandles%do_computation, &
+      &                timerName   = 'DoComp' )
 
     ! GGS: erase the following 3
     !call tem_addTimer( timerHandle = mus_timerHandles%kappa_abg, &
