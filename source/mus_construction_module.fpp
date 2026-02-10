@@ -1377,6 +1377,8 @@ contains
     integer :: myGhostFromFiner, myGhostFromCoarser
     integer :: nElems_totalGhostFromFiner
     integer :: nElems_totalGhostFromCoarser
+    integer :: nProcs, iProc
+    integer(kind=long_k), allocatable :: allElemCount(:,:)
     ! --------------------------------------------------------------------------
 
     nLevels = maxLevel - minLevel + 1
@@ -1397,11 +1399,28 @@ contains
       &   + levelDesc( minLevel:maxLevel )%elem%nElems( eT_ghostFromFiner )  &
       &   + levelDesc( minLevel:maxLevel )%elem%nElems( eT_halo )
 
-    ! Print local element counts per level on this process before global reduce
-    write(logUnit(1),"(A,I0,A)") 'Proc ', proc%rank, ' local elements per level:'
-    do iLevel = minLevel, maxLevel
-      write(logUnit(1),"(A,I0,A,I0)") '  Level ', iLevel, ': ', ElemCount(iLevel)
-    end do
+    ! Gather local element counts from all ranks to rank 0
+    call mpi_comm_size( proc%comm, nProcs, iErr )
+    if( proc%rank == 0 ) then
+      allocate( allElemCount(0:nProcs-1, minLevel:maxLevel) )
+    else
+      allocate( allElemCount(0:0, minLevel:maxLevel) ) ! dummy allocation for other ranks
+    end if
+
+    call mpi_gather( ElemCount(minLevel:maxLevel), nLevels, mpi_integer8, &
+      &              allElemCount(:, minLevel:maxLevel), nLevels, mpi_integer8, &
+      &              0, proc%comm, iErr )
+
+    ! Print local element counts per level on rank 0
+    if( proc%rank == 0 ) then
+      write(logUnit(1),"(A)") 'Local elements per level on all processes:'
+      do iProc = 0, nProcs-1
+        write(logUnit(1),"(A,I0,A)") 'Proc ', iProc, ' local elements per level:'
+        do iLevel = minLevel, maxLevel
+          write(logUnit(1),"(A,I0,A,I0)") '  Level ', iLevel, ': ', allElemCount(iProc, iLevel)
+        end do
+      end do
+    end if
 
     call mpi_allreduce( ElemCount(minLevel:maxLevel), &
       &                 nElems_allLevel(minLevel:maxLevel),             &
@@ -1443,6 +1462,8 @@ contains
       &                        nElems_totalGhostFromCoarser
 
     write(logUnit(1),*) ''
+
+    deallocate( allElemCount )
 
   end subroutine calculate_nElems
 ! **************************************************************************** !
