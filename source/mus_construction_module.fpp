@@ -1396,6 +1396,13 @@ contains
       &   + levelDesc( minLevel:maxLevel )%elem%nElems( eT_ghostFromCoarser ) &
       &   + levelDesc( minLevel:maxLevel )%elem%nElems( eT_ghostFromFiner )  &
       &   + levelDesc( minLevel:maxLevel )%elem%nElems( eT_halo )
+
+    ! Print local element counts per level on this process before global reduce
+    write(logUnit(1),"(A,I0,A)") 'Proc ', proc%rank, ' local elements per level:'
+    do iLevel = minLevel, maxLevel
+      write(logUnit(1),"(A,I0,A,I0)") '  Level ', iLevel, ': ', ElemCount(iLevel)
+    end do
+
     call mpi_allreduce( ElemCount(minLevel:maxLevel), &
       &                 nElems_allLevel(minLevel:maxLevel),             &
       &                 nLevels, mpi_integer8, mpi_sum, proc%comm, iErr )
