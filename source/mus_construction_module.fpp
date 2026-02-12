@@ -1370,7 +1370,7 @@ contains
     type(tem_comm_env_type), intent(in) :: proc
     ! --------------------------------------------------------------------------
     integer :: iLevel, iErr, nLevels
-    integer(kind=long_k) :: ElemCount(minLevel:maxLevel)
+    integer(kind=long_k) :: ElemCount(minLevel:maxLevel), nHalo(minLevel:maxLevel)
     integer(kind=long_k) :: nElems_overall
     integer(kind=long_k) :: nElems_allLevel( minLevel:maxLevel )
     integer(kind=long_k) :: nElems_fluidLevel( minLevel:maxLevel )
@@ -1413,11 +1413,28 @@ contains
 
     ! Print local element counts per level on rank 0
     if( proc%rank == 0 ) then
-      write(logUnit(1),"(A)") 'Local elements per level on all processes:'
+      write(logUnit(5),"(A)") 'Local elements per level on all processes:'
       do iProc = 0, nProcs-1
-        write(logUnit(1),"(A,I0,A)") 'Proc ', iProc, ' local elements per level:'
+        write(logUnit(5),"(A,I0,A)") 'Proc ', iProc, ' local elements per level:'
         do iLevel = minLevel, maxLevel
-          write(logUnit(1),"(A,I0,A,I0)") '  Level ', iLevel, ': ', allElemCount(iProc, iLevel)
+          write(logUnit(5),"(A,I0,A,I0)") '  Level ', iLevel, ': ', allElemCount(iProc, iLevel)
+        end do
+      end do
+    end if
+
+    nHalo(minLevel:maxLevel) = levelDesc( minLevel:maxLevel )%elem%nElems( eT_halo )
+
+    call mpi_gather( nHalo(minLevel:maxLevel), nLevels, mpi_integer8, &
+      &              allElemCount(:, minLevel:maxLevel), nLevels, mpi_integer8, &
+      &              0, proc%comm, iErr )
+
+    ! Print local element counts per level on rank 0
+    if( proc%rank == 0 ) then
+      write(logUnit(5),"(A)") 'Local halo elements per level on all processes:'
+      do iProc = 0, nProcs-1
+        write(logUnit(5),"(A,I0,A)") 'Proc ', iProc, ' local halo elements per level:'
+        do iLevel = minLevel, maxLevel
+          write(logUnit(5),"(A,I0,A,I0)") '  Level ', iLevel, ': ', allElemCount(iProc, iLevel)
         end do
       end do
     end if
