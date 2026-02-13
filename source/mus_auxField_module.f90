@@ -378,12 +378,17 @@ contains
     ! communicate velocity field. Requires for tubulence to compute ShearRate
     ! from velocity gradient.
     ! exchange velocity halo on current level
-    call general%commpattern%exchange_real(   &
-      &  send         = auxField%sendBuffer,  &
-      &  recv         = auxField%recvBuffer , &
-      &  state        = auxField%val(:),      &
-      &  message_flag = iLevel+100,           &
-      &  comm         = general%proc%comm     )
+    if (trim(schemeHeader%kind) == 'fluid' .or. &
+      & trim(schemeHeader%kind) == 'fluid_incompressible') then
+      if (field(1)%fieldProp%fluid%turbulence%active) then
+        call general%commpattern%exchange_real(   &
+          &  send         = auxField%sendBuffer,  &
+          &  recv         = auxField%recvBuffer , &
+          &  state        = auxField%val(:),      &
+          &  message_flag = iLevel+100,           &
+          &  comm         = general%proc%comm     )
+      end if
+    end if
 
     ! communicate ghost halos from coarser
     if (iLevel > minLevel) then
