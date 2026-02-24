@@ -138,11 +138,6 @@ module mus_scheme_type_module
 
     !> Contains trackingControl, config and instances
     type( tem_tracking_type ) :: track
-    !> Controls auxField halo communication.
-    !! Set during tracking initialization:
-    !! fluid/incompressible -> turbulence OR tracked grad-vars
-    !! otherwise remains false.
-    logical :: needAuxHaloComm = .false.
 
     !> Position of reduction transient variable in varSys
     type(tem_varMap_type) :: redTransVarMap

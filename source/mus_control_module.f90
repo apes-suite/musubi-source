@@ -319,24 +319,23 @@ contains
     ! and exchange them if turbulence is active
     call tem_startTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
     write(logUnit(10), "(A)") 'Calculate auxField'
-    call mus_calcAuxFieldAndExchange(                                &
-      & auxField          = me%scheme%auxField(iLevel),              &
-      & calcAuxField      = me%scheme%calcAuxField,                  &
-      & state             = me%scheme%state(iLevel)%val(:, now),     &
-      & pdfData           = me%scheme%pdf(iLevel),                   &
-      & nFields           = me%scheme%nFields,                       &
-      & field             = me%scheme%field(:),                      &
-      & globSrc           = me%scheme%globSrc,                       &
-      & stencil           = me%scheme%layout%fStencil,               &
-      & varSys            = me%scheme%varSys,                        &
-      & derVarPos         = me%scheme%derVarPos,                     &
-      & general           = me%params%general,                       &
-      & phyConvFac        = me%params%physics%fac(iLevel),           &
-      & iLevel            = iLevel,                                  &
-      & minLevel          = me%geometry%tree%global%minLevel,        &
-      & schemeHeader      = me%scheme%header,                        &
-      & quantities        = me%scheme%layout%quantities,             &
-      & needAuxHaloComm   = me%scheme%needAuxHaloComm                )
+    call mus_calcAuxFieldAndExchange(                            &
+      & auxField          = me%scheme%auxField(iLevel),          &
+      & calcAuxField      = me%scheme%calcAuxField,              &
+      & state             = me%scheme%state(iLevel)%val(:, now), &
+      & pdfData           = me%scheme%pdf(iLevel),               &
+      & nFields           = me%scheme%nFields,                   &
+      & field             = me%scheme%field(:),                  &
+      & globSrc           = me%scheme%globSrc,                   &
+      & stencil           = me%scheme%layout%fStencil,           &
+      & varSys            = me%scheme%varSys,                    &
+      & derVarPos         = me%scheme%derVarPos,                 &
+      & general           = me%params%general,                   &
+      & phyConvFac        = me%params%physics%fac(iLevel),       &
+      & iLevel            = iLevel,                              &
+      & minLevel          = me%geometry%tree%global%minLevel,    &
+      & schemeHeader      = me%scheme%header,                    &
+      & quantities        = me%scheme%layout%quantities          )
 
     if (iLevel < me%geometry%tree%global%maxLevel) then
       write(logUnit(10), "(A)") 'Interpolate and exchange auxField in ' &
@@ -350,7 +349,7 @@ contains
         & iLevel      = iLevel,                       &
         & nAuxScalars = me%scheme%varSys%nAuxScalars, &
         & general     = me%params%general,            &
-        & needAuxHaloComm = me%scheme%needAuxHaloComm )
+        & needAuxHaloComm = me%scheme%header%needAuxHaloComm )
     end if
 
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
@@ -579,8 +578,7 @@ contains
       & iLevel            = iLevel,                              &
       & minLevel          = me%geometry%tree%global%minLevel,    &
       & schemeHeader      = me%scheme%header,                    &
-      & quantities        = me%scheme%layout%quantities,         &
-      & needAuxHaloComm   = me%scheme%needAuxHaloComm            )
+      & quantities        = me%scheme%layout%quantities          )
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
     ! --------------------------------------------------------------------------
 
@@ -775,8 +773,7 @@ contains
       & iLevel            = iLevel,                                  &
       & minLevel          = me%geometry%tree%global%minLevel,        &
       & schemeHeader      = me%scheme%header,                        &
-      & quantities        = me%scheme%layout%quantities,             &
-      & needAuxHaloComm   = me%scheme%needAuxHaloComm                )
+      & quantities        = me%scheme%layout%quantities              )
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
     ! --------------------------------------------------------------------------
 

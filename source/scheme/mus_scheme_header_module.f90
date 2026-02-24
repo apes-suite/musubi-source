@@ -127,6 +127,11 @@ module mus_scheme_header_module
     character(len=labelLen) :: relaxation
     !> Variant and additional options for a relaxation
     type(mus_relaxation_header_type) :: relaxHeader
+    !> Controls auxField halo communication.
+    !! Set during tracking initialization:
+    !! fluid/incompressible -> turbulence OR tracked grad-vars
+    !! otherwise remains false.
+    logical :: needAuxHaloComm = .false.
   end type mus_scheme_header_type
 
 contains

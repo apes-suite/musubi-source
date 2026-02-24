@@ -290,8 +290,7 @@ contains
   !! halos
   subroutine mus_calcAuxFieldAndExchange(auxField, calcAuxField, state, &
     &  pdfData, nFields, field, globSrc, stencil, varSys, derVarPos,    &
-    &  phyConvFac, general, iLevel, minLevel, schemeHeader, quantities, &
-    &  needAuxHaloComm)
+    &  phyConvFac, general, iLevel, minLevel, schemeHeader, quantities  )
     ! -------------------------------------------------------------------- !
     !> auxilary field array
     type(mus_auxFieldVar_type), intent(inout) :: auxField
@@ -325,8 +324,6 @@ contains
     type(mus_scheme_header_type), intent(in) :: schemeHeader
     !> Class that contains pointers to the proper derived quantities functions
     type(mus_scheme_derived_quantities_type), intent(in) :: quantities
-    !> Whether auxField halo communication is required
-    logical, intent(in) :: needAuxHaloComm
     ! -------------------------------------------------------------------- !
     integer :: nSolve, iField, iSrc
     ! -------------------------------------------------------------------- !
@@ -386,7 +383,7 @@ contains
     ! communicate velocity field. Requires for tubulence to compute ShearRate
     ! from velocity gradient.
     ! exchange velocity halo on current level
-    if (needAuxHaloComm) then
+    if (schemeHeader%needAuxHaloComm) then
         call general%commpattern%exchange_real(   &
           &  send         = auxField%sendBuffer,  &
           &  recv         = auxField%recvBuffer , &
@@ -396,7 +393,7 @@ contains
     end if
 
     ! communicate ghost halos from coarser
-    if (needAuxHaloComm .and. iLevel > minLevel) then
+    if (schemeHeader%needAuxHaloComm .and. iLevel > minLevel) then
        call general%commpattern%exchange_real(             &
         &  send         = auxField%sendBufferFromCoarser,  &
         &  recv         = auxField%recvBufferFromCoarser , &

@@ -74,7 +74,7 @@ contains
 
     select case (trim(scheme%header%kind))
     case ('fluid', 'fluid_incompressible')
-      scheme%needAuxHaloComm = scheme%field(1)%fieldProp%fluid%turbulence%active
+      scheme%header%needAuxHaloComm = scheme%field(1)%fieldProp%fluid%turbulence%active
     end select
 
     write(dbgUnit(1),*) 'Enter mus_init_tracker'
@@ -118,11 +118,11 @@ contains
       &                    solver   = params%general%solver,  &
       &                    varSys   = scheme%varSys           )
 
-    scheme%needAuxHaloComm = scheme%needAuxHaloComm                    &
+    scheme%header%needAuxHaloComm = scheme%header%needAuxHaloComm      &
       &                     .or. mus_tracking_needs_velocity_gradient( &
       &                           scheme = scheme                      )
 
-    if (scheme%needAuxHaloComm) then
+    if (scheme%header%needAuxHaloComm) then
       write(logUnit(1),*) 'Auxiliary field halo communication activated.'
     else
       write(logUnit(1),*) 'Auxiliary field halo communication deactivated.'
@@ -135,6 +135,11 @@ contains
 ! **************************************************************************** !
   !> Check whether any active tracking object requests velocity-gradient based
   !! variables that require auxField halo values.
+  !!
+  !! TODO rather than setting this flag according to the tracking variables,
+  !!      change the computation in the tracking variables based on this
+  !!      flag and compute the values on the fly if they are not available
+  !!      in the aux field.
   logical function mus_tracking_needs_velocity_gradient(scheme)
     ! --------------------------------------------------------------------------
     type(mus_scheme_type), intent(in) :: scheme

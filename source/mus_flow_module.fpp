@@ -1705,7 +1705,7 @@ write(dbgUnit(5), *) ''
         & derVarPos  = scheme%derVarPos,                 &
         & general    = general,                          &
         & quantities = scheme%layout%quantities,         &
-        & needAuxHaloComm = scheme%needAuxHaloComm       )
+        & needAuxHaloComm = scheme%header%needAuxHaloComm )
     end do
 
     ! Initilialize auxField ghostFromFiner and ghostFromCoarser with
@@ -1720,7 +1720,7 @@ write(dbgUnit(5), *) ''
         & iLevel      = iLevel,                    &
         & nAuxScalars = scheme%varSys%nAuxScalars, &
         & general     = general,                   &
-        & needAuxHaloComm = scheme%needAuxHaloComm )
+        & needAuxHaloComm = scheme%header%needAuxHaloComm )
     end do
 
     do iLevel = minLevel+1, maxLevel
@@ -1733,7 +1733,7 @@ write(dbgUnit(5), *) ''
         & iLevel      = iLevel,                     &
         & nAuxScalars = scheme%varSys%nAuxScalars,  &
         & general     = general,                    &
-        & needAuxHaloComm = scheme%needAuxHaloComm  )
+        & needAuxHaloComm = scheme%header%needAuxHaloComm  )
     end do
 
   end subroutine mus_initAuxField

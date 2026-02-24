@@ -450,8 +450,7 @@ contains
         & iLevel            = iLevel,                        &
         & minLevel          = geometry%tree%global%minLevel, &
         & schemeHeader      = scheme%header,                 &
-        & quantities        = scheme%layout%quantities,      &
-        & needAuxHaloComm   = scheme%needAuxHaloComm         )
+        & quantities        = scheme%layout%quantities       )
 
       if (iLevel < maxLevel) then
         call mus_intpAuxFieldCoarserAndExchange(     &
@@ -463,7 +462,7 @@ contains
           & iLevel      = iLevel,                    &
           & nAuxScalars = scheme%varSys%nAuxScalars, &
           & general     = params%general,            &
-          & needAuxHaloComm = scheme%needAuxHaloComm )
+          & needAuxHaloComm = scheme%header%needAuxHaloComm )
        end if
     end do
 
