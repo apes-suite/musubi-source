@@ -335,7 +335,8 @@ contains
       & iLevel            = iLevel,                                  &
       & minLevel          = me%geometry%tree%global%minLevel,        &
       & schemeHeader      = me%scheme%header,                        &
-      & quantities        = me%scheme%layout%quantities              )
+      & quantities        = me%scheme%layout%quantities,             &
+      & needAuxHaloComm   = me%scheme%needAuxHaloComm                )
 
     if (iLevel < me%geometry%tree%global%maxLevel) then
       write(logUnit(10), "(A)") 'Interpolate and exchange auxField in ' &
@@ -348,7 +349,8 @@ contains
         & stencil     = me%scheme%layout%fStencil,    &
         & iLevel      = iLevel,                       &
         & nAuxScalars = me%scheme%varSys%nAuxScalars, &
-        & general     = me%params%general             )
+        & general     = me%params%general,            &
+        & needAuxHaloComm = me%scheme%needAuxHaloComm )
     end if
 
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
@@ -577,7 +579,8 @@ contains
       & iLevel            = iLevel,                              &
       & minLevel          = me%geometry%tree%global%minLevel,    &
       & schemeHeader      = me%scheme%header,                    &
-      & quantities        = me%scheme%layout%quantities          )
+      & quantities        = me%scheme%layout%quantities,         &
+      & needAuxHaloComm   = me%scheme%needAuxHaloComm            )
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
     ! --------------------------------------------------------------------------
 
@@ -772,7 +775,8 @@ contains
       & iLevel            = iLevel,                                  &
       & minLevel          = me%geometry%tree%global%minLevel,        &
       & schemeHeader      = me%scheme%header,                        &
-      & quantities        = me%scheme%layout%quantities              )
+      & quantities        = me%scheme%layout%quantities,             &
+      & needAuxHaloComm   = me%scheme%needAuxHaloComm                )
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
     ! --------------------------------------------------------------------------
 

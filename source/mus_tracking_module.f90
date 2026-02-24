@@ -72,6 +72,11 @@ contains
     integer :: iTrack, iConfig
     ! --------------------------------------------------------------------------
 
+    select case (trim(scheme%header%kind))
+    case ('fluid', 'fluid_incompressible')
+      scheme%needAuxHaloComm = scheme%field(1)%fieldProp%fluid%turbulence%active
+    end select
+
     write(dbgUnit(1),*) 'Enter mus_init_tracker'
     write(dbgUnit(1),*) 'Tracking control active is: ', &
       &                 scheme%track%control%active
@@ -113,7 +118,53 @@ contains
       &                    solver   = params%general%solver,  &
       &                    varSys   = scheme%varSys           )
 
+    scheme%needAuxHaloComm = scheme%needAuxHaloComm                    &
+      &                     .or. mus_tracking_needs_velocity_gradient( &
+      &                           scheme = scheme                      )
+
+    if (scheme%needAuxHaloComm) then
+      write(logUnit(1),*) 'Auxiliary field halo communication activated.'
+    else
+      write(logUnit(1),*) 'Auxiliary field halo communication deactivated.'
+    end if
+
   end subroutine mus_init_tracker
+! **************************************************************************** !
+
+
+! **************************************************************************** !
+  !> Check whether any active tracking object requests velocity-gradient based
+  !! variables that require auxField halo values.
+  logical function mus_tracking_needs_velocity_gradient(scheme)
+    ! --------------------------------------------------------------------------
+    type(mus_scheme_type), intent(in) :: scheme
+    ! --------------------------------------------------------------------------
+    integer :: iTrack, iConfig, iVar
+    ! --------------------------------------------------------------------------
+
+    mus_tracking_needs_velocity_gradient = .false.
+
+    if (.not. scheme%track%control%active) return
+
+    select case (trim(scheme%header%kind))
+    case ('fluid', 'fluid_incompressible')
+      continue
+    case default
+      return
+    end select
+
+    do iTrack = 1, scheme%track%control%nActive
+      iConfig = scheme%track%instance(iTrack)%pntConfig
+      do iVar = 1, size(scheme%track%config(iConfig)%varName)
+        select case(trim(scheme%track%config(iConfig)%varName(iVar)))
+        case ('grad_velocity', 'vorticity', 'q_criterion',             &
+              & 'grad_velocity_phy', 'vorticity_phy', 'q_criterion_phy')
+          mus_tracking_needs_velocity_gradient = .true.
+          return
+        end select
+      end do
+    end do
+  end function mus_tracking_needs_velocity_gradient
 ! **************************************************************************** !
 
 end module mus_tracking_module
