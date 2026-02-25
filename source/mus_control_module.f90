@@ -335,8 +335,7 @@ contains
       & iLevel            = iLevel,                                  &
       & minLevel          = me%geometry%tree%global%minLevel,        &
       & schemeHeader      = me%scheme%header,                        &
-      & quantities        = me%scheme%layout%quantities,             &
-      & needAuxHaloComm   = me%scheme%needAuxHaloComm                )
+      & quantities        = me%scheme%layout%quantities              )
 
     if (iLevel < me%geometry%tree%global%maxLevel) then
       write(logUnit(10), "(A)") 'Interpolate and exchange auxField in ' &
@@ -349,8 +348,7 @@ contains
         & stencil     = me%scheme%layout%fStencil,    &
         & iLevel      = iLevel,                       &
         & nAuxScalars = me%scheme%varSys%nAuxScalars, &
-        & general     = me%params%general,            &
-        & needAuxHaloComm = me%scheme%needAuxHaloComm )
+        & general     = me%params%general             )
     end if
 
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
@@ -579,8 +577,7 @@ contains
       & iLevel            = iLevel,                              &
       & minLevel          = me%geometry%tree%global%minLevel,    &
       & schemeHeader      = me%scheme%header,                    &
-      & quantities        = me%scheme%layout%quantities,         &
-      & needAuxHaloComm   = me%scheme%needAuxHaloComm            )
+      & quantities        = me%scheme%layout%quantities          )
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
     ! --------------------------------------------------------------------------
 
@@ -775,8 +772,7 @@ contains
       & iLevel            = iLevel,                                  &
       & minLevel          = me%geometry%tree%global%minLevel,        &
       & schemeHeader      = me%scheme%header,                        &
-      & quantities        = me%scheme%layout%quantities,             &
-      & needAuxHaloComm   = me%scheme%needAuxHaloComm                )
+      & quantities        = me%scheme%layout%quantities              )
     call tem_stopTimer( timerHandle =  mus_timerHandles%aux(iLevel) )
     ! --------------------------------------------------------------------------
 

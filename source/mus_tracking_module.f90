@@ -69,12 +69,14 @@ contains
     !> Global parameters
     type( mus_param_type ), intent(in) :: params
     ! --------------------------------------------------------------------------
-    integer :: iTrack, iConfig
+    integer :: iTrack, iConfig, iLevel
+    logical :: needAuxHaloComm
     ! --------------------------------------------------------------------------
 
+    needAuxHaloComm = .false.
     select case (trim(scheme%header%kind))
     case ('fluid', 'fluid_incompressible')
-      scheme%needAuxHaloComm = scheme%field(1)%fieldProp%fluid%turbulence%active
+      needAuxHaloComm = scheme%field(1)%fieldProp%fluid%turbulence%active
     end select
 
     write(dbgUnit(1),*) 'Enter mus_init_tracker'
@@ -118,11 +120,15 @@ contains
       &                    solver   = params%general%solver,  &
       &                    varSys   = scheme%varSys           )
 
-    scheme%needAuxHaloComm = scheme%needAuxHaloComm                    &
-      &                     .or. mus_tracking_needs_velocity_gradient( &
-      &                           scheme = scheme                      )
+    needAuxHaloComm = needAuxHaloComm                                  &
+      &               .or. mus_tracking_needs_velocity_gradient(       &
+      &                     scheme = scheme                            )
 
-    if (scheme%needAuxHaloComm) then
+    do iLevel = lbound(scheme%auxField, 1), ubound(scheme%auxField, 1)
+      scheme%auxField(iLevel)%needHaloComm = needAuxHaloComm
+    end do
+
+    if (needAuxHaloComm) then
       write(logUnit(1),*) 'Auxiliary field halo communication activated.'
     else
       write(logUnit(1),*) 'Auxiliary field halo communication deactivated.'
