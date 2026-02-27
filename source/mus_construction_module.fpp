@@ -206,6 +206,7 @@ contains
     type( logical_array_type ), allocatable :: haloRequired(:)
     integer :: symmetricBCs(geometry%boundary%nBCtypes)
     integer :: nSymBCs
+    logical :: needAuxHaloCommDefault
     ! --------------------------------------------------------------------------
     minLevel = geometry%tree%global%minLevel
     maxLevel = geometry%tree%global%maxLevel
@@ -650,13 +651,20 @@ contains
     deallocate( haloRequired )
 
     ! Initialize auxField var val array and communication buffers
+    needAuxHaloCommDefault = .false.
+    select case (trim(scheme%header%kind))
+    case ('fluid', 'fluid_incompressible')
+      needAuxHaloCommDefault = scheme%field(1)%fieldProp%fluid%turbulence%active
+    end select
+
     allocate(scheme%auxField(minLevel:maxLevel))
     do iLevel = minLevel, maxLevel
       call mus_init_auxFieldArrays( me          = scheme%auxField(iLevel),    &
         &                           levelDesc   = scheme%levelDesc(iLevel),   &
         &                           pattern     = params%general%commPattern, &
         &                           nSize       = scheme%pdf(iLevel)%nSize,   &
-        &                           nAuxScalars = scheme%varSys%nAuxScalars   )
+        &                           nAuxScalars = scheme%varSys%nAuxScalars,  &
+        &                           needHaloComm = needAuxHaloCommDefault      )
     end do
 
     call tem_write_debugMesh( globtree  = geometry%tree,           &
