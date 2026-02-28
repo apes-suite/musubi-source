@@ -11,6 +11,7 @@
 ! Copyright (c) 2016 Peter Vitt <peter.vitt2@uni-siegen.de>
 ! Copyright (c) 2016-2018 Raphael Haupt <raphael.haupt@uni-siegen.de>
 ! Copyright (c) 2021 Gregorio Gerardo Spinelli <gregoriogerardo.spinelli@dlr.de>
+! Copyright (c) 2025 Mengyu Wang <m.wang-2@utwente.nl>
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -206,6 +207,7 @@ contains
     type( logical_array_type ), allocatable :: haloRequired(:)
     integer :: symmetricBCs(geometry%boundary%nBCtypes)
     integer :: nSymBCs
+    logical :: needAuxHaloCommDefault
     ! --------------------------------------------------------------------------
     minLevel = geometry%tree%global%minLevel
     maxLevel = geometry%tree%global%maxLevel
@@ -225,14 +227,14 @@ contains
     !    boundaries
     ! 4. allocate the BC lists in globbc
     ! THIS ROUTINE DOES NOT MODIFY THE BC LISTS IN THE FIELDS!!!
-    call build_BClists( globBC    = scheme%globBC,              &
-      &                 tree      = geometry%tree,              &
-      &                 bc_prop   = geometry%boundary,          &
-      &                 minLevel  = minLevel,                   &
-      &                 maxLevel  = maxLevel,                   &
-      &                 layout    = scheme%layout,              &
-      &                 field     = scheme%field(:),            &
-      &                 comm      = params%general%proc%comm    )
+    call build_BClists( globBC    = scheme%globBC,           &
+      &                 tree      = geometry%tree,           &
+      &                 bc_prop   = geometry%boundary,       &
+      &                 minLevel  = minLevel,                &
+      &                 maxLevel  = maxLevel,                &
+      &                 layout    = scheme%layout,           &
+      &                 field     = scheme%field(:),         &
+      &                 comm      = params%general%proc%comm )
 
     ! Treat the boundary lists: in addition to the normal stencil treatment
     ! one has to find all those elements along the element list in the stencil
@@ -260,9 +262,9 @@ contains
     enddo ! iField
 
     ! Build and append IBM stencils to stencil array
-    call mus_build_IBMStencils( globIBM    = geometry%globIBM,         &
-      &                         layout     = scheme%layout,            &
-      &                         grwStencil = scheme%layout%grwStencil  )
+    call mus_build_IBMStencils( globIBM    = geometry%globIBM,        &
+      &                         layout     = scheme%layout,           &
+      &                         grwStencil = scheme%layout%grwStencil )
 
     ! finalize scheme layout
     ! copy growing array of stencil to allocatable array of stencil
@@ -281,7 +283,7 @@ contains
     !    directly
     ! THIS MEANS THAT FOR ALL ELEMENTS (INCL. BOUNDARY ELEMENTS) NEIGHBORS
     ! ARE STORED BUT THEY DO NOT NEED TO EXIST IN THE MESH AT THIS POINT!!!
-    call tem_init_elemLevels( me       = scheme%levelDesc,   &
+    call tem_init_elemLevels( me       = scheme%levelDesc,        &
       &                       boundary = geometry%boundary,       &
       &                       tree     = geometry%tree,           &
       &                       stencils = scheme%layout%stencil(:) )
@@ -330,11 +332,11 @@ contains
     write(dbgUnit(6),*) 'before horizontal dep'
     write(logUnit(6),*) 'before tem_build_horizontalDependencies'
     do iStencil = 1, scheme%layout%nStencils
-      call tem_build_horizontalDependencies(                      &
-        &       iStencil       = iStencil,                        &
-        &       levelDesc      = scheme%levelDesc,                &
-        &       tree           = geometry%tree,                   &
-        &       computeStencil = scheme%layout%stencil(iStencil)  )
+      call tem_build_horizontalDependencies(                     &
+        &       iStencil       = iStencil,                       &
+        &       levelDesc      = scheme%levelDesc,               &
+        &       tree           = geometry%tree,                  &
+        &       computeStencil = scheme%layout%stencil(iStencil) )
 ?? IF( .not. SOA) then
       if( main_debug%checkDependencies ) then
         call tem_debug_HorizontalDependencies( iStencil, &
@@ -351,27 +353,27 @@ contains
 
     write(logUnit(6),*) 'before communicate_property'
     do iLevel = minLevel, maxLevel
-      call communicate_property(                                  &
-        &   send     = scheme%levelDesc( iLevel )%sendbuffer,&
-        &   recv     = scheme%levelDesc( iLevel )%recvbuffer,&
-        &   property = scheme%levelDesc( iLevel )%property,  &
-        &   flag     = iLevel,                                    &
-        &   proc     = params%general%proc,                       &
-        &   pattern  = params%general%commPattern                 )
-      call communicate_property(                                  &
-        &   send     = scheme%levelDesc( iLevel )%sendbufferFromCoarser,  &
-        &   recv     = scheme%levelDesc( iLevel )%recvbufferFromCoarser,  &
-        &   property = scheme%levelDesc( iLevel )%property,       &
-        &   flag     = iLevel,                                    &
-        &   proc     = params%general%proc,                       &
-        &   pattern  = params%general%commPattern                 )
-      call communicate_property(                                  &
-        &   send     = scheme%levelDesc( iLevel )%sendbufferFromFiner,    &
-        &   recv     = scheme%levelDesc( iLevel )%recvbufferFromFiner,    &
-        &   property = scheme%levelDesc( iLevel )%property,       &
-        &   flag     = iLevel,                                    &
-        &   proc     = params%general%proc,                       &
-        &   pattern  = params%general%commPattern                 )
+      call communicate_property(                              &
+        &   send     = scheme%levelDesc( iLevel )%sendbuffer, &
+        &   recv     = scheme%levelDesc( iLevel )%recvbuffer, &
+        &   property = scheme%levelDesc( iLevel )%property,   &
+        &   flag     = iLevel,                                &
+        &   proc     = params%general%proc,                   &
+        &   pattern  = params%general%commPattern             )
+      call communicate_property(                                         &
+        &   send     = scheme%levelDesc( iLevel )%sendbufferFromCoarser, &
+        &   recv     = scheme%levelDesc( iLevel )%recvbufferFromCoarser, &
+        &   property = scheme%levelDesc( iLevel )%property,              &
+        &   flag     = iLevel,                                           &
+        &   proc     = params%general%proc,                              &
+        &   pattern  = params%general%commPattern                        )
+      call communicate_property(                                       &
+        &   send     = scheme%levelDesc( iLevel )%sendbufferFromFiner, &
+        &   recv     = scheme%levelDesc( iLevel )%recvbufferFromFiner, &
+        &   property = scheme%levelDesc( iLevel )%property,            &
+        &   flag     = iLevel,                                         &
+        &   proc     = params%general%proc,                            &
+        &   pattern  = params%general%commPattern                      )
     end do ! iLevel
     ! peakval = my_status_int('VmPeak:')
     ! write(logUnit(10),"(A,I0)") 'After comm property, VmPeak: ', peakval
@@ -591,7 +593,7 @@ contains
     call set_halo_commLinks( scheme, minLevel, maxLevel, &
       &                      geometry%boundary%nBCtypes, &
       &                      params%comm_reduced,        &
-      &                      haloRequired )
+      &                      haloRequired                )
 
     write(dbgUnit(6),*)  'before init levelBuffers'
 
@@ -613,7 +615,7 @@ contains
         & comm       = params%general%proc%comm,              &
         & scheme     = scheme,                                &
         & stat       = stat,                                  &
-        & haloRequired = haloRequired(iLevel)%val,             &
+        & haloRequired = haloRequired(iLevel)%val,            &
         & offset     = scheme%levelDesc( iLevel )%offset      )
 
 
@@ -650,13 +652,20 @@ contains
     deallocate( haloRequired )
 
     ! Initialize auxField var val array and communication buffers
+    needAuxHaloCommDefault = .false.
+    select case (trim(scheme%header%kind))
+    case ('fluid', 'fluid_incompressible')
+      needAuxHaloCommDefault = scheme%field(1)%fieldProp%fluid%turbulence%active
+    end select
+
     allocate(scheme%auxField(minLevel:maxLevel))
     do iLevel = minLevel, maxLevel
       call mus_init_auxFieldArrays( me          = scheme%auxField(iLevel),    &
         &                           levelDesc   = scheme%levelDesc(iLevel),   &
         &                           pattern     = params%general%commPattern, &
         &                           nSize       = scheme%pdf(iLevel)%nSize,   &
-        &                           nAuxScalars = scheme%varSys%nAuxScalars   )
+        &                           nAuxScalars = scheme%varSys%nAuxScalars,  &
+        &                           needHaloComm = needAuxHaloCommDefault      )
     end do
 
     call tem_write_debugMesh( globtree  = geometry%tree,           &
@@ -1024,9 +1033,9 @@ contains
                 &          %depFromCoarser( iElem )%elem%val( iSourceElem )
               ! Check the type of the source element.
               ! If it is a halo -> mark as require all links
-              call set_requiredLink(                                           &
-                &          haloElem  = sourceElem,                             &
-                &          offset    = haloOffset,                             &
+              call set_requiredLink(                                   &
+                &          haloElem  = sourceElem,                     &
+                &          offset    = haloOffset,                     &
                 &          linkField = haloRequired( sourceLevel )%val )
             end do ! iSourceElem
           end do ! iElem
@@ -1042,9 +1051,9 @@ contains
               &                                             nElemsProc( iProc )
             elemPos = scheme%levelDesc( iLevel )%recvBufferFromCoarser%   &
               &                                   elemPos( iProc )%val( iElem )
-            call set_requiredLink(                                             &
-              &                 haloElem  = elemPos,                           &
-              &                 offset    = haloOffset,                        &
+            call set_requiredLink(                                     &
+              &                 haloElem  = elemPos,                   &
+              &                 offset    = haloOffset,                &
               &                 linkField = haloRequired( iLevel )%val )
           end do
         end do
@@ -1057,9 +1066,9 @@ contains
             &                                               nElemsProc( iProc )
             elemPos = scheme%levelDesc( iLevel )%recvBufferFromFiner%     &
               &                                   elemPos( iProc )%val( iElem )
-            call set_requiredLink(                                             &
-              &                 haloElem  = elemPos,                           &
-              &                 offset    = haloOffset,                        &
+            call set_requiredLink(                                     &
+              &                 haloElem  = elemPos,                   &
+              &                 offset    = haloOffset,                &
               &                 linkField = haloRequired( iLevel )%val )
           end do
         end do
@@ -1076,9 +1085,9 @@ contains
                 ! Get the neighbor source element
                 sourceElem = scheme%field( iField )%bc( iBnd )                 &
                   &                 %neigh( iLevel )%posInState( iNeigh, iElem )
-                call set_requiredLink(                                         &
-                  &             haloElem  = sourceElem,                        &
-                  &             offset    = haloOffset,                        &
+                call set_requiredLink(                                 &
+                  &             haloElem  = sourceElem,                &
+                  &             offset    = haloOffset,                &
                   &             linkField = haloRequired( iLevel )%val )
               end do ! iNeigh
             end do  ! iField
@@ -1100,9 +1109,9 @@ contains
                 sourceElem = scheme%levelDesc(iLevel)%neigh(1)%        &
                   & nghElems(?NgDir?(iNeigh, scheme%layout%fStencil),elemPos)
                 ! if sourceElem < 0 then this neighbor is boundary
-                call set_requiredLink(                                 &
-                  &      haloElem  = sourceElem,                       &
-                  &      offset    = haloOffset,                       &
+                call set_requiredLink(                          &
+                  &      haloElem  = sourceElem,                &
+                  &      offset    = haloOffset,                &
                   &      linkField = haloRequired( iLevel )%val )
               end do ! iNeigh
             end do ! iElem
@@ -1391,19 +1400,19 @@ contains
     ! Calculate the total number of fluid elements in ALL LEVELS and processes
 
     ! count level-wise global nElems_total
-    ElemCount(minLevel:maxLevel) =   &
-      &     levelDesc( minLevel:maxLevel )%elem%nElems( eT_fluid ) &
+    ElemCount(minLevel:maxLevel) =                                            &
+      &     levelDesc( minLevel:maxLevel )%elem%nElems( eT_fluid )            &
       &   + levelDesc( minLevel:maxLevel )%elem%nElems( eT_ghostFromCoarser ) &
-      &   + levelDesc( minLevel:maxLevel )%elem%nElems( eT_ghostFromFiner )  &
+      &   + levelDesc( minLevel:maxLevel )%elem%nElems( eT_ghostFromFiner )   &
       &   + levelDesc( minLevel:maxLevel )%elem%nElems( eT_halo )
-    call mpi_allreduce( ElemCount(minLevel:maxLevel), &
+    call mpi_allreduce( ElemCount(minLevel:maxLevel),                   &
       &                 nElems_allLevel(minLevel:maxLevel),             &
       &                 nLevels, mpi_integer8, mpi_sum, proc%comm, iErr )
 
     ! count level-wise global nElems_fluid
-    ElemCount(minLevel:maxLevel) =   &
+    ElemCount(minLevel:maxLevel) = &
       &     levelDesc( minLevel:maxLevel )%elem%nElems( eT_fluid )
-    call mpi_allreduce( ElemCount(minLevel:maxLevel), &
+    call mpi_allreduce( ElemCount(minLevel:maxLevel),         &
       &                 nElems_fluidLevel(minLevel:maxLevel), &
       &                 nLevels, mpi_integer8, mpi_sum, proc%comm, iErr )
 
@@ -1418,9 +1427,9 @@ contains
     end do
     ! count global ghost
     call mpi_allreduce( myGhostFromFiner, nElems_totalGhostFromFiner, &
-      &                 1, mpi_integer, mpi_sum, proc%comm, iErr )
+      &                 1, mpi_integer, mpi_sum, proc%comm, iErr      )
     call mpi_allreduce( myGhostFromCoarser, nElems_totalGhostFromCoarser, &
-      &                 1, mpi_integer, mpi_sum, proc%comm, iErr )
+      &                 1, mpi_integer, mpi_sum, proc%comm, iErr          )
 
     nElems_overall = sum( nElems_allLevel( minLevel:maxLevel ))
     do iLevel = minLevel, maxLevel
@@ -1476,16 +1485,16 @@ contains
     ! set posInNghElems in scheme%field(iField)%bc
     do iField = 1, scheme%nFields
       do iBnd = 1, nBCs
-        call mus_set_posInNghElems( minLevel, maxLevel, &
-          &                         scheme%layout%nStencils, &
-          &                         scheme%globBC(iBnd), &
+        call mus_set_posInNghElems( minLevel, maxLevel,           &
+          &                         scheme%layout%nStencils,      &
+          &                         scheme%globBC(iBnd),          &
           &                         scheme%field(iField)%bc(iBnd) )
       end do
     end do
 
     if ( remove_solid .and. (nBCs > 0) ) then
-      call remove_solid_in_bc( minLevel, maxLevel, nBCs, &
-        &                      scheme%nFields, LP, &
+      call remove_solid_in_bc( minLevel, maxLevel, nBCs,                     &
+        &                      scheme%nFields, LP,                           &
         &                      scheme%levelDesc, scheme%globBC, scheme%field )
     end if
 
@@ -1499,7 +1508,7 @@ contains
       do iBnd = 1, nBCs
         bcBufferSize = bcBufferSize + scheme%globBC( iBnd )%nElems( iLevel )
       end do ! iBnd
-      call init( me     = scheme%levelDesc( iLevel )%bc_elemBuffer,       &
+      call init( me     = scheme%levelDesc( iLevel )%bc_elemBuffer, &
         &        length = bcBufferSize )
       do iBnd = 1, nBCs
         ! if BC kind of all fields are wall then do nothing for this boundary
@@ -1515,13 +1524,13 @@ contains
             scheme%globBC( iBnd )%elemLvl( iLevel )%elem%val( iElem ) = elemPos
 
             ! store elemPos in bc_elemBuffer
-            call append( me  = scheme%levelDesc( iLevel )%bc_elemBuffer,  &
-              &          val = elemPos,                                   &
+            call append( me  = scheme%levelDesc( iLevel )%bc_elemBuffer, &
+              &          val = elemPos,                                  &
               &          pos = iPos )
             ! store the position in the bc_elemBuffer in the elemBuffer
-            call append ( me =  scheme%globBC( iBnd )%elemLvl( iLevel )% &
-              &                                       posInBcElemBuf,    &
-              &          val = iPos )
+            call append ( me =  scheme%globBC( iBnd )%elemLvl( iLevel ) &
+              &                                      %posInBcElemBuf,   &
+              &          val = iPos                                     )
           end do ! iElem in globBC%nElems on the current level
 
           ! elem and elemBuffer for corner nodes
@@ -1601,11 +1610,11 @@ contains
             end if
 
             if (scheme%field( iField )%bc( iBnd )%requireNeighBufPost) then
-              allocate( scheme%field( iField )%bc( iBnd )%                     &
-                & neigh( iLevel )%neighBufferPost(                             &
-                &         scheme%field( iField )%bc( iBnd )%nNeighs,           &
-                &         scheme%globBC( iBnd )%nElems( iLevel )*              &
-                &         scheme%layout%fStencil%QQ ) )
+              allocate( scheme%field( iField )%bc( iBnd )%           &
+                & neigh( iLevel )%neighBufferPost(                   &
+                &         scheme%field( iField )%bc( iBnd )%nNeighs, &
+                &         scheme%globBC( iBnd )%nElems( iLevel )*    &
+                &         scheme%layout%fStencil%QQ )                )
               scheme%field(iField)%bc(iBnd)%neigh(iLevel)%neighBufferPost &
                 & = -1._rk
             end if
@@ -1614,7 +1623,7 @@ contains
               allocate( scheme%field( iField )%bc( iBnd )%neigh( iLevel )  &
                 &                                        %computeNeighBuf( &
                 &         scheme%globBC( iBnd )%nElems( iLevel )*          &
-                &         scheme%layout%fStencil%QQ ) )
+                &         scheme%layout%fStencil%QQ )                      )
               scheme%field( iField )%bc( iBnd )%neigh( iLevel )        &
                 &                              %computeNeighBuf = -1._rk
             end if
@@ -1632,12 +1641,12 @@ contains
         ! Copy the neighboring information to the bc%elem%neigh
         if( scheme%field( iField )%bc( iBnd )%nNeighs > 0 ) then
           ! get position of neighbor element in the levelwise list
-          call setFieldBCNeigh(                                       &
-            &     fieldBC   = scheme%field( iField )%bc( iBnd ),      &
-            &     globBC    = scheme%globBC( iBnd ),                  &
-            &     levelDesc = scheme%levelDesc(minLevel:maxLevel),&
-            &     minLevel  = minLevel,                     &
-            &     maxLevel  = maxLevel                      )
+          call setFieldBCNeigh(                                    &
+            &     fieldBC   = scheme%field( iField )%bc( iBnd ),   &
+            &     globBC    = scheme%globBC( iBnd ),               &
+            &     levelDesc = scheme%levelDesc(minLevel:maxLevel), &
+            &     minLevel  = minLevel,                            &
+            &     maxLevel  = maxLevel                             )
         end if ! nNeigh>0
       end do ! iBnd
     end do ! iField
@@ -1787,7 +1796,7 @@ contains
 
         neighLoop: do iNeigh = 1, fieldBC%nNeighs
           ! neighbor position in the levelwise list
-          neighVal = levelDesc( iLevel )%neigh( stencilPos )%                  &
+          neighVal = levelDesc( iLevel )%neigh( stencilPos )%            &
             &                            nghElems( iNeigh, posInNghElems )
 ?? if( DEBUG ) then
           write(dbgUnit(10),*) 'iNeigh:', iNeigh, 'neighval:', neighVal
@@ -1798,7 +1807,7 @@ contains
           if ( neighVal < 1 ) then
             if ( iNeigh == 1 ) then
 ?? if( DEBUG ) then
-              write(dbgUnit(6),*) 'setting current elemPos',&
+              write(dbgUnit(6),*) 'setting current elemPos', &
                                    globBC%elemLvl( iLevel )%elem%val( iElem )
 ?? endif
 
@@ -1817,7 +1826,7 @@ contains
               ! Neighbor fails, so take last neighbor which was valid
               fieldBC%neigh( iLevel )%posInState( iNeigh:, iElem ) = &
                 &      fieldBC%neigh( iLevel )%posInState( iNeigh-1, iElem )
-              write(logUnit(1),"(A,I0,A,I5,A)") 'neighbor number ',iNeigh,     &
+              write(logUnit(1),"(A,I0,A,I5,A)") 'neighbor number ',iNeigh,    &
                 &    ' not found for elem:', iElem,'. Use last found neighbor.'
             end if ! iNeigh = 1
             ! no need to find further neighbors
@@ -1881,7 +1890,7 @@ contains
               ! Neighbor fails, so take last neighbor which was valid
               fieldBC%neigh( iLevel )%posInState( iNeigh:, iElem ) = &
                 &      fieldBC%neigh( iLevel )%posInState( iNeigh-1, iElem )
-              write(logUnit(1),"(A,I0,A,I5,A)") 'neighbor number ',ineigh,     &
+              write(logUnit(1),"(A,I0,A,I5,A)") 'neighbor number ',ineigh,    &
                 &    ' not found for elem:', iElem,'. Use last found neighbor.'
             end if ! iNeigh = 1
             ! no need to find further neighbors
@@ -1916,7 +1925,7 @@ contains
   !! stored to the FETCH position
   !!
   subroutine build_BClists( globBC, tree, bc_prop, minLevel, maxLevel, &
-    &                       layout, field, comm )
+    &                       layout, field, comm                        )
     ! --------------------------------------------------------------------------
     !> fluid tree from mesh
     type( treelmesh_type ), intent(in)                  :: tree
@@ -2278,32 +2287,32 @@ contains
           ! If this boundary ID was not found for current element yet,
           ! assign to list
 
-          if( .not. allocated( globBC(bID)%elemLvl(level)%elem%val))then
-            write(dbgUnit(1),*) 'Error: bc not allctd lvl ', level,        &
+          if( .not. allocated( globBC(bID)%elemLvl(level)%elem%val)) then
+            write(dbgUnit(1),*) 'Error: bc not allctd lvl ', level, &
               &                     ' bid ', bID
           end if
 
           ! append the position of the treeID in tree%treeID list
           ! to the boundary elem lists
-          call append( me = globBC( bID )%elemLvl( level )%elem,             &
-            &         val = posInTree,                                       &
-            &         pos = nBnds( bID ),                                    &
-            &    wasadded = wasadded )
+          call append( me = globBC( bID )%elemLvl( level )%elem, &
+            &         val = posInTree,                           &
+            &         pos = nBnds( bID ),                        &
+            &    wasadded = wasadded                             )
 
           if ( wasadded ) then
             bitmask     = .false.
             normal      = 0
             !append the bitmask for bID
             call append( me = globBC( bID )%elemLvl( level )%bitmask, &
-              &          val = bitmask  )
+              &          val = bitmask                                )
 
             !append normal
             call append( me = globBC( bID )%elemLvl( level )%normal, &
-              &          val = normal )
+              &          val = normal                                )
             if ( globBC( bID )%hasQVal ) then
               !append qVal
               call append( me = globBC( bID )%elemLvl( level )%qVal, &
-                &         val = qVal  )
+                &         val = qVal                                 )
             end if ! haQval
 
             found( bID ) = .true.
@@ -2331,8 +2340,8 @@ contains
             ! Add this boundary direction to the sum for the normal vector
             ! use the minus, as we want to go into the flow domain, and the
             ! stencil is pointing outside
-            globBC( bID )%elemLvl( level )%normal%val(:, nBnds( bID ) )        &
-              &  =  globBC( bID )%elemLvl( level )%normal%val(:, nBnds( bID ) )&
+            globBC( bID )%elemLvl( level )%normal%val(:, nBnds( bID ) )         &
+              &  =  globBC( bID )%elemLvl( level )%normal%val(:, nBnds( bID ) ) &
               &     -  weight(iDir) * stencil%cxDir( :, iDir )
           end if ! hasQVal
         end if ! bID > 0
@@ -2345,8 +2354,8 @@ contains
         do iBnd = 1, bc_prop%nBCtypes
           if (found(iBnd) .and. globBC(iBnd)%treat_corner ) then
             ! Assign the position of the treeID to the corner elem list
-            call append( me = globBC( iBnd )%cornerBC%elemLvl( level )%elem,   &
-              &          val = posInTree )
+            call append( me = globBC( iBnd )%cornerBC%elemLvl( level )%elem, &
+              &          val = posInTree                                     )
 
             corner_bitmask = corner_bitmask .or. &
               & globBC( iBnd )%elemLvl(level)%bitmask%val(:, nBnds( iBnd ))
@@ -2357,8 +2366,8 @@ contains
 
         do iBnd = 1, bc_prop%nBCtypes
           if (found(iBnd) .and. globBC(iBnd)%treat_corner ) then
-            call append( me = globBC(iBnd)%cornerBC%elemLvl(level)%bitmask,    &
-              &          val = corner_bitmask )
+            call append( me = globBC(iBnd)%cornerBC%elemLvl(level)%bitmask, &
+              &          val = corner_bitmask                               )
 
             call append( me = globBC( iBnd )%cornerBC%elemLvl( level )%normal, &
               &          val = normal )
@@ -2376,7 +2385,7 @@ contains
   !! the corner elements as well as assigns the corresponding prevailing
   !! direction from the stencil
   subroutine normalizeBC( nBCs, minLevel, maxLevel, globBC, layout, field, &
-    &                     comm )
+    &                     comm                                             )
     ! --------------------------------------------------------------------------
     !> number of boundaries
     integer,                        intent(in) :: nBCs, minLevel, maxLevel
@@ -2421,9 +2430,9 @@ contains
       bc_normal = 0.0_rk
       do iLevel = minLevel, maxLevel
         do iElem = 1, globBC( iBnd )%nElems( iLevel )
-          call tem_determine_discreteVector(                               &
-            &   globBC( iBnd )%elemLvl( iLevel )%normal%val( :, iElem ),   &
-            &   layout%prevailDir, angle )
+          call tem_determine_discreteVector(                             &
+            &   globBC( iBnd )%elemLvl( iLevel )%normal%val( :, iElem ), &
+            &   layout%prevailDir, angle                                 )
           ! element normal
           elem_normal = globBC( iBnd )%elemLvl( iLevel )%normal%val( :, iElem )
           ! average boundary normal
@@ -2435,12 +2444,12 @@ contains
           ! Find the index in the stencil corresponding to the normal
           ! direction
           do iDir = 1, layout%fStencil%QQ
-            if( layout%fStencil%cxDir(1, iDir ) == elem_normal(1)         &
-              & .and. layout%fStencil%cxDir(2, iDir ) == elem_normal(2)   &
+            if( layout%fStencil%cxDir(1, iDir ) == elem_normal(1)       &
+              & .and. layout%fStencil%cxDir(2, iDir ) == elem_normal(2) &
               & .and. layout%fStencil%cxDir(3, iDir ) == elem_normal(3) ) then
-              call append (                                                &
-                &    me = globBC(iBnd)%elemLvl(iLevel)%normalInd,          &
-                &   val = iDir )
+              call append (                                       &
+                &    me = globBC(iBnd)%elemLvl(iLevel)%normalInd, &
+                &   val = iDir                                    )
             end if
           end do
         end do  ! iElem
@@ -2484,8 +2493,8 @@ contains
 
       globBC(iBnd)%normal = bc_globNormal
       do iDir = 1, layout%fStencil%QQ
-        if( layout%fStencil%cxDir(1, iDir ) == bc_globNormal(1)         &
-          & .and. layout%fStencil%cxDir(2, iDir ) == bc_globNormal(2)   &
+        if( layout%fStencil%cxDir(1, iDir ) == bc_globNormal(1)       &
+          & .and. layout%fStencil%cxDir(2, iDir ) == bc_globNormal(2) &
           & .and. layout%fStencil%cxDir(3, iDir ) == bc_globNormal(3) ) then
           globBC(iBnd)%normalInd = iDir
         end if
@@ -2506,7 +2515,7 @@ contains
         angleMax = angleMax / oneDegInRad
         ! if angle is > 1 deg then print warning message
         if (angleMax > 1.0_rk) then
-          write(logUnit(6),'(a,i0,a)') ' WARNING: Normal direction of ',&
+          write(logUnit(6),'(a,i0,a)') ' WARNING: Normal direction of ', &
             &  counter, ' elements of "'// trim(globBC(iBnd)%label)//'" boundary'
           write(logUnit(6),*) 'deviates from stencil discrete vectors.'
           write(logUnit(6),'(a,f5.2)') ' Max. angle between bnd normal and '//&
@@ -2524,10 +2533,10 @@ contains
       do iLevel = minLevel, maxLevel
         if (globBC(iBnd)%treat_corner) then
           do iElem = 1, globBC(iBnd)%cornerBC%nElems( iLevel )
-            call tem_determine_discreteVector(                                 &
-             &   globBC( iBnd)%cornerBC%elemLvl( iLevel )%                     &
-             &                                          normal%val( :, iElem ),&
-             &   layout%prevailDir)
+            call tem_determine_discreteVector(                                  &
+             &   globBC( iBnd)%cornerBC%elemLvl( iLevel )%                      &
+             &                                          normal%val( :, iElem ), &
+             &   layout%prevailDir                                              )
             ! Find the index in the stencil corresponding to the normal
             ! direction
             do iDir = 1, layout%fStencil%QQ
@@ -2540,9 +2549,11 @@ contains
                 & layout%fStencil%cxDir(3, iDir) ==                            &
                 & globBC(iBnd)%cornerBC%elemLvl(iLevel)%normal%val(3, iElem))  &
                 & then
-              call append (                                                    &
-                &      me = globBC(iBnd)%cornerBC%elemLvl(iLevel)%normalInd,   &
-                &     val = iDir )
+
+                call append (                                                  &
+                  &      me = globBC(iBnd)%cornerBC%elemLvl(iLevel)%normalInd, &
+                  &     val = iDir                                             )
+
               end if
             end do
           end do ! iElem
@@ -2561,7 +2572,7 @@ contains
   !! Unique stencil label for boundary stencils are created with boundary label
   !! and stencil%cxDir therefore each stencil is limited to one boundary type
   subroutine mus_build_BCStencils( globBC, bc, prevailDir, prefix, minLevel, &
-    &                              maxLevel, stencil_labels, grwStencil )
+    &                              maxLevel, stencil_labels, grwStencil      )
     ! --------------------------------------------------------------------------
     !> boundaries for the elements with bnd property set
     type(glob_boundary_type), intent(in)             :: globBC
@@ -2678,9 +2689,9 @@ write(dbgUnit(1),*) 'wasAdded ', wasAdded, ' stencilPos ', stencilPos
           ! append element position in treeID list
           ! to level wise list and level independent list
           call append( me  = grwStencil%val(stencilPos)%elemLvl( iLevel ), &
-            &          val = elemPos                                        )
+            &          val = elemPos                                       )
           call append( me  = grwStencil%val(stencilPos)%elem, &
-            &          val = elemPos                           )
+            &          val = elemPos                          )
 
           ! store stencil position current boundary element
           bc%elemLvl(iLevel)%stencilPos(iElem) = stencilPos
@@ -2752,7 +2763,7 @@ write(dbgUnit(1),*) 'wasAdded ', wasAdded, ' stencilPos ', stencilPos
       ! store position of IBM stencil in stencil array
       globIBM%IBM(iIBM)%stencilPos = stencilPos
 
-      write(logUnit(10),*) 'Stored stencil for IBM ', iIBM, ' at position ',   &
+      write(logUnit(10),*) 'Stored stencil for IBM ', iIBM, ' at position ', &
         &                 globIBM%IBM(iIbm)%stencilPos
     end do
   end subroutine mus_build_IBMStencils
@@ -2834,41 +2845,42 @@ write(dbgUnit(1),*) 'wasAdded ', wasAdded, ' stencilPos ', stencilPos
       nGhostFromCoarser = levelDesc( iLevel )%offset(2, eT_ghostFromCoarser ) &
         & - levelDesc( iLevel )%offset(1, eT_ghostFromCoarser )
       ! add all ghost from Coarser ghostelements to bc list
-      call  mus_add_BcghostElem(                                             &
-        &   levelDesc = levelDesc(iLevel),                                   &
-        &   stencil   = layout%fstencil,                                     &
-        &   bc_prop   = bc_prop,                                             &
-        &   globBC    = globBc,                                              &
-        &   nGhosts   = nGhostFromCoarser,                                   &
-        &   offset    = offset,                                              &
-        &   weight    = weight,                                              &
-        &   iLevel    = iLevel                                               )
+      call  mus_add_BcghostElem(           &
+        &   levelDesc = levelDesc(iLevel), &
+        &   stencil   = layout%fstencil,   &
+        &   bc_prop   = bc_prop,           &
+        &   globBC    = globBc,            &
+        &   nGhosts   = nGhostFromCoarser, &
+        &   offset    = offset,            &
+        &   weight    = weight,            &
+        &   iLevel    = iLevel             )
 
       do iBnd = 1 , bc_prop%nBCtypes
         ! store number of Bc Elems without GhostBoundaryElems
         globBC( iBnd )%nElems_Fluid(iLevel) = globBC( iBnd )%nElems( ilevel )
         ! replace nElems without GhostBoundaryElems
         ! by nElems incl. GhostFromCoarser boundary elem
-        globBC( iBnd )%nElems( ilevel ) =                                      &
-         &                        globBC( iBnd )%elemLvl( ilevel )%elem%nVals
+        globBC( iBnd )%nElems( ilevel ) =  &
+          &                        globBC( iBnd )%elemLvl( ilevel )%elem%nVals
 
-        if ( globBC( iBnd )%nElems( ilevel ) -                                 &
-         &                     globBC( iBnd )%nElems_Fluid( ilevel ) > 0)  then
-          write(logUnit(5),"(A,I5,A,I2,A,A)") 'Added ',                        &
-           &globBC( iBnd )%nElems( ilevel ) -                                  &
-           &globBC( iBnd )%nElems_Fluid( ilevel ), ' Ghostelements on Level: ',&
-           &iLevel,' to Boundary: ', globBC( iBND )%label
+        if ( globBC( iBnd )%nElems( ilevel )            &
+          &  - globBC( iBnd )%nElems_Fluid( ilevel ) > 0) then
+          write(logUnit(5),"(A,I5,A,I2,A,A)") 'Added ', &
+            & globBC( iBnd )%nElems( ilevel )           &
+            & - globBC( iBnd )%nElems_Fluid( ilevel ),  &
+            & ' Ghostelements on Level: ',              &
+            & iLevel, ' to Boundary: ', globBC( iBND )%label
         end if
 
       end do !iBnd
     end do !iLevel
 
-    call set_normalIndGhost(                                  &
-      &                 nBCs     = bc_prop%nBCtypes,          &
-      &                 minLevel = minLevel,                  &
-      &                 maxLevel = maxLevel,                  &
-      &                 globBC   = globBC,                    &
-      &                 layout   = layout                     )
+    call set_normalIndGhost(                         &
+      &                 nBCs     = bc_prop%nBCtypes, &
+      &                 minLevel = minLevel,         &
+      &                 maxLevel = maxLevel,         &
+      &                 globBC   = globBC,           &
+      &                 layout   = layout            )
 
   contains
 
@@ -2889,24 +2901,26 @@ write(dbgUnit(1),*) 'wasAdded ', wasAdded, ' stencilPos ', stencilPos
     ! for all Fluid elems
     do iBnd = 1 , nBCs
       do iLevel = minLevel, maxLevel
-        do iElem = globBC( iBnd )%nElems_fluid( iLevel ) +1,                  &
-                 & globBC( iBnd )%nElems( iLevel )
-          call tem_determine_discreteVector(                                  &
-            &   globBC( iBnd )%elemLvl( iLevel )%normal%val( :, iElem ),      &
-            &   layout%prevailDir, angle )
+        do iElem = globBC( iBnd )%nElems_fluid( iLevel ) +1, &
+          &        globBC( iBnd )%nElems( iLevel )
+          call tem_determine_discreteVector(                             &
+            &   globBC( iBnd )%elemLvl( iLevel )%normal%val( :, iElem ), &
+            &   layout%prevailDir, angle                                 )
           ! loop over all directions
           do iDir = 1, layout%fstencil%QQN
-            if( layout%fstencil%cxDir(1, iDir ) ==                            &
-              & globBC( iBnd )%elemLvl( iLevel )%normal%val( 1, iElem )       &
-              & .and.                                                         &
-              & layout%fstencil%cxDir(2, iDir ) ==                            &
-              & globBC( iBnd )%elemLvl( iLevel )%normal%val( 2, iElem )       &
-              & .and. layout%fstencil%cxDir(3, iDir ) ==                      &
-              & globBC( iBnd )%elemLvl( iLevel )%normal%val( 3, iElem ) )     &
+            if( layout%fstencil%cxDir(1, iDir ) ==                        &
+              & globBC( iBnd )%elemLvl( iLevel )%normal%val( 1, iElem )   &
+              & .and.                                                     &
+              & layout%fstencil%cxDir(2, iDir ) ==                        &
+              & globBC( iBnd )%elemLvl( iLevel )%normal%val( 2, iElem )   &
+              & .and. layout%fstencil%cxDir(3, iDir ) ==                  &
+              & globBC( iBnd )%elemLvl( iLevel )%normal%val( 3, iElem ) ) & 
               & then
-              call append (                                                   &
-                &    me = globBC( iBnd )%elemLvl( iLevel )%normalInd,         &
-                &   val = iDir                                                )
+
+              call append (                                           &
+                &    me = globBC( iBnd )%elemLvl( iLevel )%normalInd, &
+                &   val = iDir                                        )
+
             end if ! iDir
           end do ! iDir
         end do !iElem
@@ -2930,7 +2944,7 @@ write(dbgUnit(1),*) 'wasAdded ', wasAdded, ' stencilPos ', stencilPos
   ! Run over all the ghostelements with boundary property and check each
   ! direction. Also sets normal, bitmask and qVal for ghostelements.
   subroutine mus_add_BcghostElem(levelDesc, stencil, bc_prop, globBC, nGhosts, &
-      &                          offset, weight, iLevel )
+      &                          offset, weight, iLevel                        )
     ! --------------------------------------------------------------------------
     !> Level Descriptor for iLevel
     type( tem_levelDesc_type ),intent(inout)    :: levelDesc
