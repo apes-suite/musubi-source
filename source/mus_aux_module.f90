@@ -377,10 +377,10 @@ contains
       &    geometry  = geometry, &
       &    params    = params    )
 
-    call mus_auxField_configure_from_tracking(          &
-      &    auxField   = scheme%auxField,                &
-      &    track      = scheme%track,                   &
-      &    schemeKind = scheme%header%kind              )
+    call mus_auxField_configure_from_tracking( &
+      &    auxField   = scheme%auxField,       &
+      &    track      = scheme%track,          &
+      &    schemeKind = scheme%header%kind     )
 
     ! convergence objects
     if ( params%general%simControl%abortCriteria%steady_state ) then

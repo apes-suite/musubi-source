@@ -132,13 +132,13 @@ module mus_auxField_module
   end interface
 
 
-
 contains
+
 
   ! ************************************************************************* !
   !> This routine initialize auxField var val array and communication buffers
-  subroutine mus_init_auxFieldArrays(me, levelDesc, pattern, nSize, nAuxScalars, &
-    &                                needHaloComm)
+  subroutine mus_init_auxFieldArrays(me, levelDesc, pattern, nSize, &
+    &                                nAuxScalars, needHaloComm      )
     ! --------------------------------------------------------------------- !
     !> Auxiliary field variable
     type(mus_auxFieldVar_type), intent(out) :: me
@@ -300,7 +300,7 @@ contains
   !! halos
   subroutine mus_calcAuxFieldAndExchange(auxField, calcAuxField, state, &
     &  pdfData, nFields, field, globSrc, stencil, varSys, derVarPos,    &
-    &  phyConvFac, general, iLevel, minLevel, schemeHeader, quantities)
+    &  phyConvFac, general, iLevel, minLevel, schemeHeader, quantities  )
     ! -------------------------------------------------------------------- !
     !> auxilary field array
     type(mus_auxFieldVar_type), intent(inout) :: auxField
@@ -420,7 +420,7 @@ contains
   !! halos
   subroutine mus_intpAuxFieldCoarserAndExchange(intp, tAuxField, sAuxField,  &
     &                                           tLevelDesc, stencil, iLevel, &
-    &                                           nAuxScalars, general)
+    &                                           nAuxScalars, general         )
     ! -------------------------------------------------------------------- !
     !> Interpolation type
     type(mus_interpolation_type), intent(inout) :: intp
@@ -468,7 +468,7 @@ contains
   !! halos
   subroutine mus_intpAuxFieldFinerAndExchange(intp, tAuxField, sAuxField,  &
     &                                         tLevelDesc, stencil, iLevel, &
-    &                                         nAuxScalars, general)
+    &                                         nAuxScalars, general         )
     ! -------------------------------------------------------------------- !
     !> Interpolation type
     type(mus_interpolation_type), intent(inout) :: intp
@@ -533,10 +533,10 @@ contains
     if (size(auxField) == 0) return
 
     needHaloComm = auxField(lbound(auxField, 1))%needHaloComm
-    needHaloComm = needHaloComm                                   &
-      &            .or. aux_tracking_needs_velocity_gradient(     &
-      &                   track      = track,                     &
-      &                   schemeKind = schemeKind                 )
+    needHaloComm = needHaloComm                               &
+      &            .or. aux_tracking_needs_velocity_gradient( &
+      &                   track      = track,                 &
+      &                   schemeKind = schemeKind             )
 
     do iLevel = lbound(auxField, 1), ubound(auxField, 1)
       auxField(iLevel)%needHaloComm = needHaloComm
@@ -545,7 +545,7 @@ contains
     if (needHaloComm) then
       write(logUnit(1),*) 'Auxiliary field halo communication activated.'
     else
-      write(logUnit(1),*) 'Auxiliary field halo communication deactivated.'
+      write(logUnit(1),*) 'Auxiliary field halo communication DEACTIVATED.'
     end if
 
   end subroutine mus_auxField_configure_from_tracking
@@ -554,15 +554,17 @@ contains
 
   ! ************************************************************************* !
   !> Check if active tracking requests velocity-gradient based quantities.
-  logical function aux_tracking_needs_velocity_gradient(track, schemeKind)
+  function aux_tracking_needs_velocity_gradient(track, schemeKind) &
+    &        result(needed)
     ! -------------------------------------------------------------------- !
     type(tem_tracking_type), intent(in) :: track
     character(len=*), intent(in) :: schemeKind
+    logical :: needed
     ! -------------------------------------------------------------------- !
     integer :: iTrack, iConfig, iVar
     ! -------------------------------------------------------------------- !
 
-    aux_tracking_needs_velocity_gradient = .false.
+    needed = .false.
 
     if (.not. track%control%active) return
 
@@ -577,9 +579,9 @@ contains
       iConfig = track%instance(iTrack)%pntConfig
       do iVar = 1, size(track%config(iConfig)%varName)
         select case(trim(track%config(iConfig)%varName(iVar)))
-        case ('grad_velocity', 'vorticity', 'q_criterion',              &
+        case ('grad_velocity', 'vorticity', 'q_criterion',           &
           &   'grad_velocity_phy', 'vorticity_phy', 'q_criterion_phy')
-          aux_tracking_needs_velocity_gradient = .true.
+          needed = .true.
           return
         end select
       end do
