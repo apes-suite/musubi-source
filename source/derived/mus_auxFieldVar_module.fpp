@@ -455,8 +455,8 @@ contains
     ! vectorization
     nChunks = ceiling(real(nSolve, kind=rk) / real(vlen, kind=rk))
 
-    !$omp parallel do                                                                            &
-    !$omp   & private( rho, pdf, elemPos, elemOff, nChunkElems, iChunks, low_bound, iElem, vel ) &
+    !$omp parallel do                                                                          &
+    !$omp   & private( rho, pdf, elemPos, elemOff, nChunkElems, iChunks, low_bound, iElem, vel )
     do iChunks = 1, nChunks
       ! calculate the end  number of iElem loop
       nChunkElems = min(vlen, nSolve - ((iChunks - 1) * vlen))
@@ -547,8 +547,8 @@ contains
     ! vectorization
     nChunks = ceiling(real(nSolve, kind=rk) / real(vlen, kind=rk))
 
-    !$omp parallel do                                                                            &
-    !$omp   & private( rho, pdf, elemPos, elemOff, nChunkElems, iChunks, low_bound, iElem, vel ) &
+    !$omp parallel do                                                                          &
+    !$omp   & private( rho, pdf, elemPos, elemOff, nChunkElems, iChunks, low_bound, iElem, vel )
     do iChunks = 1, nChunks
       ! calculate the end  number of iElem loop
       nChunkElems = min(vlen, nSolve - ((iChunks - 1) * vlen))
@@ -640,8 +640,8 @@ contains
     ! vectorization
     nChunks = ceiling(real(nSolve, kind=rk) / real(vlen, kind=rk))
 
-    !$omp parallel do                                                                            &
-    !$omp   & private( rho, pdf, elemPos, elemOff, nChunkElems, iChunks, low_bound, iElem, vel ) &
+    !$omp parallel do                                                                          &
+    !$omp   & private( rho, pdf, elemPos, elemOff, nChunkElems, iChunks, low_bound, iElem, vel )
     do iChunks = 1, nChunks
       ! calculate the end  number of iElem loop
       nChunkElems = min(vlen, nSolve - ((iChunks - 1) * vlen))
@@ -746,8 +746,8 @@ contains
     ! vectorization
     nChunks = ceiling(real(nSolve, kind=rk) / real(vlen, kind=rk))
 
-    !$omp parallel do                                                                            &
-    !$omp   & private( rho, pdf, elemPos, elemOff, nChunkElems, iChunks, low_bound, iElem, vel ) &
+    !$omp parallel do                                                                          &
+    !$omp   & private( rho, pdf, elemPos, elemOff, nChunkElems, iChunks, low_bound, iElem, vel )
     do iChunks = 1, nChunks
       ! calculate the end  number of iElem loop
       nChunkElems = min(vlen, nSolve - ((iChunks - 1) * vlen))

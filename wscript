@@ -76,7 +76,8 @@ def configure(conf):
         for key, fenv in conf.all_envs.items():
             if fenv.FC_NAME == 'GFORTRAN':
                 fenv.FCFLAGS.append('-Wno-unused-dummy-argument')
-                fenv.FCFLAGS.append('-fmax-stack-var-size=131072')
+                if not conf.options.openmp:
+                    fenv.FCFLAGS.append('-fmax-stack-var-size=131072')
             if fenv.FC_NAME == 'IFORT':
                 stderrflag = len(fenv.FCFLAGS)
                 for flag in range(len(fenv.FCFLAGS)-1):
