@@ -381,6 +381,12 @@ contains
       call append(me          = poss_srcVar,      &
         &         varName     = 'hrr_correction', &
         &         nComponents = QQ                )
+      ! In the Brinkman term \( -\nu / K \mathbf{u} \),
+      ! this is its coefficient \nu / K
+      call append(me          = poss_srcVar, &
+        &         varName     = 'brinkman',  &
+        &         nComponents = 1            )
+
     case ('fluid_GNS', 'fluid_incompressible_GNS')
       ! body force
       call append(me          = poss_srcVar, &
@@ -395,6 +401,12 @@ contains
       call append(me          = poss_srcVar, &
         &         varName     = 'injection', &
         &         nComponents = 1            )
+
+      ! source term \( \alpha C \) for passive scalar C
+      ! where \( \alpha \) is ps_sourceCoeff
+      call append(me          = poss_srcVar,      &
+        &         varName     = 'ps_sourceCoeff', &
+        &         nComponents = 1                 )
 
     case ('nernst_planck')
       call append(me          = poss_srcVar,      &
@@ -616,19 +628,23 @@ contains
     if (.not. allocated(me%geom_utau(1)%canoND)) then
       allocate(me%geom_utau(1)%canoND(0))
     end if
+    if (.not. allocated(me%geom_utau(1)%bcLabels)) then
+      allocate(me%geom_utau(1)%bcLabels(0))
+    end if
 
-    if (size(me%geom_utau(1)%canoND) == 0      &
+    if (size(me%geom_utau(1)%canoND) == 0        &
       & .and. size(me%geom_utau(1)%bcLabels) == 0) then
-      write(logUnit(1),*) 'Error: Requires single shape for turb_channel_force'
+      write(logUnit(1),*) 'Error: Requires canond or boundary shape for u_tau'
       call tem_abort()
     end if
 
-    if (.not. allocated(me%geom_umean(1)%canoND)) &
-      & allocate(me%geom_umean(1)%canoND(0))
+    if (.not. allocated(me%geom_umean(1)%canoND)) then
+      allocate(me%geom_umean(1)%canoND(0))
+    end if
 
     if (size(me%geom_umean(1)%canoND) == 0         &
       & .and. trim(me%geom_umean(1)%kind) /= 'all' ) then
-      write(logUnit(1),*) 'Error: Requires single shape for turb_channel_force'
+      write(logUnit(1),*) 'Error: Requires canond or all shape for u_mean'
       call tem_abort()
     end if
 
