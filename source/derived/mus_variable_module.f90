@@ -142,14 +142,16 @@ module mus_variable_module
   use mus_derQuanPS_module,       only: mus_append_derVar_lbmPS, &
     &                                   deriveEquilPS_FromMacro, &
     &                                   deriveEquilPS2ndOrder_FromMacro,   &
-    &                                   derive_equalInjectionPS,   &
-    &                                   deriveAuxPS_fromState,     &
-    &                                   deriveEquilPS_fromAux,     &
-    &                                   derive_injectionPS,        &
-    &                                   derive_psSourceCoeff,      &
-    &                                   applySrc_injectionPS,      &
-    &                                   applySrc_equalInjectionPS, &
-    &                                   applySrc_psSourceCoeff
+    &                                   derive_equalInjectionPS,     &
+    &                                   deriveAuxPS_fromState,       &
+    &                                   deriveEquilPS_fromAux,       &
+    &                                   derive_injectionPS,          &
+    &                                   derive_psSourceCoeff,        &
+    &                                   derive_psSourceCoeff_2ndOrd, &
+    &                                   applySrc_injectionPS,        &
+    &                                   applySrc_equalInjectionPS,   &
+    &                                   applySrc_psSourceCoeff,      &
+    &                                   applySrc_psSourceCoeff_2ndOrd
   use mus_derQuanMSGas_module,    only: mus_append_derVar_MSGas,         &
     &                                   deriveAuxMSGas_fromState,        &
     &                                   deriveEquilMSGas_fromAux,        &
@@ -196,23 +198,24 @@ module mus_variable_module
     &   deriveVelocity_FromState_IsothermAcEq
   use mus_operation_var_module,       only: mus_opVar_setupIndices, &
     &                                   mus_set_opVar_getElement
-  use mus_auxFieldVar_module,         only: mus_addForceToAuxField_fluid,        &
-    &                                       mus_addForceToAuxField_fluid_GNS,    &
-    &                                       mus_addForceToAuxField_fluidIncomp,  &
-    &                                       mus_addForceToAuxField_MSL,          &
-    &                                       mus_addForceToAuxField_MSL_WTDF,     &
-    &                                       mus_addElectricToAuxField_MSL,       &
-    &                                       mus_addElectricToAuxField_MSL_WTDF,  &
-    &                                       mus_addSrcToAuxField_poisson,        &
-    &                                       mus_addSponFldToAuxField_fluid,      &
-    &                                       mus_addDynSponFldToAuxField_fluid,   &
-    &                                       mus_access_auxFieldVar_forElement,   &
-    &                                       mus_auxFieldVar_forPoint,            &
-    &                                       mus_auxFieldVar_fromIndex,           &
-    &                                       mus_addTurbChanForceToAuxField_fluid,&
-    &                                       mus_addHRRCorrToAuxField_fluid_2D,   &
-    &                                       mus_addHRRCorrToAuxField_fluid_3D,   &
-    &                                       mus_addBrinkmanToAuxField_fluidIncomp
+  use mus_auxFieldVar_module,         only: mus_addForceToAuxField_fluid,          &
+    &                                       mus_addForceToAuxField_fluid_GNS,      &
+    &                                       mus_addForceToAuxField_fluidIncomp,    &
+    &                                       mus_addForceToAuxField_MSL,            &
+    &                                       mus_addForceToAuxField_MSL_WTDF,       &
+    &                                       mus_addElectricToAuxField_MSL,         &
+    &                                       mus_addElectricToAuxField_MSL_WTDF,    &
+    &                                       mus_addSrcToAuxField_poisson,          &
+    &                                       mus_addSponFldToAuxField_fluid,        &
+    &                                       mus_addDynSponFldToAuxField_fluid,     &
+    &                                       mus_access_auxFieldVar_forElement,     &
+    &                                       mus_auxFieldVar_forPoint,              &
+    &                                       mus_auxFieldVar_fromIndex,             &
+    &                                       mus_addTurbChanForceToAuxField_fluid,  &
+    &                                       mus_addHRRCorrToAuxField_fluid_2D,     &
+    &                                       mus_addHRRCorrToAuxField_fluid_3D,     &
+    &                                       mus_addBrinkmanToAuxField_fluidIncomp, &
+    &                                       mus_addPSSourceCoeffDensityToAuxField
   use mus_turbulence_var_module,      only: mus_append_turbVar
   use mus_material_var_module,        only: mus_append_materialVar
   use mus_bc_var_module,              only: mus_append_bcVar
@@ -1314,8 +1317,26 @@ contains
           get_element => derive_equalInjectionPS
           me%method(iSrc)%applySrc => applySrc_equalInjectionPS
         case ('ps_sourceCoeff')
-          get_element => derive_psSourceCoeff
-          me%method(iSrc)%applySrc => applySrc_psSourceCoeff
+          ! select pointer according to order
+          if (me%method(iSrc)%order == 2) then
+            me%method(iSrc)%addSrcToAuxField => mus_addPSSourceCoeffDensityToAuxField
+            select case (trim(schemeHeader%relaxation))
+            case ('bgk', 'trt')
+              select case( trim(schemeHeader%relaxHeader%variant) )
+              case ('Lmodel')
+                call tem_abort('ps_sourceCoeff not supported for Lmodel variant')
+              case default
+                get_element => derive_psSourceCoeff_2ndOrd
+                me%method(iSrc)%applySrc => applySrc_psSourceCoeff_2ndOrd
+              end select
+            case default
+              call tem_abort('Unknown source variable for ' &
+                &            //trim(schemeHeader%relaxation)      )
+            end select
+          else ! 1st order
+            get_element => derive_psSourceCoeff
+            me%method(iSrc)%applySrc => applySrc_psSourceCoeff
+          end if          
         case default
           call tem_abort('Unknown source variable for ' &
             &            //trim(schemeHeader%kind)      )
