@@ -111,8 +111,7 @@ module mus_derQuanPS_module
   public :: derive_injectionPS
   public :: derive_equalInjectionPS
   public :: derive_psSourceCoeff
-  public :: derive_coeffDensity
-  public :: derive_coeffDensity_2ndOrd
+  public :: derive_psSourceCoeff_2ndOrd
 
   ! source update
   public :: applySrc_injectionPS

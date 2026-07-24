@@ -4783,7 +4783,10 @@ end subroutine f_f_eq_regularized_4th_ord_d3q19
           & ?FETCH?(iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems, neigh) &
           &                   )
       end do
-      rho = sum( pdfTmp )
+      ! element offset for auxField array
+      elemOff = (iElem - 1) * varSys%nAuxScalars
+      ! local density
+      rho = auxField(elemOff + dens_pos)
 
       do iDir = 1, layout%fStencil%QQ
         ! compute c_i * u
