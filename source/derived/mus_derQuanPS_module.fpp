@@ -111,13 +111,15 @@ module mus_derQuanPS_module
   public :: derive_injectionPS
   public :: derive_equalInjectionPS
   public :: derive_psSourceCoeff
-  public :: derive_psSourceCoeff_2ndOrd
+  public :: derive_psSourceCoeff_2ndOrd_BGK
+  public :: derive_psSourceCoeff_2ndOrd_TRT
 
   ! source update
   public :: applySrc_injectionPS
   public :: applySrc_equalInjectionPS
   public :: applySrc_psSourceCoeff
-  public :: applySrc_psSourceCoeff_2ndOrd
+  public :: applySrc_psSourceCoeff_2ndOrd_BGK
+  public :: applySrc_psSourceCoeff_2ndOrd_TRT
 
 contains
 
@@ -683,9 +685,10 @@ contains
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
     real(kind=rk) :: psSourceCoeff(nElems)
+    real(kind=rk) :: transVel(nElems*3)
     integer :: iElem, iDir, QQ, nScalars, posInTotal, elemOff
-    integer :: den_pos, iLevel
-    real(kind=rk) :: density, coeff_L
+    integer :: den_pos, iLevel, vel_varPos
+    real(kind=rk) :: density, coeff_L, velocity(3), uc
     ! -------------------------------------------------------------------- !
 
     ! convert c pointer to solver type fortran pointer
@@ -702,6 +705,18 @@ contains
       & nElems  = nElems,                                    &
       & nDofs   = nDofs,                                     &
       & res     = psSourceCoeff                              )
+
+    ! passive scalar has only one transport Variable
+    vel_varPos = scheme%transVar%method(1)%data_varPos
+    ! Get velocity field
+    call varSys%method%val(vel_varPos)%get_element( &
+      & varSys  = varSys,                           &
+      & elemPos = elemPos,                          &
+      & time    = time,                             &
+      & tree    = tree,                             &
+      & nElems  = nElems,                           &
+      & nDofs   = 3,                                &
+      & res     = transVel                          )     
 
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
@@ -722,12 +737,15 @@ contains
 
       coeff_L = psSourceCoeff(iElem) &
         &        / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
+      ! convert physical velocity into LB velocity
+      velocity = transVel((iElem-1)*3+1 : iElem*3) / fPtr%solverData%physics%fac(iLevel)%vel   
 
       ! source term:
       ! S_i = w_i * S
       do iDir = 1, QQ
+        uc = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), velocity )
         res( (iElem - 1) * fun%nComponents + iDir ) = scheme%layout%weight(iDir) &
-          &                                            * coeff_L * density
+          &                                            * coeff_L * density * (1._rk + uc * cs2inv)
       end do
 
     end do !iElem
@@ -749,8 +767,132 @@ contains
    !!   numerical errors for Lattice Boltzmann models: From recurrence equations
    !!   to “magic” collision numbers", Computers & Mathematics with Applications,
    !!   Volume 58, Issue 5, Pages 823-840
-  recursive subroutine derive_psSourceCoeff_2ndOrd(fun, varsys, elempos, time, &
-    &                                              tree, nElems, nDofs, res    )
+  recursive subroutine derive_psSourceCoeff_2ndOrd_BGK(fun, varsys, elempos, time, &
+    &                                                  tree, nElems, nDofs, res    )
+    ! -------------------------------------------------------------------- !
+    !> Description of the method to obtain the variables, here some preset
+    !! values might be stored, like the space time function to use or the
+    !! required variables.
+    class(tem_varSys_op_type), intent(in) :: fun
+
+    !> The variable system to obtain the variable from.
+    type(tem_varSys_type), intent(in) :: varSys
+
+    !> Position of the TreeID of the element to get the variable for in the
+    !! global treeID list.
+    integer, intent(in) :: elempos(:)
+
+    !> Point in time at which to evaluate the variable.
+    type(tem_time_type), intent(in)  :: time
+
+    !> global treelm mesh info
+    type(treelmesh_type), intent(in) :: tree
+
+    !> Number of values to obtain for this variable (vectorized access).
+    integer, intent(in) :: nElems
+
+    !> Number of degrees of freedom within an element.
+    integer, intent(in) :: nDofs
+
+    !> Resulting values for the requested variable.
+    !!
+    !! Linearized array dimension:
+    !! (n requested entries) x (nComponents of this variable)
+    !! x (nDegrees of freedom)
+    !! Access: (iElem-1)*fun%nComponents*nDofs +
+    !!         (iDof-1)*fun%nComponents + iComp
+    real(kind=rk), intent(out) :: res(:)
+    ! -------------------------------------------------------------------- !
+    type(mus_varSys_data_type), pointer :: fPtr
+    type(mus_scheme_type), pointer :: scheme
+    real(kind=rk) :: psSourceCoeff(nElems)
+    real(kind=rk) :: transVel(nElems*3)
+    integer :: iElem, iDir, QQ, nScalars, posInTotal, elemOff
+    integer :: den_pos, iLevel, vel_varPos
+    real(kind=rk) :: density, coeff_L, omega, velocity(3), uc
+    ! -------------------------------------------------------------------- !
+
+    ! convert c pointer to solver type fortran pointer
+    call c_f_pointer( varSys%method%val( fun%input_varPos(1) )%method_data, &
+      &               fPtr )
+    scheme => fPtr%solverData%scheme
+    ! Get source which is refered in config file either its
+    ! spacetime variable or operation variable
+    call varSys%method%val(fun%input_varPos(2))%get_element( &
+      & varSys  = varSys,                                    &
+      & elemPos = elemPos,                                   &
+      & time    = time,                                      &
+      & tree    = tree,                                      &
+      & nElems  = nElems,                                    &
+      & nDofs   = nDofs,                                     &
+      & res     = psSourceCoeff                              )
+
+    ! passive scalar has only one transport Variable
+    vel_varPos = scheme%transVar%method(1)%data_varPos
+    ! Get velocity field
+    call varSys%method%val(vel_varPos)%get_element( &
+      & varSys  = varSys,                           &
+      & elemPos = elemPos,                          &
+      & time    = time,                             &
+      & tree    = tree,                             &
+      & nElems  = nElems,                           &
+      & nDofs   = 3,                                &
+      & res     = transVel                          )
+
+    ! constant parameter
+    QQ = scheme%layout%fStencil%QQ
+
+    nScalars = varSys%nScalars
+    ! Position of density variable in auxField
+    den_pos = varSys%method%val(scheme%derVarPos(1)%density)%auxField_varPos(1)
+
+    omega = scheme%field(1)%fieldProp%species%omega
+
+    do iElem = 1, nElems
+      ! get iLevel for element
+      iLevel = tem_levelOf( tree%treeID( elemPos(iElem ) ) )
+      posInTotal = fPtr%solverData%geometry%levelPointer( elemPos(iElem) )
+
+      ! element offset
+      elemoff = (posInTotal - 1) * varSys%nAuxScalars
+      ! obtain density from auxField
+      density = scheme%auxField(iLevel)%val(elemOff + den_pos)
+
+      coeff_L = psSourceCoeff(iElem) &
+        &        / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
+      ! convert physical velocity into LB velocity
+      velocity = transVel((iElem-1)*3+1 : iElem*3) / fPtr%solverData%physics%fac(iLevel)%vel  
+
+      ! source term:
+      ! S_i = w_i * S
+      do iDir = 1, QQ
+        uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
+        res( (iElem - 1) * fun%nComponents + iDir ) = scheme%layout%weight(iDir)   &
+          &                                            * (1.0_rk - omega / 2.0_rk) &
+          &                                            * coeff_L * density * (1.0_rk + uc * cs2inv)
+      end do
+
+    end do !iElem
+
+  end subroutine derive_psSourceCoeff_2ndOrd_BGK
+! ************************************************************************** !
+
+    ! ************************************************************************** !
+   !> Derive external source variable defined as a source term.
+   !!
+   !! The source in advection diffusion equation for passive scalar is
+   !! \( S = \alpha C \)
+   !! It evaluates spacetime function defined in lua file for the source 
+   !! coefficient variable \( C \) and convert it to state value which is
+   !! to be added to the state
+   !!
+   !! Reference: 
+   !!   Dominique d’Humières, Irina Ginzburg, (2009), "Viscosity independent 
+   !!   numerical errors for Lattice Boltzmann models: From recurrence equations
+   !!   to “magic” collision numbers", Computers & Mathematics with Applications,
+   !!   Volume 58, Issue 5, Pages 823-840
+  recursive subroutine derive_psSourceCoeff_2ndOrd_TRT(fun, varsys, elempos, time, &
+    &                                                  tree, nElems, nDofs, res    )
     ! -------------------------------------------------------------------- !
     !> Description of the method to obtain the variables, here some preset
     !! values might be stored, like the space time function to use or the
@@ -843,7 +985,7 @@ contains
 
     end do !iElem
 
-  end subroutine derive_psSourceCoeff_2ndOrd
+  end subroutine derive_psSourceCoeff_2ndOrd_TRT
 ! ************************************************************************** !
 
 ! ****************************************************************************** !
@@ -1133,9 +1275,10 @@ contains
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
     real(kind=rk) :: psSourceCoeff(fun%elemLvl(iLevel)%nElems)
+    real(kind=rk) :: transVel(fun%elemLvl(iLevel)%nElems*3)
     integer :: nElems, iElem, iDir, QQ, nScalars
-    integer :: posInTotal, den_pos, elemoff
-    real(kind=rk) :: density
+    integer :: posInTotal, den_pos, elemoff, vel_varPos
+    real(kind=rk) :: density, velocity(3), uc
     ! ---------------------------------------------------------------------- !
     ! convert c pointer to solver type fortran pointer
     call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
@@ -1159,6 +1302,22 @@ contains
     psSourceCoeff = psSourceCoeff &
       &              / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
 
+    ! passive scalar has only one transport Variable
+    vel_varPos = scheme%transVar%method(1)%data_varPos
+    ! Get velocity field
+    call varSys%method%val(vel_varPos)%get_valOfIndex( &
+      & varSys  = varSys,                              &
+      & time    = time,                                &
+      & iLevel  = iLevel,                              &
+      & idx     = scheme%transVar%method(1)            &
+      &           %pntIndex%indexLvl(iLevel)           &
+      &           %val(1:nElems),                      &
+      & nVals   = nElems,                              &
+      & res     = transVel                             )
+
+    ! convert physical velocity into LB velocity
+    transVel = transVel / fPtr%solverData%physics%fac(iLevel)%vel
+
     ! Position of density variable in auxField
     den_pos = varSys%method%val( derVarPos(1)%density )%auxField_varPos(1)
 
@@ -1174,12 +1333,13 @@ contains
       elemoff = (posInTotal - 1) * varSys%nAuxScalars
       ! obtain velocity from auxField
       density = scheme%auxField(iLevel)%val(elemOff + den_pos)
+      velocity = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, QQ
-
+        uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
-          &    + scheme%layout%weight( iDir ) * psSourceCoeff(iElem) * density
+          &    + scheme%layout%weight( iDir ) * psSourceCoeff(iElem) * density * (1.0_rk + uc * cs2inv)
 
       end do
 
@@ -1187,7 +1347,7 @@ contains
   end subroutine applySrc_psSourceCoeff
 ! ************************************************************************** !
 
-! ************************************************************************** !
+  ! ************************************************************************** !
    !> Update state with source variable "ps_sourceCoeff".
    !!
    !! The source in advection diffusion equation for passive scalar is
@@ -1201,7 +1361,7 @@ contains
    !!   numerical errors for Lattice Boltzmann models: From recurrence equations
    !!   to “magic” collision numbers", Computers & Mathematics with Applications,
    !!   Volume 58, Issue 5, Pages 823-840
-  subroutine applySrc_psSourceCoeff_2ndOrd( fun, inState, outState, neigh,     &
+  subroutine applySrc_psSourceCoeff_2ndOrd_BGK( fun, inState, outState, neigh, &
     &                                auxField, nPdfSize, iLevel, varSys, time, &
     &                                phyConvFac, derVarPos                     )
     ! -------------------------------------------------------------------- !
@@ -1241,9 +1401,10 @@ contains
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
     real(kind=rk) :: psSourceCoeff(fun%elemLvl(iLevel)%nElems)
+    real(kind=rk) :: transVel(fun%elemLvl(iLevel)%nElems*3)
     integer :: nElems, iElem, iDir, QQ, nScalars
-    integer :: posInTotal, den_pos, elemoff
-    real(kind=rk) :: density, omega, lambda, omega_plus
+    integer :: posInTotal, den_pos, elemoff, vel_varPos
+    real(kind=rk) :: density, omega, velocity(3), uc
     ! ---------------------------------------------------------------------- !
     ! convert c pointer to solver type fortran pointer
     call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
@@ -1267,6 +1428,151 @@ contains
     psSourceCoeff = psSourceCoeff &
       &              / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
 
+    ! passive scalar has only one transport Variable
+    vel_varPos = scheme%transVar%method(1)%data_varPos
+    ! Get velocity field
+    call varSys%method%val(vel_varPos)%get_valOfIndex( &
+      & varSys  = varSys,                              &
+      & time    = time,                                &
+      & iLevel  = iLevel,                              &
+      & idx     = scheme%transVar%method(1)            &
+      &           %pntIndex%indexLvl(iLevel)           &
+      &           %val(1:nElems),                      &
+      & nVals   = nElems,                              &
+      & res     = transVel                             )
+
+    ! convert physical velocity into LB velocity
+    transVel = transVel / fPtr%solverData%physics%fac(iLevel)%vel
+
+    ! Position of density variable in auxField
+    den_pos = varSys%method%val( derVarPos(1)%density )%auxField_varPos(1)
+
+    omega = scheme%field(1)%fieldProp%species%omega
+
+    ! constant parameter
+    QQ = scheme%layout%fStencil%QQ
+    nScalars = varSys%nScalars
+
+    do iElem = 1, nElems
+      ! to access level wise state array
+      posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
+
+      ! element offset
+      elemoff = (posInTotal - 1) * varSys%nAuxScalars
+      ! obtain velocity from auxField
+      density = scheme%auxField(iLevel)%val(elemOff + den_pos)
+      velocity = transVel( (iElem-1)*3+1 : iElem*3 )
+
+      do iDir = 1, QQ
+        uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
+        outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
+          & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
+          &    + scheme%layout%weight( iDir ) * (1.0_rk - omega / 2.0_rk)      &
+          &    * psSourceCoeff(iElem) * density * (1.0_rk + uc * cs2inv)
+
+      end do
+
+    end do !iElem
+  end subroutine applySrc_psSourceCoeff_2ndOrd_BGK
+! ************************************************************************** !
+
+! ************************************************************************** !
+   !> Update state with source variable "ps_sourceCoeff".
+   !!
+   !! The source in advection diffusion equation for passive scalar is
+   !! \( S = \alpha C \)
+   !! It evaluates spacetime function defined in lua file for the source 
+   !! coefficient variable \( C \) and convert it to state value which is
+   !! to be added to the state
+   !!
+   !! Reference: 
+   !!   Dominique d’Humières, Irina Ginzburg, (2009), "Viscosity independent 
+   !!   numerical errors for Lattice Boltzmann models: From recurrence equations
+   !!   to “magic” collision numbers", Computers & Mathematics with Applications,
+   !!   Volume 58, Issue 5, Pages 823-840
+  subroutine applySrc_psSourceCoeff_2ndOrd_TRT( fun, inState, outState, neigh, &
+    &                                auxField, nPdfSize, iLevel, varSys, time, &
+    &                                phyConvFac, derVarPos                     )
+    ! -------------------------------------------------------------------- !
+    !> Description of method to apply source terms
+    class(mus_source_op_type), intent(in) :: fun
+
+    !> input  pdf vector
+    real(kind=rk), intent(in) :: inState(:)
+
+    !> output pdf vector
+    real(kind=rk), intent(inout) :: outState(:)
+
+    !> connectivity Array corresponding to state vector
+    integer,intent(in) :: neigh(:)
+
+    !> auxField array
+    real(kind=rk), intent(in) :: auxField(:)
+
+    !> number of elements in state Array
+    integer, intent(in) :: nPdfSize
+
+    !> current level
+    integer, intent(in) :: iLevel
+
+    !> variable system
+    type(tem_varSys_type), intent(in) :: varSys
+
+    !> Point in time at which to evaluate the variable.
+    type(tem_time_type), intent(in)  :: time
+
+    !> Physics conversion factor for current level
+    type(mus_convertFac_type), intent(in) :: phyConvFac
+
+    !> position of derived quantities in varsys
+    type(mus_derVarPos_type), intent(in) :: derVarPos(:)
+    ! -------------------------------------------------------------------- !
+    type(mus_varSys_data_type), pointer :: fPtr
+    type(mus_scheme_type), pointer :: scheme
+    real(kind=rk) :: psSourceCoeff(fun%elemLvl(iLevel)%nElems)
+    real(kind=rk) :: transVel(fun%elemLvl(iLevel)%nElems*3)
+    integer :: nElems, iElem, iDir, QQ, nScalars
+    integer :: posInTotal, den_pos, elemoff, vel_varPos
+    real(kind=rk) :: density, omega, lambda, omega_plus, velocity(3), uc
+    ! ---------------------------------------------------------------------- !
+    ! convert c pointer to solver type fortran pointer
+    call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
+      &               fPtr )
+    scheme => fPtr%solverData%scheme
+
+    ! Number of elements to apply source terms
+    nElems = fun%elemLvl(iLevel)%nElems
+
+    ! Get force which is refered in config file either its
+    ! spacetime variable or operation variable
+    call varSys%method%val(fun%data_varPos)%get_valOfIndex( &
+      & varSys  = varSys,                                   &
+      & time    = time,                                     &
+      & iLevel  = iLevel,                                   &
+      & idx     = fun%elemLvl(iLevel)%idx(1:nElems),        &
+      & nVals   = nElems,                                   &
+      & res     = psSourceCoeff                             )
+
+    ! convert physical to lattice
+    psSourceCoeff = psSourceCoeff &
+      &              / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
+
+    ! passive scalar has only one transport Variable
+    vel_varPos = scheme%transVar%method(1)%data_varPos
+    ! Get velocity field
+    call varSys%method%val(vel_varPos)%get_valOfIndex( &
+      & varSys  = varSys,                              &
+      & time    = time,                                &
+      & iLevel  = iLevel,                              &
+      & idx     = scheme%transVar%method(1)            &
+      &           %pntIndex%indexLvl(iLevel)           &
+      &           %val(1:nElems),                      &
+      & nVals   = nElems,                              &
+      & res     = transVel                             )
+
+    ! convert physical velocity into LB velocity
+    transVel = transVel / fPtr%solverData%physics%fac(iLevel)%vel    
+
     ! Position of density variable in auxField
     den_pos = varSys%method%val( derVarPos(1)%density )%auxField_varPos(1)
 
@@ -1287,18 +1593,19 @@ contains
       elemoff = (posInTotal - 1) * varSys%nAuxScalars
       ! obtain velocity from auxField
       density = scheme%auxField(iLevel)%val(elemOff + den_pos)
+      velocity = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, QQ
-
+        uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
           &    + scheme%layout%weight( iDir ) * (1.0_rk - omega_plus / 2.0_rk) &
-          &    * psSourceCoeff(iElem) * density
+          &    * psSourceCoeff(iElem) * density * (1.0_rk + uc * cs2inv)
 
       end do
 
     end do !iElem
-  end subroutine applySrc_psSourceCoeff_2ndOrd
+  end subroutine applySrc_psSourceCoeff_2ndOrd_TRT
 ! ************************************************************************** !
 
 

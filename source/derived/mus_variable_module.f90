@@ -142,16 +142,18 @@ module mus_variable_module
   use mus_derQuanPS_module,       only: mus_append_derVar_lbmPS, &
     &                                   deriveEquilPS_FromMacro, &
     &                                   deriveEquilPS2ndOrder_FromMacro,   &
-    &                                   derive_equalInjectionPS,     &
-    &                                   deriveAuxPS_fromState,       &
-    &                                   deriveEquilPS_fromAux,       &
-    &                                   derive_injectionPS,          &
-    &                                   derive_psSourceCoeff,        &
-    &                                   derive_psSourceCoeff_2ndOrd, &
-    &                                   applySrc_injectionPS,        &
-    &                                   applySrc_equalInjectionPS,   &
-    &                                   applySrc_psSourceCoeff,      &
-    &                                   applySrc_psSourceCoeff_2ndOrd
+    &                                   derive_equalInjectionPS,           &
+    &                                   deriveAuxPS_fromState,             &
+    &                                   deriveEquilPS_fromAux,             &
+    &                                   derive_injectionPS,                &
+    &                                   derive_psSourceCoeff,              &
+    &                                   derive_psSourceCoeff_2ndOrd_BGK,   &
+    &                                   derive_psSourceCoeff_2ndOrd_TRT,   &
+    &                                   applySrc_injectionPS,              &
+    &                                   applySrc_equalInjectionPS,         &
+    &                                   applySrc_psSourceCoeff,            &
+    &                                   applySrc_psSourceCoeff_2ndOrd_BGK, &
+    &                                   applySrc_psSourceCoeff_2ndOrd_TRT
   use mus_derQuanMSGas_module,    only: mus_append_derVar_MSGas,         &
     &                                   deriveAuxMSGas_fromState,        &
     &                                   deriveEquilMSGas_fromAux,        &
@@ -1326,14 +1328,22 @@ contains
               case ('Lmodel')
                 call tem_abort('ps_sourceCoeff not supported for Lmodel variant')
               case default
-                get_element => derive_psSourceCoeff_2ndOrd
-                me%method(iSrc)%applySrc => applySrc_psSourceCoeff_2ndOrd
+                write(logUnit(1),*) 'Selecting 2nd order ps_sourceCoeff for passive_scalar'
+                select case (trim(schemeHeader%relaxation))
+                case ('bgk')
+                  get_element => derive_psSourceCoeff_2ndOrd_BGK
+                  me%method(iSrc)%applySrc => applySrc_psSourceCoeff_2ndOrd_BGK
+                case ('trt')
+                  get_element => derive_psSourceCoeff_2ndOrd_TRT
+                  me%method(iSrc)%applySrc => applySrc_psSourceCoeff_2ndOrd_TRT
+                end select
               end select
             case default
               call tem_abort('Unknown source variable for ' &
                 &            //trim(schemeHeader%relaxation)      )
             end select
           else ! 1st order
+            write(logUnit(1),*) 'Selecting 1st order ps_sourceCoeff for passive_scalar'
             get_element => derive_psSourceCoeff
             me%method(iSrc)%applySrc => applySrc_psSourceCoeff
           end if          
