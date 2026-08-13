@@ -744,6 +744,7 @@ contains
       ! S_i = w_i * S
       do iDir = 1, QQ
         uc = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), velocity )
+        uc = 0._rk
         res( (iElem - 1) * fun%nComponents + iDir ) = scheme%layout%weight(iDir) &
           &                                            * coeff_L * density * (1._rk + uc * cs2inv)
       end do
@@ -867,6 +868,7 @@ contains
       ! S_i = w_i * S
       do iDir = 1, QQ
         uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
+        uc = 0._rk
         res( (iElem - 1) * fun%nComponents + iDir ) = scheme%layout%weight(iDir)   &
           &                                            * (1.0_rk - omega / 2.0_rk) &
           &                                            * coeff_L * density * (1.0_rk + uc * cs2inv)
@@ -1337,6 +1339,7 @@ contains
 
       do iDir = 1, QQ
         uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
+        uc = 0.0_rk
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
           &    + scheme%layout%weight( iDir ) * psSourceCoeff(iElem) * density * (1.0_rk + uc * cs2inv)
@@ -1465,6 +1468,7 @@ contains
 
       do iDir = 1, QQ
         uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
+        uc = 0.0_rk
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
           &    + scheme%layout%weight( iDir ) * (1.0_rk - omega / 2.0_rk)      &
@@ -1597,6 +1601,7 @@ contains
 
       do iDir = 1, QQ
         uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
+        uc = 0.0_rk
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
           &    + scheme%layout%weight( iDir ) * (1.0_rk - omega_plus / 2.0_rk) &
