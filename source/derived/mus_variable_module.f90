@@ -118,6 +118,8 @@ module mus_variable_module
     &                                   derive_HRRCorrection_d3q27,       &
     &                                   derive_brinkmanForce,             &
     &                                   derive_brinkmanForce_TRT,         &
+    &                                   derive_brinkmanForce_2ndOrd_BGK,  &
+    &                                   derive_brinkmanForce_2ndOrd_TRT,  &
     &                                   applySrc_absorbLayer,             &
     &                                   applySrc_absorbLayer_MRT,         &
     &                                   applySrc_absorbLayerDyn,          &
@@ -135,7 +137,9 @@ module mus_variable_module
     &                                   applySrc_turbChanForce_MRT_d3q27, &
     &                                   applySrc_force1stOrd,             &       
     &                                   applySrc_brinkmanForce,           &
-    &                                   applySrc_brinkmanForce_TRT
+    &                                   applySrc_brinkmanForce_TRT,       &
+    &                                   applySrc_brinkmanForce_2ndOrd_BGK,&
+    &                                   applySrc_brinkmanForce_2ndOrd_TRT
   use mus_derQuanIncomp_module,   only: mus_append_derVar_fluidIncomp,     &
     &                                   derive_absorbLayerIncomp,          &
     &                                   applySrc_absorbLayerIncomp
@@ -1189,11 +1193,25 @@ contains
             case ('fluid_incompressible')
               select case (trim(schemeHeader%relaxation))
               case ('bgk')
-                get_element => derive_brinkmanForce
-                me%method(iSrc)%applySrc => applySrc_brinkmanForce
+                if (me%method(iSrc)%order == 2) then
+                  write(logUnit(1), *) 'Brinkman force 2nd order is implemented for incompressible BGK scheme'
+                  get_element => derive_brinkmanForce_2ndOrd_BGK
+                  me%method(iSrc)%applySrc => applySrc_brinkmanForce_2ndOrd_BGK
+                else
+                  write(logUnit(1), *) 'Brinkman force 1st order is implemented for incompressible BGK scheme'
+                  get_element => derive_brinkmanForce
+                  me%method(iSrc)%applySrc => applySrc_brinkmanForce
+                end if
               case ('trt')
-                get_element => derive_brinkmanForce_TRT
-                me%method(iSrc)%applySrc => applySrc_brinkmanForce_TRT
+                if (me%method(iSrc)%order == 2) then
+                  write(logUnit(1), *) 'Brinkman force 2nd order is implemented for incompressible TRT scheme'
+                  get_element => derive_brinkmanForce_2ndOrd_TRT
+                  me%method(iSrc)%applySrc => applySrc_brinkmanForce_2ndOrd_TRT
+                else
+                  write(logUnit(1), *) 'Brinkman force 1st order is implemented for incompressible TRT scheme'
+                  get_element => derive_brinkmanForce_TRT
+                  me%method(iSrc)%applySrc => applySrc_brinkmanForce_TRT
+                end if
               case default
                 call tem_abort('Brinkman model not supported for '  &
                   &            //trim(schemeHeader%relaxation)      )
