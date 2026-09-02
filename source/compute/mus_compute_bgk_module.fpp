@@ -161,18 +161,18 @@ contains
 ! ****************************************************************************** !
 
 ! ****************************************************************************** !
-  !> Advection relaxation routine for the
-  !! BGK model with an explicit calculation of all equilibrium
+  !> Advection relaxation routine for the generic incompressible
+  !! TRT model with an explicit calculation of all equilibrium
   !! quantities. Slow and simple. This routine should only be
   !! used for testing purposes
   !!
   !! This subroutine interface must match the abstract interface definition
   !! [[kernel]] in scheme/[[mus_scheme_type_module]].f90 in order to be callable
   !! via [[mus_scheme_type:compute]] function pointer.
-  subroutine mus_advRel_kFluidIncomp_rTRT_vStdNoOpt_l( fieldProp, inState, outState,    &
-    &                                   auxField, neigh, nElems, nSolve, &
-    &                                   level, layout, params, varSys,   &
-    &                                   derVarPos                        )
+  subroutine mus_advRel_kFluidIncomp_rTRT_vStdNoOpt_l( fieldProp, inState, &
+    &                                   outState, auxField, neigh, nElems, &
+    &                                   nSolve, level, layout, params,     &
+    &                                   varSys, derVarPos                  )
     ! -------------------------------------------------------------------- !
     !> Array of field properties (fluid or species)
     type(mus_field_prop_type), intent(in) :: fieldProp(:)
@@ -211,22 +211,16 @@ contains
     ! equilibrium calculation variables
     real(kind=rk) ucx
     real(kind=rk) feqPlus, feqMinus, fPlus, fMinus
-    real(kind=rk) omega, aux_omega, magicParam
+    real(kind=rk) omega, aux_omega, lambda
     integer :: dens_pos, vel_pos(3), elemOff, invDir
     ! ---------------------------------------------------------------------------
     dens_pos = varSys%method%val(derVarPos(1)%density)%auxField_varPos(1)
     vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
 
     QQ = layout%fStencil%QQ
-    ! nElems = size(neigh)/QQ
     nScalars = varSys%nScalars
 
     nodeloop: do iElem = 1, nSolve
-      !> Generic fetching step:
-      !! Streaming for pull
-      !! Local copy for push
-      ux = 0._rk
-      rho = 0._rk
       do iDir = 1, QQ
         pdfTmp( iDir ) = inState( ?FETCH?(iDir, 1, iElem, QQ, nScalars, nElems,neigh))
       end do
@@ -245,8 +239,8 @@ contains
 
       !> relaxation parameter
       omega = fieldProp(1)%fluid%viscKine%omLvl(level)%val(iElem)
-      magicParam = fieldProp(1)%fluid%lambda
-      aux_omega = 1.0_rk / (magicParam / (1.0_rk / omega - 0.5_rk) + 0.5_rk)
+      lambda = fieldProp(1)%fluid%lambda
+      aux_omega = 1.0_rk / (lambda / (1.0_rk / omega - 0.5_rk) + 0.5_rk)
 
       do iDir = 1,QQ
 
@@ -255,10 +249,10 @@ contains
           & + layout%fStencil%cxDir( 2, iDir )*ux(2) &
           & + layout%fStencil%cxDir( 3, iDir )*ux(3)
 
-        ! compute the equilibrium (fi_eq = weight_i * rho * ( 1+c_i*u / cs^2))
-        feqPlus = layout%weight( iDir ) * (rho    &
-          &           +  rho0*(9._rk*ucx*ucx*0.5_rk     &
-          &                     - usq*0.5_rk*3._rk) )
+        ! compute the symmetric and antisymmetric parts of the equilibrium
+        feqPlus = layout%weight( iDir ) * (rho   &
+          &        +  rho0*(9._rk*ucx*ucx*0.5_rk &
+          &                  - usq*0.5_rk*3._rk) )
 
         feqMinus = rho0 * layout%weight( iDir ) * 3._rk * ucx
 
@@ -266,10 +260,10 @@ contains
         fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
         fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
         
-        outstate(                                                            &
-  & ?SAVE?( iDir, 1, iElem, layout%fStencil%QQ, varSys%nScalars, nElems,neigh ) ) =     &
-          &                pdfTmp( iDir ) + aux_omega * ( feqMinus - fMinus)              &
-          &                + omega * (feqPlus - fPlus)
+        outstate(                                                                &
+          & ?SAVE?( iDir,1,iElem,layout%fStencil%QQ,varSys%nScalars,nElems,neigh ) 
+          & ) = pdfTmp( iDir ) + aux_omega * ( feqMinus - fMinus)                &
+          &     + omega * (feqPlus - fPlus)
 
       end do ! iDir
 

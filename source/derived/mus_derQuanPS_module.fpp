@@ -685,10 +685,9 @@ contains
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
     real(kind=rk) :: psSourceCoeff(nElems)
-    real(kind=rk) :: transVel(nElems*3)
     integer :: iElem, iDir, QQ, nScalars, posInTotal, elemOff
-    integer :: den_pos, iLevel, vel_varPos
-    real(kind=rk) :: density, coeff_L, velocity(3), uc
+    integer :: den_pos, iLevel
+    real(kind=rk) :: density, coeff_L
     ! -------------------------------------------------------------------- !
 
     ! convert c pointer to solver type fortran pointer
@@ -705,18 +704,6 @@ contains
       & nElems  = nElems,                                    &
       & nDofs   = nDofs,                                     &
       & res     = psSourceCoeff                              )
-
-    ! passive scalar has only one transport Variable
-    vel_varPos = scheme%transVar%method(1)%data_varPos
-    ! Get velocity field
-    call varSys%method%val(vel_varPos)%get_element( &
-      & varSys  = varSys,                           &
-      & elemPos = elemPos,                          &
-      & time    = time,                             &
-      & tree    = tree,                             &
-      & nElems  = nElems,                           &
-      & nDofs   = 3,                                &
-      & res     = transVel                          )     
 
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
@@ -736,17 +723,13 @@ contains
       density = scheme%auxField(iLevel)%val(elemOff + den_pos)
 
       coeff_L = psSourceCoeff(iElem) &
-        &        / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
-      ! convert physical velocity into LB velocity
-      velocity = transVel((iElem-1)*3+1 : iElem*3) / fPtr%solverData%physics%fac(iLevel)%vel   
+        &        / fPtr%solverData%physics%fac(iLevel)%sourceCoeff  
 
       ! source term:
       ! S_i = w_i * S
       do iDir = 1, QQ
-        uc = dot_product( scheme%layout%fStencil%cxDirRK(:, iDir), velocity )
-        uc = 0._rk
         res( (iElem - 1) * fun%nComponents + iDir ) = scheme%layout%weight(iDir) &
-          &                                            * coeff_L * density * (1._rk + uc * cs2inv)
+          &                                            * coeff_L * density
       end do
 
     end do !iElem
@@ -807,10 +790,9 @@ contains
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
     real(kind=rk) :: psSourceCoeff(nElems)
-    real(kind=rk) :: transVel(nElems*3)
     integer :: iElem, iDir, QQ, nScalars, posInTotal, elemOff
-    integer :: den_pos, iLevel, vel_varPos
-    real(kind=rk) :: density, coeff_L, omega, velocity(3), uc
+    integer :: den_pos, iLevel
+    real(kind=rk) :: density, coeff_L, omega
     ! -------------------------------------------------------------------- !
 
     ! convert c pointer to solver type fortran pointer
@@ -827,18 +809,6 @@ contains
       & nElems  = nElems,                                    &
       & nDofs   = nDofs,                                     &
       & res     = psSourceCoeff                              )
-
-    ! passive scalar has only one transport Variable
-    vel_varPos = scheme%transVar%method(1)%data_varPos
-    ! Get velocity field
-    call varSys%method%val(vel_varPos)%get_element( &
-      & varSys  = varSys,                           &
-      & elemPos = elemPos,                          &
-      & time    = time,                             &
-      & tree    = tree,                             &
-      & nElems  = nElems,                           &
-      & nDofs   = 3,                                &
-      & res     = transVel                          )
 
     ! constant parameter
     QQ = scheme%layout%fStencil%QQ
@@ -860,18 +830,14 @@ contains
       density = scheme%auxField(iLevel)%val(elemOff + den_pos)
 
       coeff_L = psSourceCoeff(iElem) &
-        &        / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
-      ! convert physical velocity into LB velocity
-      velocity = transVel((iElem-1)*3+1 : iElem*3) / fPtr%solverData%physics%fac(iLevel)%vel  
+        &        / fPtr%solverData%physics%fac(iLevel)%sourceCoeff 
 
-      ! source term:
-      ! S_i = w_i * S
       do iDir = 1, QQ
         uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
         uc = 0._rk
         res( (iElem - 1) * fun%nComponents + iDir ) = scheme%layout%weight(iDir)   &
           &                                            * (1.0_rk - omega / 2.0_rk) &
-          &                                            * coeff_L * density * (1.0_rk + uc * cs2inv)
+          &                                            * coeff_L * density
       end do
 
     end do !iElem
@@ -1277,10 +1243,9 @@ contains
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
     real(kind=rk) :: psSourceCoeff(fun%elemLvl(iLevel)%nElems)
-    real(kind=rk) :: transVel(fun%elemLvl(iLevel)%nElems*3)
     integer :: nElems, iElem, iDir, QQ, nScalars
-    integer :: posInTotal, den_pos, elemoff, vel_varPos
-    real(kind=rk) :: density, velocity(3), uc
+    integer :: posInTotal, den_pos, elemoff
+    real(kind=rk) :: density
     ! ---------------------------------------------------------------------- !
     ! convert c pointer to solver type fortran pointer
     call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
@@ -1304,22 +1269,6 @@ contains
     psSourceCoeff = psSourceCoeff &
       &              / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
 
-    ! passive scalar has only one transport Variable
-    vel_varPos = scheme%transVar%method(1)%data_varPos
-    ! Get velocity field
-    call varSys%method%val(vel_varPos)%get_valOfIndex( &
-      & varSys  = varSys,                              &
-      & time    = time,                                &
-      & iLevel  = iLevel,                              &
-      & idx     = scheme%transVar%method(1)            &
-      &           %pntIndex%indexLvl(iLevel)           &
-      &           %val(1:nElems),                      &
-      & nVals   = nElems,                              &
-      & res     = transVel                             )
-
-    ! convert physical velocity into LB velocity
-    transVel = transVel / fPtr%solverData%physics%fac(iLevel)%vel
-
     ! Position of density variable in auxField
     den_pos = varSys%method%val( derVarPos(1)%density )%auxField_varPos(1)
 
@@ -1342,7 +1291,7 @@ contains
         uc = 0.0_rk
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
-          &    + scheme%layout%weight( iDir ) * psSourceCoeff(iElem) * density * (1.0_rk + uc * cs2inv)
+          &    + scheme%layout%weight( iDir ) * psSourceCoeff(iElem) * density
 
       end do
 
@@ -1404,10 +1353,9 @@ contains
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
     real(kind=rk) :: psSourceCoeff(fun%elemLvl(iLevel)%nElems)
-    real(kind=rk) :: transVel(fun%elemLvl(iLevel)%nElems*3)
     integer :: nElems, iElem, iDir, QQ, nScalars
-    integer :: posInTotal, den_pos, elemoff, vel_varPos
-    real(kind=rk) :: density, omega, velocity(3), uc
+    integer :: posInTotal, den_pos, elemoff
+    real(kind=rk) :: density, omega
     ! ---------------------------------------------------------------------- !
     ! convert c pointer to solver type fortran pointer
     call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
@@ -1431,22 +1379,6 @@ contains
     psSourceCoeff = psSourceCoeff &
       &              / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
 
-    ! passive scalar has only one transport Variable
-    vel_varPos = scheme%transVar%method(1)%data_varPos
-    ! Get velocity field
-    call varSys%method%val(vel_varPos)%get_valOfIndex( &
-      & varSys  = varSys,                              &
-      & time    = time,                                &
-      & iLevel  = iLevel,                              &
-      & idx     = scheme%transVar%method(1)            &
-      &           %pntIndex%indexLvl(iLevel)           &
-      &           %val(1:nElems),                      &
-      & nVals   = nElems,                              &
-      & res     = transVel                             )
-
-    ! convert physical velocity into LB velocity
-    transVel = transVel / fPtr%solverData%physics%fac(iLevel)%vel
-
     ! Position of density variable in auxField
     den_pos = varSys%method%val( derVarPos(1)%density )%auxField_varPos(1)
 
@@ -1467,12 +1399,10 @@ contains
       velocity = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, QQ
-        uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
-        uc = 0.0_rk
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
           &    + scheme%layout%weight( iDir ) * (1.0_rk - omega / 2.0_rk)      &
-          &    * psSourceCoeff(iElem) * density * (1.0_rk + uc * cs2inv)
+          &    * psSourceCoeff(iElem) * density
 
       end do
 
@@ -1534,10 +1464,9 @@ contains
     type(mus_varSys_data_type), pointer :: fPtr
     type(mus_scheme_type), pointer :: scheme
     real(kind=rk) :: psSourceCoeff(fun%elemLvl(iLevel)%nElems)
-    real(kind=rk) :: transVel(fun%elemLvl(iLevel)%nElems*3)
     integer :: nElems, iElem, iDir, QQ, nScalars
-    integer :: posInTotal, den_pos, elemoff, vel_varPos
-    real(kind=rk) :: density, omega, lambda, omega_plus, velocity(3), uc
+    integer :: posInTotal, den_pos, elemoff
+    real(kind=rk) :: density, omega, lambda, omega_plus
     ! ---------------------------------------------------------------------- !
     ! convert c pointer to solver type fortran pointer
     call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
@@ -1559,23 +1488,7 @@ contains
 
     ! convert physical to lattice
     psSourceCoeff = psSourceCoeff &
-      &              / fPtr%solverData%physics%fac(iLevel)%sourceCoeff
-
-    ! passive scalar has only one transport Variable
-    vel_varPos = scheme%transVar%method(1)%data_varPos
-    ! Get velocity field
-    call varSys%method%val(vel_varPos)%get_valOfIndex( &
-      & varSys  = varSys,                              &
-      & time    = time,                                &
-      & iLevel  = iLevel,                              &
-      & idx     = scheme%transVar%method(1)            &
-      &           %pntIndex%indexLvl(iLevel)           &
-      &           %val(1:nElems),                      &
-      & nVals   = nElems,                              &
-      & res     = transVel                             )
-
-    ! convert physical velocity into LB velocity
-    transVel = transVel / fPtr%solverData%physics%fac(iLevel)%vel    
+      &              / fPtr%solverData%physics%fac(iLevel)%sourceCoeff 
 
     ! Position of density variable in auxField
     den_pos = varSys%method%val( derVarPos(1)%density )%auxField_varPos(1)
@@ -1600,12 +1513,10 @@ contains
       velocity = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, QQ
-        uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
-        uc = 0.0_rk
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
           &    + scheme%layout%weight( iDir ) * (1.0_rk - omega_plus / 2.0_rk) &
-          &    * psSourceCoeff(iElem) * density * (1.0_rk + uc * cs2inv)
+          &    * psSourceCoeff(iElem) * density
 
       end do
 

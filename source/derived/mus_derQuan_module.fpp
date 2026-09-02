@@ -185,6 +185,7 @@ module mus_derQuan_module
   public :: applySrc_absorbLayerDyn
   public :: applySrc_absorbLayerDyn_MRT
   public :: applySrc_force
+  public :: applySrc_force_TRT
   public :: applySrc_force_GNS
   public :: applySrc_force_MRT
   public :: applySrc_force_MRT_d2q9
@@ -3481,6 +3482,93 @@ contains
 
   end subroutine applySrc_force
 ! ****************************************************************************** !
+
+! ****************************************************************************** !
+  !> Update state with the second-order Guo force for TRT collision.
+  !!
+  !! The first-order Hermite contribution is odd and therefore has to be weighted 
+  !! with the antisymmetric TRT relaxation rate. The second-order contribution is 
+  !! even and uses the symmetric relaxation rate.  
+  subroutine applySrc_force_TRT( fun, inState, outState, neigh, auxField,    &
+    &                            nPdfSize, iLevel, varSys, time, phyConvFac, &
+    &                            derVarPos                                   )
+    ! -------------------------------------------------------------------- !
+    class(mus_source_op_type), intent(in) :: fun
+    real(kind=rk), intent(in) :: inState(:)
+    real(kind=rk), intent(inout) :: outState(:)
+    integer, intent(in) :: neigh(:)
+    real(kind=rk), intent(in) :: auxField(:)
+    integer, intent(in) :: nPdfSize
+    integer, intent(in) :: iLevel
+    type(tem_varSys_type), intent(in) :: varSys
+    type(tem_time_type), intent(in) :: time
+    type(mus_convertFac_type), intent(in) :: phyConvFac
+    type(mus_derVarPos_type), intent(in) :: derVarPos(:)
+    ! -------------------------------------------------------------------- !
+    type(mus_varSys_data_type), pointer :: fPtr
+    type(mus_scheme_type), pointer :: scheme
+    real(kind=rk) :: forceField(fun%elemLvl(iLevel)%nElems*3)
+    real(kind=rk) :: force(3), velocity(3), cx(3)
+    real(kind=rk) :: ucx, cxForce, uForce, h1Term, h2Term
+    real(kind=rk) :: omegaPlus, omegaMinus
+    real(kind=rk) :: omegaPlus_fac, omegaMinus_fac
+    integer :: nElems, iElem, iDir, QQ, nScalars
+    integer :: posInTotal, statePos, elemOff
+    integer :: vel_pos(3)
+    ! -------------------------------------------------------------------- !
+    call c_f_pointer( varSys%method%val( fun%srcTerm_varPos )%method_data, &
+      &               fPtr )
+    scheme => fPtr%solverData%scheme
+
+    nElems = fun%elemLvl(iLevel)%nElems
+    call varSys%method%val(fun%data_varPos)%get_valOfIndex( &
+      & varSys  = varSys,                                   &
+      & time    = time,                                     &
+      & iLevel  = iLevel,                                   &
+      & idx     = fun%elemLvl(iLevel)%idx(1:nElems),        &
+      & nVals   = nElems,                                   &
+      & res     = forceField                                )
+
+    ! Convert force per physical volume to lattice units.
+    forceField = forceField / fPtr%solverData%physics%fac(iLevel)%body_force
+
+    QQ = scheme%layout%fStencil%QQ
+    nScalars = varSys%nScalars
+    vel_pos = varSys%method%val(derVarPos(1)%velocity)%auxField_varPos(1:3)
+
+    do iElem = 1, nElems
+      posInTotal = fun%elemLvl(iLevel)%posInTotal(iElem)
+      elemOff = (posInTotal - 1) * varSys%nAuxScalars
+      velocity = auxField(elemOff + vel_pos)
+      force = forceField((iElem-1)*3+1:iElem*3)
+      uForce = dot_product(velocity, force)
+
+      omegaPlus = scheme%field(1)%fieldProp%fluid%viscKine          &
+        &                               %omLvl(iLevel)%val(posInTotal)
+      omegaMinus = 1.0_rk / ( scheme%field(1)%fieldProp%fluid%lambda &
+        &                    / (1.0_rk / omegaPlus - 0.5_rk) + 0.5_rk)
+      omegaPlus_fac = 1.0_rk - 0.5_rk * omegaPlus
+      omegaMinus_fac = 1.0_rk - 0.5_rk * omegaMinus
+
+      do iDir = 1, QQ
+        cx = scheme%layout%fStencil%cxDirRK(:, iDir)
+        ucx = dot_product(cx, velocity)
+        cxForce = dot_product(cx, force)
+
+        ! H1 is odd; H2 is even.
+        h1Term = cs2inv * cxForce
+        h2Term = cs4inv * ucx * cxForce - cs2inv * uForce
+
+        statePos = ?SAVE?(iDir, 1, posInTotal, QQ, nScalars, nPdfSize, neigh)
+        outState(statePos) = outState(statePos)                &
+          & + scheme%layout%weight(iDir)                       &
+          & * (omegaMinus_fac * h1Term + omegaPlus_fac * h2Term)
+      end do
+    end do
+
+  end subroutine applySrc_force_TRT
+! ****************************************************************************** !
+
   ! ****************************************************************************** !
   !> Update state with source variable "force" for Generalized Navier-Stokes equations.
   !! The implementation is taken from "Lattice Boltzmann model for incompressible flows 
@@ -5297,7 +5385,7 @@ contains
           &                velocity )
 
         ! position in state array
-        statePos = ( posintotal-1)* nscalars+idir+( 1-1)* qq
+        statePos = ?SAVE?(iDir, 1, posInTotal, QQ, nScalars, nPdfSize, neigh)
         ! update outstate
         outState(statePos) = outState(statePos)                          &
           &                   - omega_fac * scheme%layout%weight(iDir)   &
@@ -5544,7 +5632,7 @@ contains
         h2Term = cs2inv * ucx * ucx - u2
 
         ! position in state array
-        statePos = ( posintotal-1)* nscalars+idir+( 1-1)* qq
+        statePos = ?SAVE?(iDir, 1, posInTotal, QQ, nScalars, nPdfSize, neigh)
         ! update outstate
         outState(statePos) = outState(statePos)                          &
           & - scheme%layout%weight(iDir) * cs2inv * bCoeffField(iElem)  &
@@ -7048,7 +7136,8 @@ contains
     real(kind=rk), allocatable                :: tmpPDF(:)
     real(kind=rk), allocatable                :: fEq(:)
     real(kind=rk)                             :: dens, vel(3)
-    integer                                   :: pdfPos, nCompsPDF, iVal
+    integer                                   :: pdfPos, nCompsPDF, iVal, elemOff
+    integer                                   :: dens_pos, vel_pos(3)
     !> Class that contains pointers to the proper derived quantities functions
     type(mus_scheme_derived_quantities_type), pointer :: quantities
     ! ---------------------------------------------------------------------------
@@ -7057,15 +7146,24 @@ contains
     quantities => scheme%layout%quantities
     pdfPos = fun%input_varPos(1)
     nCompsPDF = varSys%method%val( pdfPos )%nComponents
+    ! The input PDFs are the streamed pre-collision populations. Use the
+    ! macroscopic fields reconstructed from those PDFs and corrected by the
+    ! source offset when forming equilibrium. 
+    dens_pos = varSys%method%val( scheme%derVarPos(1)%density ) &
+      &                     %auxField_varPos(1)
+    vel_pos = varSys%method%val( scheme%derVarPos(1)%velocity ) &
+      &                    %auxField_varPos(1:3)
     allocate( tmpPDF( nCompsPDF ) )
     allocate( fEq( fun%nComponents ) )
     res = 0.0_rk
 
     do iVal = 1 , nVals
       tmpPDF = pdf( (iVal-1)*nCompsPDF+1 : iVal*nCompsPDF )
-      ! computes density and velocity
-      dens   = sum(tmpPDF)
-      vel = quantities%vel_from_pdf_ptr(pdf = tmpPDF, dens = dens)
+      elemOff = (posInState(iVal)-1) * varSys%nAuxScalars
+      dens = scheme%auxField(iLevel)%val(elemOff + dens_pos)
+      vel(1) = scheme%auxField(iLevel)%val(elemOff + vel_pos(1))
+      vel(2) = scheme%auxField(iLevel)%val(elemOff + vel_pos(2))
+      vel(3) = scheme%auxField(iLevel)%val(elemOff + vel_pos(3))
 
       fEq = quantities%pdfEq_ptr( rho = dens,    &
         &                         vel = vel,     &
@@ -7172,8 +7270,9 @@ contains
     real(kind=rk), allocatable                :: tmpPDF(:)
     real(kind=rk), allocatable                :: fEq(:)
     real(kind=rk)                             :: dens, vel(3)
-    integer                                   :: iVal
+    integer                                   :: iVal, elemOff
     integer                                   :: pdfPos, nCompsPDF
+    integer                                   :: dens_pos, vel_pos(3)
     !> Class that contains pointers to the proper derived quantities functions
     type(mus_scheme_derived_quantities_type), pointer :: quantities
     ! ---------------------------------------------------------------------------
@@ -7183,15 +7282,25 @@ contains
 
     pdfPos = fun%input_varPos(1)
     nCompsPDF = varSys%method%val( pdfPos )%nComponents
+    ! Computing velocity directly from tmpPDF would return the raw momentum
+    ! sum_i(f_i*c_i), omitting (dt/2)*F in second-order forcing schemes. The
+    ! resulting equilibrium, non-equilibrium second moment, and shear stress
+    ! would therefore be inconsistent with the collision/source algorithm.
+    dens_pos = varSys%method%val( scheme%derVarPos(1)%density ) &
+      &                     %auxField_varPos(1)
+    vel_pos = varSys%method%val( scheme%derVarPos(1)%velocity ) &
+      &                    %auxField_varPos(1:3)
     allocate( fEq( fun%nComponents ) )
     allocate( tmpPDF( nCompsPDF ) )
     res = 0.0_rk
 
     do iVal = 1 , nVals
       tmpPDF = pdf( (iVal-1)*nCompsPDF+1 : iVal*nCompsPDF )
-      ! computes density and velocity
-      dens = sum(tmpPDF)
-      vel = quantities%vel_from_pdf_ptr(pdf = tmpPDF, dens = dens)
+      elemOff = (posInState(iVal)-1) * varSys%nAuxScalars
+      dens = scheme%auxField(iLevel)%val(elemOff + dens_pos)
+      vel(1) = scheme%auxField(iLevel)%val(elemOff + vel_pos(1))
+      vel(2) = scheme%auxField(iLevel)%val(elemOff + vel_pos(2))
+      vel(3) = scheme%auxField(iLevel)%val(elemOff + vel_pos(3))
 
       ! computes equilibrium
       fEq = quantities%pdfEq_ptr( rho = dens,      &
@@ -7263,7 +7372,8 @@ contains
     real(kind=rk), allocatable                :: tau(:)
     real(kind=rk), allocatable                :: fEq(:)
     real(kind=rk)                             :: dens, vel(3), omega
-    integer                                   :: pdfPos, nCompsPDF, iVal
+    integer                                   :: pdfPos, nCompsPDF, iVal, elemOff
+    integer                                   :: dens_pos, vel_pos(3)
     !> Class that contains pointers to the proper derived quantities functions
     type(mus_scheme_derived_quantities_type), pointer :: quantities
     ! ---------------------------------------------------------------------------
@@ -7273,6 +7383,12 @@ contains
 
     pdfPos = fun%input_varPos(1)
     nCompsPDF = varSys%method%val( pdfPos )%nComponents
+    ! Use the source-corrected macroscopic state associated with the fetched
+    ! pre-collision PDFs. The raw PDF first moment omits the half-force term.
+    dens_pos = varSys%method%val( scheme%derVarPos(1)%density ) &
+      &                     %auxField_varPos(1)
+    vel_pos = varSys%method%val( scheme%derVarPos(1)%velocity ) &
+      &                    %auxField_varPos(1:3)
 
     allocate( tmpPDF( nCompsPDF ) )
     allocate( nonEq( nCompsPDF ) )
@@ -7281,9 +7397,11 @@ contains
 
     do iVal = 1, nVals
       tmpPDF = pdf( (iVal-1)*nCompsPDF+1 : iVal*nCompsPDF )
-      ! computes density and velocity
-      dens   = sum(tmpPDF)
-      vel = quantities%vel_from_pdf_ptr(pdf = tmpPDF, dens = dens)
+      elemOff = (posInState(iVal)-1) * varSys%nAuxScalars
+      dens = scheme%auxField(iLevel)%val(elemOff + dens_pos)
+      vel(1) = scheme%auxField(iLevel)%val(elemOff + vel_pos(1))
+      vel(2) = scheme%auxField(iLevel)%val(elemOff + vel_pos(2))
+      vel(3) = scheme%auxField(iLevel)%val(elemOff + vel_pos(3))
 
       ! computes equilibrium
       fEq = quantities%pdfEq_ptr( rho = dens,       &

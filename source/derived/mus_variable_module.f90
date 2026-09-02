@@ -125,6 +125,7 @@ module mus_variable_module
     &                                   applySrc_absorbLayerDyn,          &
     &                                   applySrc_absorbLayerDyn_MRT,      &
     &                                   applySrc_force,                   &
+    &                                   applySrc_force_TRT,               &
     &                                   applySrc_force_GNS,               &
     &                                   applySrc_force_MRT,               &
     &                                   applySrc_force_MRT_d2q9,          &
@@ -1071,6 +1072,8 @@ contains
               case default
                 me%method(iSrc)%applySrc => applySrc_force_MRT
               end select
+            case ('trt')
+              me%method(iSrc)%applySrc => applySrc_force_TRT
             case default
               me%method(iSrc)%applySrc => applySrc_force
             end select
