@@ -55,7 +55,8 @@ boundary_condition = {
 }
 glob_source = {
   varname = 'channelForce',
-  brinkman = Fc
+  brinkman = Fc,
+  brinkman_order = 1
 }
 
 variable = {

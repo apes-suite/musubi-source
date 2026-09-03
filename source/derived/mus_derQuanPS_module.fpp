@@ -833,8 +833,6 @@ contains
         &        / fPtr%solverData%physics%fac(iLevel)%sourceCoeff 
 
       do iDir = 1, QQ
-        uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
-        uc = 0._rk
         res( (iElem - 1) * fun%nComponents + iDir ) = scheme%layout%weight(iDir)   &
           &                                            * (1.0_rk - omega / 2.0_rk) &
           &                                            * coeff_L * density
@@ -1284,11 +1282,8 @@ contains
       elemoff = (posInTotal - 1) * varSys%nAuxScalars
       ! obtain velocity from auxField
       density = scheme%auxField(iLevel)%val(elemOff + den_pos)
-      velocity = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, QQ
-        uc = dot_product( scheme%layout%fStencil%cxDirRK(:,iDir), velocity(:) )
-        uc = 0.0_rk
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
           & = outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) ) &
           &    + scheme%layout%weight( iDir ) * psSourceCoeff(iElem) * density
@@ -1396,7 +1391,6 @@ contains
       elemoff = (posInTotal - 1) * varSys%nAuxScalars
       ! obtain velocity from auxField
       density = scheme%auxField(iLevel)%val(elemOff + den_pos)
-      velocity = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, QQ
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &
@@ -1510,7 +1504,6 @@ contains
       elemoff = (posInTotal - 1) * varSys%nAuxScalars
       ! obtain velocity from auxField
       density = scheme%auxField(iLevel)%val(elemOff + den_pos)
-      velocity = transVel( (iElem-1)*3+1 : iElem*3 )
 
       do iDir = 1, QQ
         outState( ?SAVE?(iDir,1,posInTotal,QQ,nScalars,nPdfSize,neigh) )       &

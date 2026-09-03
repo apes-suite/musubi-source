@@ -1,6 +1,6 @@
-title: Brinkman Channel 2D Example with BGK operator
+title: Brinkman Channel 2D Example with TRT operator and H2 Brinkman force
 
-# Brinkman Channel 2D Example with BGK operator ## {#ex_brinkman_channel2d_bgk}
+# Brinkman Channel 2D Example with TRT operator and H2 Brinkman force ## {#ex_brinkman_channel2d_trt_h2}
 
 Brinkman flow in a channel is a classical benchmark problem for validating 
 the Navier--Stokes--Brinkman (NSB) solver, as it combines viscous diffusion 
@@ -29,13 +29,29 @@ with $k_1 = \tfrac{u_m}{e^{\sqrt{F_0} h} - e^{-\sqrt{F_0} h}}$ and $k_2 = -k_1$.
 The analytical solution is written in `func.lua`. The values of $F_0$ is and 
 other parameters are set in `params.lua`. 
 
-In this example, BGK collision model is adopted. Meanwhile, the source term is expanded 
-up to the first Hermite order. 
+In this example, TRT collision model is adopted. Meanwhile, the source term is expanded 
+up to the second Hermite order. Separating it according to lattice parity gives
+
+  $$ S_i=S_i^{-}+S_i^{+} $$
+where the first-order, antisymmetric contribution is
 
 $$
-  S_i=w_i\omega^{-}
+  S_i^{-}=w_i\omega^{-}
   \left(
   \frac{1}{\omega^{-}}-\frac{\Delta t}{2}
   \right)
   \frac{\mathbf{c}_i\cdot\mathbf{F}_{\mathrm{tot}}}{c_s^2},
+$$
+and the second-order, symmetric contribution is
+$$
+  S_i^{+}=w_i\omega^{+}
+  \left(
+  \frac{1}{\omega^{+}}-\frac{\Delta t}{2}
+  \right)
+  \left[
+  \frac{
+  (\mathbf{c}_i\cdot\mathbf{u})
+  (\mathbf{c}_i\cdot\mathbf{F}_{\mathrm{tot}})
+  }{c_s^4}-\frac{\mathbf{u}\cdot\mathbf{F}_{\mathrm{tot}}}{c_s^2}
+  \right].
 $$

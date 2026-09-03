@@ -260,10 +260,9 @@ contains
         fPlus = 0.5_rk * (pdfTmp(iDir) + pdfTmp(invDir))
         fMinus = 0.5_rk * (pdfTmp(iDir) - pdfTmp(invDir))
         
-        outstate(                                                                &
-          & ?SAVE?( iDir,1,iElem,layout%fStencil%QQ,varSys%nScalars,nElems,neigh ) 
-          & ) = pdfTmp( iDir ) + aux_omega * ( feqMinus - fMinus)                &
-          &     + omega * (feqPlus - fPlus)
+        outstate( ?SAVE?( iDir,1,iElem,layout%fStencil%QQ,varSys%nScalars,nElems,neigh ) ) &
+          & = pdfTmp( iDir ) + aux_omega * ( feqMinus - fMinus) &
+          &   + omega * (feqPlus - fPlus)
 
       end do ! iDir
 
