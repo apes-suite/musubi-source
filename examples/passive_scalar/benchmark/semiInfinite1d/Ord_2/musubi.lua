@@ -28,8 +28,8 @@ identify  = {
   label = 'species', 
   kind = 'passive_scalar', 
   relaxation={
-    name = 'bgk',
-    variant = 'first'
+    name = 'trt',
+    variant = 'second'
   }, 
   layout='d1q3',
 }
