@@ -29,7 +29,7 @@ identify = {
   label      = 'fluid_2D',
   kind       = 'fluid_incompressible',
   relaxation = 'trt',
-  layout     = 'd3q19'
+  layout     = 'd2q9'
 }
 initial_condition = {
   pressure  = press_phy,
