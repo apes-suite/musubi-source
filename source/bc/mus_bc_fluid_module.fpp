@@ -81,6 +81,7 @@ module mus_bc_fluid_module
 
   public :: press_neq
   public :: pressure_antiBounceBack
+  public :: pressure_antiBounceBack_simple
   public :: pressure_eq
   public :: outlet_dnt
   public :: pressure_expol
@@ -2351,6 +2352,85 @@ write(dbgUnit(1),*) 'iElem ', iElem,' elemID ',levelDesc%total(   &
     end do ! iElem
 
   end subroutine pressure_antiBounceBack
+! ****************************************************************************** !
+
+
+! ****************************************************************************** !
+  !> Halfway pressure anti-bounce-back boundary condition.
+  !!
+  !! Reconstructs each unknown incoming population from the opposite outgoing
+  !! post-collision population using
+  !!
+  !!   f_i(x_f,t+dt) = 2 w_i rho_b - f_inv(i)^*(x_f,t).
+  !!
+  !! The prescribed physical pressure is converted to the lattice density
+  !! moment rho_b. The rule is therefore valid for both the compressible and
+  !! incompressible fluid formulations.
+  subroutine pressure_antiBounceBack_simple( me, state, bcBuffer, globBC,     &
+    &                                        levelDesc, tree, nSize, iLevel,  &
+    &                                        sim_time, neigh, layout,         &
+    &                                        fieldProp, varPos, nScalars,     &
+    &                                        varSys, derVarPos, physics,      &
+    &                                        iField, mixture                  )
+    ! -------------------------------------------------------------------- !
+    class(boundary_type) :: me
+    real(kind=rk), intent(inout) :: state(:)
+    real(kind=rk), intent(in) :: bcBuffer(:)
+    type(glob_boundary_type), intent(in) :: globBC
+    type(tem_levelDesc_type), intent(in) :: levelDesc
+    type(treelmesh_type), intent(in) :: tree
+    integer, intent(in) :: nSize
+    integer, intent(in) :: iLevel
+    type(tem_time_type), intent(in) :: sim_time
+    integer, intent(in) :: neigh(:)
+    type(mus_scheme_layout_type), intent(in) :: layout
+    type(mus_field_prop_type), intent(in) :: fieldProp
+    integer, intent(in) :: varPos(:)
+    integer, intent(in) :: nScalars
+    type(tem_varSys_type), intent(in) :: varSys
+    type(mus_derVarPos_type), intent(in) :: derVarPos
+    type(mus_physics_type), intent(in) :: physics
+    integer, intent(in) :: iField
+    type(mus_mixture_type), intent(in) :: mixture
+    ! -------------------------------------------------------------------- !
+    real(kind=rk) :: rhoDef(globBC%nElems(iLevel))
+    real(kind=rk) :: inv_rho_phy
+    integer :: iDir, iElem, QQ, invDir, elemPos
+    integer :: posInBuffer, bcPress_pos
+    ! -------------------------------------------------------------------- !
+
+    QQ = layout%fStencil%QQ
+    inv_rho_phy = cs2inv / physics%fac(iLevel)%press
+
+    bcPress_pos = me%bc_states%pressure%varPos
+    call varSys%method%val(bcPress_pos)%get_valOfIndex( &
+      & varSys = varSys,                                &
+      & time   = sim_time,                              &
+      & iLevel = iLevel,                                &
+      & idx    = me%bc_states%pressure                  &
+      &            %pntIndex%indexLvl(iLevel)           &
+      &            %val(1:globBC%nElems(iLevel)),       &
+      & nVals  = globBC%nElems(iLevel),                 &
+      & res    = rhoDef                                 )
+
+    ! Convert physical pressure to the lattice density moment.
+    rhoDef = rhoDef * inv_rho_phy
+
+    do iElem = 1, globBC%nElems(iLevel)
+      elemPos = globBC%elemLvl(iLevel)%elem%val(iElem)
+      posInBuffer = globBC%elemLvl(iLevel)%posInBcElemBuf%val(iElem)
+
+      do iDir = 1, layout%fStencil%QQN
+        if (globBC%elemLvl(iLevel)%bitmask%val(iDir, iElem)) then
+          invDir = layout%fStencil%cxDirInv(iDir)
+          state(?FETCH?(iDir, iField, elemPos, QQ, nScalars, nSize, neigh)) = &
+            & 2._rk * layout%weight(iDir) * rhoDef(iElem)                    &
+            & - bcBuffer((posInBuffer-1)*nScalars + varPos(invDir))
+        end if
+      end do
+    end do
+
+  end subroutine pressure_antiBounceBack_simple
 ! ****************************************************************************** !
 
 ! ****************************************************************************** !

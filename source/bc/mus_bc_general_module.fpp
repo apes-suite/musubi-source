@@ -87,6 +87,7 @@ module mus_bc_general_module
     &                                         outlet_dnt, pressure_eq,         &
     &                                         pressure_expol, press_neq,       &
     &                                         pressure_antiBounceBack,         &
+    &                                         pressure_antiBounceBack_simple,  &
     &                                         outlet_zero_prsgrd,              &
     &                                         mfr_bounceback, mfr_eq,          &
     &                                         velocity_bounceback,             &
@@ -699,6 +700,14 @@ contains
            bc( iBnd )%fnct => pressure_antiBounceBack_pasScal
         case default
           call tem_abort('Unknown scheme kind for pressure_antiBounceBack')
+        end select
+      case('pressure_antibounceback_simple')
+        select case(trim(schemeHeader%kind))
+        case('fluid', 'fluid_incompressible')
+          bc(iBnd)%fnct => pressure_antiBounceBack_simple
+        case default
+          call tem_abort('Unknown scheme kind for simple pressure ' &
+            &            //'anti-bounce-back')
         end select
       case('outlet_zero_prsgrd')
         bc( iBnd )%fnct => outlet_zero_prsgrd

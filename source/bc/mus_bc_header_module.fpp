@@ -1030,7 +1030,8 @@ contains
 
           me(myBCID)%nNeighs = me(myBCID)%order
 
-        case( 'pressure_eq', 'pressure_antibounceback', 'outlet_bouzidi',      &
+        case( 'pressure_eq', 'pressure_antibounceback',                        &
+          &   'pressure_antibounceback_simple', 'outlet_bouzidi',             &
           &   'pressure_expol', 'pressure_expol_slow', 'pressure_noneq_expol', &
           &   'pressure_momentsbased', 'press_neq'                             )
           select case( trim( bc_header%BC_kind(iBC) ))
@@ -1045,6 +1046,11 @@ contains
               &                 // trim(me( myBCID )%label)
             me( myBCID )%requireNeighBufPost = .true.
             me( myBCID )%nNeighs = 1
+
+          case( 'pressure_antibounceback_simple' )
+            write(logUnit(1),*) '    Simple pressure anti bounce back for ' &
+              &                 // trim(me(myBCID)%label)
+            me(myBCID)%nNeighs = 0
 
           case( 'outlet_bouzidi' )
             write(logUnit(1),*) '    Outlet bouzidi boundary condition for' &
