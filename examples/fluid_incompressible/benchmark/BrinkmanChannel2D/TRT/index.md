@@ -7,6 +7,18 @@ the Navier--Stokes--Brinkman (NSB) solver, as it combines viscous diffusion
 and Darcy drag effects characteristic of porous media. 
 The problem considers a steady laminar flow through a channel filled with a porous matrix, 
 where the additional Darcy drag term significantly alters the velocity distribution. 
+
+In this example, TRT collision model is adopted. Meanwhile, the source term is expanded 
+up to the first Hermite order. 
+
+$$
+  S_i=w_i\omega^{-}
+  \left(
+  \frac{1}{\omega^{-}}-\frac{\Delta t}{2}
+  \right)
+  \frac{\mathbf{c}_i\cdot\mathbf{F}_{\mathrm{tot}}}{c_s^2},
+$$
+
 The governing one-dimensional Brinkman equation reads
 
 $$\frac{\partial^2 u_x}{\partial y^2} = F_0 u_x, \label{nsb_eq_1}$$

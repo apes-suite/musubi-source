@@ -11,15 +11,24 @@ sim_control        = {
   }
 }
 -------------------------------------------------------------------------------
-physics  = { dt = dt, rho0 = rho_phy }
+-- The best magic number for this case is given analytically in
+--  Ginzburg, I.. doi: 10.1103/PhysRevE.77.066704.
+-- Readers can try by uncommenting the following two lines.
+-- B = math.sqrt(F0) / 2
+-- magic = 3*(1-B^2*coth(B)^2) / (4*B^2*(1-3))
+
+-- In general, we use magic = 0.25.
+magic = 0.25
+physics  = { dt    = dt,    rho0 = rho_phy }
 fluid    = { 
   rho0 = rho_phy, 
-  kinematic_viscosity = nu_phy
+  kinematic_viscosity = nu_phy, 
+  lambda = magic 
 }
 identify = {
   label      = 'fluid_2D',
   kind       = 'fluid_incompressible',
-  relaxation = 'bgk',
+  relaxation = 'trt',
   layout     = 'd2q9'
 }
 initial_condition = {
@@ -47,7 +56,7 @@ boundary_condition = {
 glob_source = {
   varname = 'channelForce',
   brinkman = Fc,
-  brinkman_order = 1
+  brinkman_order = 2
 }
 
 variable = {
@@ -97,7 +106,7 @@ tracking = {
   time_control = {
     min = {iter = tmax},
     max = {iter = tmax},
-    interval = {iter = tmax}
+    interval = {iter = interval}
   }
 }
 
