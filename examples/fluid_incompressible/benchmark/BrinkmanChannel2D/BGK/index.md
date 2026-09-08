@@ -22,9 +22,20 @@ and a symmetric velocity condition at the upper wall,
 
 The analytical solution of this boundary-value problem is
 
-  $$u(y) = k_1 e^{\sqrt{F_0} y} + k_2 e^{-\sqrt{F_0} y}, \label{nsb_solution}$$
+  $$u(y) = k_1 e^{\sqrt{F_0} y} + k_2 e^{-\sqrt{F_0} y}$$
 
 with $k_1 = \tfrac{u_m}{e^{\sqrt{F_0} h} - e^{-\sqrt{F_0} h}}$ and $k_2 = -k_1$. 
 
 The analytical solution is written in `func.lua`. The values of $F_0$ is and 
 other parameters are set in `params.lua`. 
+
+In this example, BGK collision model is adopted. Meanwhile, the source term is expanded 
+up to the first Hermite order. 
+
+$$
+  S_i=w_i\omega^{-}
+  \left(
+  \frac{1}{\omega^{-}}-\frac{\Delta t}{2}
+  \right)
+  \frac{\mathbf{c}_i\cdot\mathbf{F}_{\mathrm{tot}}}{c_s^2},
+$$
