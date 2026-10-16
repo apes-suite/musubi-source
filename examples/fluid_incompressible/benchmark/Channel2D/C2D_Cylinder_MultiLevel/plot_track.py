@@ -2,16 +2,12 @@
 import sys
 import os
 
-# Path to gleaner (Better use environment variable PYTHONPATH!)
-if os.path.exists( os.getenv('HOME')+'/apes/gleaner'): 
-  glrPath = os.getenv('HOME')+'/apes/gleaner'
-else:
+try:
+    import gleaner
+except:
   print('Gleaner library not found')
+  print('Use apes-pyenv to make it available')
   exit
-
-# Import gleaner module
-sys.path.append(glrPath)
-import gleaner
 
 # Do not use X-server to create and save plot
 import matplotlib
@@ -90,7 +86,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('DragCoeffOverTime.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 logging.info('Lift coefficient over time:')
 fig = mplt.figure()
@@ -119,7 +115,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('LiftCoeffOverTime.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 logging.info('Pressure profile across the channel length:')
 fig = mplt.figure()
@@ -147,7 +143,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('PressureAlongLength.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 logging.info('Velocity X profile across the channel length:')
 fig = mplt.figure()
@@ -175,7 +171,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('VelocityXAlongLength.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 logging.info('Velocity Y profile across the channel length:')
 fig = mplt.figure()
@@ -203,7 +199,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('VelocityYAlongLength.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 logging.info('Pressure difference between the cylinder:')
 fig = mplt.figure()
@@ -244,7 +240,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('PressureDiffOverTime.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 logging.info('Lift coefficient in Frequency:')
 fig = mplt.figure()
@@ -286,7 +282,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('FFT.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 
 

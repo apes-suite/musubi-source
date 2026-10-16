@@ -2,13 +2,13 @@
 
 # Path to gleaner (Better use environment variable PYTHONPATH!)
 import os
-if os.path.exists( os.getenv('HOME')+'/apes/gleaner'): 
-  glrPath = os.getenv('HOME')+'/apes/gleaner'
-else:
+try:
+    import gleaner
+except:
   print('Gleaner library not found')
+  print('Use apes-pyenv to make it available')
   exit
 
-import sys
 
 # Do not use X-server to create and save plot
 import matplotlib
@@ -17,8 +17,6 @@ matplotlib.use('Agg')
 ## Import all required modules
 import matplotlib.ticker as mtick
 import matplotlib.pyplot as mplt
-sys.path.append(glrPath)
-import gleaner
 import logging
 
 # font setting
@@ -126,7 +124,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('pressureOverTime.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 print ('Velocity X over time:')
 fig = mplt.figure()
@@ -162,7 +160,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('velocityXOverTime.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 print ('Velocity Y over time:')
 fig = mplt.figure()
@@ -198,7 +196,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('velocityYOverTime.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 print ('Normalized pressure over center axis:')
 fig = mplt.figure()
@@ -226,7 +224,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('pressureOverCenterAxis.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 print ('Velocity X over center axis:')
 fig = mplt.figure()
@@ -254,7 +252,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('velocityXOverCenterAxis.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 print ('Velocity Y over center axis:')
 fig = mplt.figure()
@@ -282,7 +280,7 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('velocityYOverCenterAxis.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 
 logging.info('Plots created')

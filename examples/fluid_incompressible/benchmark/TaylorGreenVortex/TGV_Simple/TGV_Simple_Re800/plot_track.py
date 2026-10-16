@@ -1,17 +1,12 @@
 ## This is the user-script for plotting using gleaner tool.
-import sys
 import os
 
-# Path to gleaner (Better use environment variable PYTHONPATH!)
-if os.path.exists( os.getenv('HOME')+'/apes/gleaner'):
-  glrPath = os.getenv('HOME')+'/apes/gleaner'
-else:
+try:
+    import gleaner
+except:
   print('Gleaner library not found')
+  print('Use apes-pyenv to make it available')
   exit
-
-# Import gleaner module
-sys.path.append(glrPath)
-import gleaner
 
 # Do not use X-server to create and save plot
 import matplotlib
@@ -74,6 +69,6 @@ figsize = [8,6]
 fig = mplt.gcf()
 fig.set_size_inches(figsize[0],figsize[1])
 mplt.savefig('PressureOverTime.png', dpi=100, format='png', \
-             bbox_inches="tight",interpolation=None)
+             bbox_inches="tight")
 ## -------------------------------------------------------------------------- ##
 logging.info('Plots created')

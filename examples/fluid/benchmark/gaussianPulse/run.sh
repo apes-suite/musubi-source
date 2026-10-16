@@ -1,7 +1,6 @@
 #!/bin/bash
-
-# path to musubi executable
-musubi_path=~/apes/musubi/build/musubi
+#
+# Run from with apes-pyenv activated
 
 # Remove old directories
 rm -rf tracking restart
@@ -10,7 +9,7 @@ rm -rf tracking restart
 mkdir tracking restart
 
 # Run Musubi
-mpirun --oversubscribe -np 2 $musubi_path musubi.lua
+mpirun --oversubscribe -np 2 musubi
 
 # Remove database if existent
 rm *.db

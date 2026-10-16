@@ -47,20 +47,14 @@ def convert_array_to_nparray(x):
         x_new = np.append(x_new, i)
   return x_new
 
-import sys
 import os
-# Path to gleaner (Better use environment variable PYTHONPATH!)
-if os.path.exists('/scratch/ws/0/masi_ka-apes_repo/apes/gleaner/'):
-  glrPath = '/scratch/ws/0/masi_ka-apes_repo/apes/gleaner'
-elif os.path.exists( os.getenv('HOME')+'/apes/gleaner'): 
-  glrPath = os.getenv('HOME')+'/apes/gleaner'
-else:
-  print('Gleaner library not found')
-  exit
 
-# Import gleaner module
-sys.path.append(glrPath)
-import gleaner
+try:
+    import gleaner
+except:
+  print('Gleaner library not found')
+  print('Use apes-pyenv to make it available')
+  exit
 
 # Do not use X-server to create and save plot
 import matplotlib
