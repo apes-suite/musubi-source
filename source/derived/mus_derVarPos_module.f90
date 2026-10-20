@@ -64,6 +64,7 @@ module mus_derVarPos_module
     integer :: spc_momenta       = -1
     integer :: shearStress       = -1
     integer :: wss               = -1
+    integer :: wallShearVector   = -1
     integer :: shearMag          = -1
     integer :: strainRate        = -1
     integer :: shearRate         = -1
@@ -450,4 +451,3 @@ contains
 
 
 end module mus_derVarPos_module
-

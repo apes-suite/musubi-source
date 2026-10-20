@@ -121,6 +121,7 @@ module mus_derQuanIncomp_module
     &                                      deriveShearMag,                     &
     &                                      deriveWSS2D,                        &
     &                                      deriveWSS3D,                        &
+    &                                      deriveWallShearVector,              &
     &                                      deriveTemp,                         &
     &                                      deriveShearRate,                    &
     &                                      deriveBndForce,                     &
@@ -198,13 +199,14 @@ contains
     nullify(get_point, get_element, set_params, get_params, setup_indices, &
       &     get_valOfIndex)
 
-    nDerVars = 20
+    nDerVars = 21
     allocate(derVarName_loc(nDerVars))
     derVarName_loc = [ 'fetch_pdf         ', 'fetch_pdf_now     ', &
       &                'pressure          ', 'equilibrium       ', &
       &                'non_equilibrium   ', 'kinetic_energy    ', &
       &                'shear_stress      ', 'strain_rate       ', &
       &                'shear_rate        ', 'wss               ', &
+      &                'wall_shear_vector ', &
       &                'momentum          ', 'vel_mag           ', &
       &                'bnd_force         ', 'fetch_pdf         ', &
       &                'shear_mag         ', 'temperature       ', &
@@ -312,6 +314,12 @@ contains
         else
           write(logUnit(1),*) 'WARNING: WSS does not support 1D'
         end if
+
+      case ('wall_shear_vector')
+        nComponents = 3
+        get_element => deriveWallShearVector
+        allocate(input_varname(1))
+        input_varname(1) = 'shear_stress'
 
       case ('momentum')
         get_element => deriveMomentum

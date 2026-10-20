@@ -266,8 +266,9 @@ contains
           ! field density
           dens_field = scheme%auxField(iLevel)%val(elemOff + dens_pos(iField))
           ! set nonPhysical if local field density is negative
-          ! density can never be negative
-          if (dens_field <= 0.0_rk) then
+          ! An empty passive scalar is valid; fluid mass density must be positive.
+          if (dens_field < 0.0_rk .or. (dens_field == 0.0_rk &
+            & .and. trim(scheme%header%kind) /= 'passive_scalar')) then
             write(logUnit(1),'(a,i3)') 'ERROR: Negative density for field', &
               &                        iField
             write(logUnit(1),*) 'Terminating check total density calculation'
