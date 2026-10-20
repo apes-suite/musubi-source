@@ -139,6 +139,7 @@ module mus_derQuan_module
   public :: deriveShearMag
   public :: deriveWSS3D
   public :: deriveWSS2D
+  public :: deriveWallShearVector
   public :: deriveTemp
   public :: deriveShearRate
   public :: deriveBndForce
@@ -242,13 +243,14 @@ contains
     nullify(get_point, get_element, set_params, get_params, setup_indices, &
       &     get_valOfIndex)
 
-    nDerVars = 21
+    nDerVars = 22
     allocate(derVarName_loc(nDerVars))
     derVarName_loc    = [ 'fetch_pdf         ', 'fetch_pdf_now     ', &
       &                   'pressure          ', 'equilibrium       ', &
       &                   'non_equilibrium   ', 'kinetic_energy    ', &
       &                   'shear_stress      ', 'strain_rate       ', &
       &                   'shear_rate        ', 'wss               ', &
+      &                   'wall_shear_vector ', &
       &                   'momentum          ', 'vel_mag           ', &
       &                   'bnd_force         ', 'moment            ', &
       &                   'shear_mag         ', 'temperature       ', &
@@ -372,6 +374,12 @@ contains
         else
           write(logUnit(1),*) 'WARNING: WSS does not support 1D'
         end if
+
+      case ('wall_shear_vector')
+        nComponents = 3
+        get_element => deriveWallShearVector
+        allocate(input_varname(1))
+        input_varname(1) = 'shear_stress'
 
       case ('momentum')
         get_element => deriveMomentum
@@ -1433,6 +1441,100 @@ contains
     end do ! iElem
 
   end subroutine deriveWSS3D
+! ****************************************************************************** !
+
+! ****************************************************************************** !
+  !> Tangential viscous traction on wall elements, in lattice pressure units.
+  !! The shear_stress input stores xx, yy, xy in its first three slots in 2D, and
+  !! xx, yy, zz, xy, yz, xz in 3D. The isotropic pressure contribution
+  !! cancels in (I - n*n^T) sigma n, so it need not be included.
+  !! Non-wall elements return zero. The existing wss variable retains its
+  !! principal-stress definition for backward compatibility.
+  recursive subroutine deriveWallShearVector(fun, varsys, elempos, time, tree, &
+    &                                        nElems, nDofs, res)
+    class(tem_varSys_op_type), intent(in) :: fun
+    type(tem_varSys_type), intent(in) :: varsys
+    integer, intent(in) :: elempos(:)
+    type(tem_time_type), intent(in) :: time
+    type(treelmesh_type), intent(in) :: tree
+    integer, intent(in) :: nElems, nDofs
+    real(kind=rk), intent(out) :: res(:)
+    type(mus_varSys_data_type), pointer :: fPtr
+    real(kind=rk), allocatable :: shear(:)
+    real(kind=rk) :: normal(3), traction(3), normNormal
+    integer :: iElem, iBC, iField, iLevel, posInBndID, posInBcElem
+    integer :: nStress, first
+    logical :: isWall, hasMeshNormal
+
+    call c_f_pointer(fun%method_data, fPtr)
+    nStress = varsys%method%val(fun%input_varPos(1))%nComponents
+    allocate(shear(nStress*nElems))
+    call varsys%method%val(fun%input_varPos(1))%get_element( &
+      & varSys=varsys, elemPos=elempos, time=time, tree=tree, &
+      & nElems=nElems, nDofs=nDofs, res=shear)
+
+    res = 0.0_rk
+    do iElem = 1, nElems
+      if (.not. btest(tree%elemPropertyBits(elempos(iElem)), prp_hasBnd)) cycle
+      posInBndID = fPtr%solverData%geometry%posInBndID(elempos(iElem))
+      if (posInBndID <= 0) cycle
+
+      ! Select an actual wall at inlet/wall and outlet/wall junctions.
+      do iBC = 1, size(fPtr%solverData%scheme%globBC)
+        ! globBC%isWall is unreliable because mus_check_allWall currently
+        ! rejects both 'wall' and 'symmetry'. Inspect configured BC kinds.
+        isWall = .true.
+        do iField = 1, size(fPtr%solverData%scheme%field)
+          if (index(trim(fPtr%solverData%scheme%field(iField)%bc(iBC) &
+            & %BC_kind), 'wall') == 0) isWall = .false.
+        end do
+        if (.not. isWall) cycle
+        if (.not. any(fPtr%solverData%geometry%boundary &
+          & %boundary_ID(:,posInBndID) == int(iBC,kind=long_k))) cycle
+
+        iLevel = tem_levelOf(tree%treeID(elempos(iElem)))
+        posInBcElem = PositionOfVal( &
+          & me=fPtr%solverData%scheme%globBC(iBC)%elemLvl(iLevel)%elem, &
+          & val=elempos(iElem))
+        if (posInBcElem <= 0) cycle
+
+        ! Prefer the surface normal supplied by the mesh. Use Musubi's
+        ! discrete boundary normal when the mesh has none.
+        hasMeshNormal = .false.
+        if (allocated(fPtr%solverData%geometry%boundary%hasNormal)) then
+          hasMeshNormal = fPtr%solverData%geometry%boundary%hasNormal(iBC)
+        end if
+        if (hasMeshNormal) then
+          normal = fPtr%solverData%geometry%boundary%normal(:,posInBndID)
+        else
+          normal = real(fPtr%solverData%scheme%globBC(iBC) &
+            & %elemLvl(iLevel)%normal%val(:,posInBcElem), kind=rk)
+        end if
+        normNormal = sqrt(sum(normal*normal))
+        if (normNormal <= tiny(normNormal)) cycle
+        normal = normal / normNormal
+
+        first = (iElem-1)*nStress
+        select case (fPtr%solverData%scheme%layout%fStencil%nDims)
+        case (2)
+          traction(1) = shear(first+1)*normal(1) + shear(first+3)*normal(2)
+          traction(2) = shear(first+3)*normal(1) + shear(first+2)*normal(2)
+          traction(3) = 0.0_rk
+        case (3)
+          traction(1) = shear(first+1)*normal(1) + shear(first+4)*normal(2) &
+            &         + shear(first+6)*normal(3)
+          traction(2) = shear(first+4)*normal(1) + shear(first+2)*normal(2) &
+            &         + shear(first+5)*normal(3)
+          traction(3) = shear(first+6)*normal(1) + shear(first+5)*normal(2) &
+            &         + shear(first+3)*normal(3)
+        case default
+          cycle
+        end select
+        res((iElem-1)*3+1:iElem*3) = traction - dot_product(traction,normal)*normal
+        exit
+      end do
+    end do
+  end subroutine deriveWallShearVector
 ! ****************************************************************************** !
 
 ! ****************************************************************************** !
